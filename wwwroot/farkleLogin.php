@@ -153,6 +153,11 @@ function LoginSuccess( $pInfo, $remember=1 )
 	$_SESSION['playerid'] = $pInfo['playerid'];
 	if( isset($pInfo['adminlevel']) ) $_SESSION['adminlevel'] = $pInfo['adminlevel'];
 	
+	// Let's start setting everybody's IP addr. 
+	$remoteIP = $_SERVER['REMOTE_ADDR'];
+	$sql = "update farkle_players set remoteaddr='{$remoteIP}' where playerid='{$pInfo['playerid']}'";
+	$rc = db_command($sql);
+	
 	return 1;
 }
 

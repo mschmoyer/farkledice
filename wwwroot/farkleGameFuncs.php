@@ -31,11 +31,6 @@ define( 'LAST_ROUND', 				10); 	// Last round in a 10-round style game.
 define( 'MAX_GAMES_AGAINST_PLAYER', 12); 	// Max number of unfinished games a player can start against another player
 define( 'MAX_UNFINISHED_GAMES',		20); 	// Max number of unfinished games a players can start without playing the rest
 
-/*if( isset($_GET['test']) && $_GET['test'] == 'endgame' )
-{
-	FarkleWinGame( $_GET['gameid'], $_GET['winnerid'], $_GET['reason'], 0, 1, 1 );
-}*/
-
 /*
 	Func: FarkleNewGame()
 	Desc: This is what a player will call when they create a new game. Has pre-requisite checking. 
@@ -367,52 +362,6 @@ function FarkleJoinRandomGame( $gameMode=GAME_MODE_10ROUND, $theRandomPlayers=2 
 	{
 		$newGameId = CreateNewRandomGame( $gameMode, $randomPlayers ); 
 	}
-	
-	// Old way of doing it...testing new way. 
-	/*if( $_SESSION['lastrandomgame'] == -2 || $_SESSION['lastrandomgame'] > 0 )
-	{
-		$avoidPlayerid = 0; 
-		//if( $_SESSION['lastrandomgame'] > 0 )
-		//	$avoidPlayerid = $_SESSION['lastrandomgame'];
-	
-		// Look for a new random game or start a new one if one does not exist. 
-		$newGameId = JoinAlreadyStartedRandomGame( $gameMode, $randomPlayers, $avoidPlayerid );
-		if( !empty($newGameId) ) $newGamePlayers = GetGamePlayerids($newGameId);
-		if( !empty($newGameId) && isset($newGamePlayers[0]['playerid']) )
-		{
-			$newGamePlayers = GetGamePlayerids($newGameId);
-			//$_SESSION['lastrandomgame'] = ( $newGamePlayers[0]['playerid'] != $_SESSION['playerid'] ? $newGamePlayers[0]['playerid'] : $_SESSION['playerid'] );
-		}
-		else
-		{
-			$newGameId = CreateNewRandomGame( $gameMode, $randomPlayers ); 
-			//$_SESSION['lastrandomgame'] = -1;
-		}
-	} else if( $_SESSION['lastrandomgame'] == -1 )
-	{
-		// Pick a random player to play. 
-		$sql = "select playerid	from farkle_players 
-			where lastplayed > now()-interval '2' week and random_selectable > 0 and playerid != {$_SESSION['playerid']}
-			order by lastplayed desc 
-			LIMIT 0, 30";
-		$randPlayers = db_select_query( $sql, SQL_MULTI_ROW );	
-		
-		$randVal = (int)(rand(0,count($randPlayers)-1));
-		
-		foreach( $randPlayers as $r ) {
-			$randVal--; 
-			if( $randVal <= 0 ) {
-				$randomPlayerid = $r['playerid'];
-				break;
-			}
-		}
-		
-		if( !empty($randomPlayerid) ) 
-		{
-			$newGameId = CreateGameWithPlayers( $_SESSION['playerid'], Array( $_SESSION['playerid'], $randomPlayerid ) );
-			$_SESSION['lastrandomgame'] = $randomPlayerid; 
-		}
-	}*/
 	
 	if( empty($newGameId) )
 	{
