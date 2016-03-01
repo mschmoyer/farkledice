@@ -132,10 +132,10 @@ function CheckForLevel( $playerid )
 		if( $newLevel >= MAX_LEVEL+10 )
 			$cardcolor = "prestige7.png";
 		if( $newLevel >= 100 )
-			$cardcolor = "prestige8.png"; 
+			$cardcolor = "prestige8.png";
 		
 		// Update the player's XP, etc. 
-		$sql = "update farkle_players set cardcolor='$cardcolor', playerlevel=playerlevel+$levelsGained, 
+		$sql = "update farkle_players set playerlevel=playerlevel+$levelsGained, 
 				xp_to_level=$xp_to_level, xp=$newXP, level_acked=0
 				where playerid=$playerid";
 		$result = db_command($sql);

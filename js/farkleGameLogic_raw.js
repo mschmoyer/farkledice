@@ -36,14 +36,15 @@ function loadImage(src, onload) {
 }
 
 // initialize the dice array
-function farkleInit()
+function farkleInit(diceBackImg)
 {
 	var i;	
 
-	//var randomnumber=Math.floor(Math.random()*2) + 1;
-	var randomnumber=6;
-	gDiceBackImage = loadImage('/images/dicebackSet'+randomnumber+'.png', 0); 
+	// The background of the dice. 
+	if(!diceBackImg) diceBackImg = 'dicebackSet6.png';
+	gDiceBackImage = loadImage('/images/'+diceBackImg, 0); 
 	
+	// The black dots. 
 	for (i=0;i<=MAX_DICE+1;i++) {
 		gDiceImages[i] = loadImage('/images/diceFront'+i+'.png', 0); 
 	}

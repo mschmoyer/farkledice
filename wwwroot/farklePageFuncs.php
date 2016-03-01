@@ -97,7 +97,7 @@ function GetStats( $playerid, $recordInSession = 1 )
 	
 	// Total points
 	$sql = "select 
-		IFNULL(fullname, username) as username, email, sendhourlyemails, random_selectable, playerid, playertitle, cardcolor,
+		IFNULL(fullname, username) as username, email, sendhourlyemails, random_selectable, playerid, playertitle, cardcolor, cardbg,
 		(select sum(worth) 
 			from farkle_achievements a, farkle_achievements_players b 
 			where a.achievementid=b.achievementid and b.playerid='$playerid') as achscore,

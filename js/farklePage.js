@@ -49,8 +49,6 @@ var gFriends;
  */
 function pageInit( )
 {
-	farkleInit();
-	
 	gAjaxUrl = AjaxFix_wwwroot( gAjaxUrl ); 
 
 	// Grab data from the hidden fields populated by PHP
@@ -64,6 +62,8 @@ function pageInit( )
 	g_playerInfo = 	eval( "(" + $('#m_pInfo').val() + ")" );
 	g_lobbyInfo = 	$('#m_lobbyInfo').val();
 	gLastKnownScreen = $('#m_lastknownscreen').val();
+	
+	farkleInit( g_playerInfo[0].cardbg );
 	
 	$('#m_friendInfo').val('');
 	$('#m_lbInfo').val('');
