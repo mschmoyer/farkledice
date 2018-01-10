@@ -35,7 +35,7 @@
 		// These functions can be executed while not logged in
 		if( $p['action'] == 'register' ) 				$rc = UserRegister( $p['user'], $p['pass'], $p['email'] );
 		else if( $p['action'] == 'login' )				$rc = UserLogin( $p['user'], $p['pass'], $p['remember'] );
-		else if( $p['action'] == 'fblogin' )			$rc = UserFacebookLogin( $p['facebookid'], $p['username'], $p['email'], $p['fullname'], $p['playerid'] );
+		else if( $p['action'] == 'fblogin' )			$rc = UserFacebookLogin( $p['facebookid'], $p['username'], $p['email'], $p['fullname'], $p['playerid'], 0 );
 		else if( $p['action'] == 'forgotpass' )			$rc = ResendPassword( $p['email'] );
 		else if( $p['action'] == 'resetpass' )			$rc = ResetPassword( $p['code'], $p['pass'] );
 		else

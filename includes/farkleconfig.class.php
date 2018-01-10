@@ -7,7 +7,7 @@ class FarkleConfig {
 			$this->data = $_SESSION['FarkleConfig']; 
 		} else {
 			$this->data = parse_ini_file( "../configs/siteconfig.ini" ); 
-			$_SESSION['FarkleConfig'] = $data; 
+			$_SESSION['FarkleConfig'] = $this->data; 
 		}
 		//var_dump($data); 
 	}

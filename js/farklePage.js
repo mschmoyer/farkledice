@@ -63,7 +63,11 @@ function pageInit( )
 	g_lobbyInfo = 	$('#m_lobbyInfo').val();
 	gLastKnownScreen = $('#m_lastknownscreen').val();
 	
-	farkleInit( g_playerInfo[0].cardbg );
+	var cardBg = 'dicebackSet6.png';
+	if(g_playerInfo) {
+		if(g_playerInfo[0] && g_playerInfo[0].cardBg) cardBg = g_playerInfo[0].cardbg; 
+	} 
+	farkleInit( cardBg );
 	
 	$('#m_friendInfo').val('');
 	$('#m_lbInfo').val('');

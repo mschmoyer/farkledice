@@ -135,7 +135,7 @@ function RegenerateDevice( $sessionid, $playerid )
 		BaseUtil_Debug( __FUNCTION__ . ": Migrating player {$playerid} session to new table.", 1 );
 		// No device found -- but they do have a session. 
 		// This is old data so we'll make a new device with the current user agent. 
-		$agentString = $_SERVER['HTTP_USER_AGENT'];
+		$agentString = ( !empty($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : "unrecognized" );
 
 		$sql = "insert into farkle_players_devices (playerid, sessionid, lastused, agentstring) values 
 				({$playerid}, '{$sessionid}', NOW(), '{$agentString}')";
@@ -171,7 +171,7 @@ function LoginGenerateSession( $playerid, $remember=1, $device='web' )
 
 	// Create a sessionid 
 	$sessionid = uniqid();
-	$agentString = $_SERVER['HTTP_USER_AGENT'];
+	$agentString = ( !empty($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : "unrecognized" );
 	
 	if( isset($_SESSION['ios_app']) ) {
 		$device = 'ios_app';
@@ -450,7 +450,7 @@ function AddDeviceToken( $device, $deviceToken, $sessionid, $playerid )
 	$resp = Array( 'Error' => 'Unknown error' ); 
 	BaseUtil_Debug( __FUNCTION__ . ": attempting to add $device token for $playerid. deviceToken=$deviceToken, session=$sessionid", 7 ); 
 	
-	$agentString = $_SERVER['HTTP_USER_AGENT'];
+	$agentString = ( !empty($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : "unrecognized" );
 	$sql = "insert into farkle_players_devices (playerid, sessionid, device, token, lastused, agentstring) 
 			values ('$playerid', '$sessionid', '$device', '$deviceToken', NOW(), '$agentString')
 			ON DUPLICATE KEY update token='$deviceToken', lastused=NOW(), agentString='$agentString'"; 

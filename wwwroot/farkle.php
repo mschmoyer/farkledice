@@ -64,7 +64,7 @@
 	
 		$smarty->assign('username', $_SESSION['username'] );
 		$smarty->assign('playerid', $_SESSION['playerid'] );
-		$smarty->assign('adminlevel', $_SESSION['adminlevel'] );
+		$smarty->assign('adminlevel', ( !empty($_SESSION['adminlevel']) ? $_SESSION['adminlevel'] : 0 ) );
 
 		BaseUtil_Debug( "farkle.php: Pre-populating data.", 14 );
 		//* Here we pre-populate some data so we don't have to do 4 ajax calls later *//

@@ -29,7 +29,7 @@
 			DATE_FORMAT(a.gamestart, '%b %D @ %l:00 %p') as gamestart
 			from farkle_games a, farkle_games_players b, farkle_players c
 			where a.gameid=b.gameid and c.playerid=b.playerid and a.winningplayer=0 and a.whostarted != c.playerid
-			and b.playerround=1 and b.notified=0 and c.sendhourlyemails=1 and c.email is not null
+			and b.playerround=1 and b.notified=0 and c.sendhourlyemails=1 and c.email is not null and char_length(c.email) >= 5
 			order by b.playerid, a.gamestart";
 		$games = db_select_query( $sql, SQL_MULTI_ROW );
 		if( $games ) $lastPlayerid = $games[0]['playerid']; 

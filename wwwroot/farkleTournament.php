@@ -370,22 +370,22 @@ function GenerateTournamentRound( $tid )
 			$gamePlayers = Array( $roundPlayers[$i]['playerid'], $roundPlayers[$i+1]['playerid'] );
 				
 			// Create the new game. 
-			error_log( "GenerateTournamentRound: New tournament game: {$gamePlayers[0]['playerid']} vs. {$gamePlayers[1]['playerid']}" );
+			//error_log( "GenerateTournamentRound: New tournament game: {$gamePlayers[0]} vs. {$gamePlayers[1]}" );
 			
 			$newGameId = CreateGameWithPlayers( $roundPlayers[$i]['playerid'], $gamePlayers, $roundDays, 
 				GAME_WITH_FRIENDS, GAME_MODE_10ROUND );
 				
 			if( $newGameId > 0 )
 			{				
-				BaseUtil_Debug( __FUNCTION__ . ": Started a tournament game with Players=$gamePlayers", 1 );
+				BaseUtil_Debug( __FUNCTION__ . ": Started a tournament game with player {$gamePlayers[0]} vs. {$gamePlayers[1]}", 1 );
 				
 				// Insert the tournament/game information
 				$sql = "insert into farkle_tournaments_games (tournamentid,gameid,roundnum,byeplayerid) VALUES
 					( $tid, $newGameId, $nextRound, 0)";
 				$rc = db_command($sql);
 				
-				
-				if( isset($roundPlayers[$i]['email']) ) {
+				// Email exists and it is length>5 - (smallest email is "a@b.c")
+				if( isset($roundPlayers[$i]['email']) && strlen($roundPlayers[$i]['email']) > 5 ) {
 					if( $lastRound > 0 )
 					{
 						// Send "next round" email
@@ -555,8 +555,10 @@ function EmailTournamentPlayers( $tid, $v_subj, $v_msg, $all=1 )
 		}
 		else
 		{
-			// TBD: Check valid email. 
-			SendEmail( $r['email'], $subj, $msg );
+			if( isset($r['email']) && strlen($r['email']) > 5 ) 
+			{
+				SendEmail( $r['email'], $subj, $msg );
+			}
 		}
 	}	
 }

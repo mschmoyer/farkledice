@@ -1251,8 +1251,8 @@ function FarkleQuitGame( $playerid, $gameid, $forceLoss = 0 )
 		$rc = db_command($sql);
 		
 		// Save a copy of this deleted game for debugging / reference purposes. 
-		$sql = "insert into farkle_games_deleted select * from farkle_games where gameid=$gameid";
-		$rc = db_command($sql);
+		//$sql = "insert into farkle_games_deleted select * from farkle_games where gameid=$gameid";
+		//$rc = db_command($sql);
 		
 		// Delete it. 
 		$sql = "delete from farkle_games where gameid=$gameid";
