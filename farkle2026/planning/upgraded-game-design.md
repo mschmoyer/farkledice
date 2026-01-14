@@ -1,898 +1,831 @@
-# Farkle Ten: Lucky Dice - Enhanced Game Design
+# Farkle Fortune - Enhanced Solo Mode
 
-> *A Balatro-inspired roguelike reimagining of classic Farkle*
+> *A deep, replayable single-player experience that expands on classic Farkle*
 
 ## Executive Summary
 
-This document outlines an enhanced solo game mode for Farkle Ten that transforms the classic push-your-luck dice game into a deep, replayable roguelike experience. Inspired by Balatro's addictive loop of meaningful choices, satisfying progression, and emergent strategy, "Lucky Dice" mode adds:
+Farkle Fortune transforms the classic push-your-luck dice game into a rich solo experience with lasting progression. Rather than copying other roguelikes, this design builds naturally from what makes Farkle exciting: the tension of each roll, the thrill of hot dice, and the agony of the Farkle.
 
-- **Special Dice** with unique abilities (like Balatro's Jokers)
-- **Roguelike Runs** with escalating difficulty across 8 Antes
-- **Boss Challenges** that modify the rules
-- **Shop Economy** with packs, consumables, and upgrades
-- **Meta-Progression** that persists between runs
+**Core Additions:**
+- **Special Dice** with unique faces and behaviors
+- **The Gauntlet** - 20 escalating challenges with rule modifiers
+- **Fortune Economy** - earn and spend currency with strategic depth
+- **Meta-Progression** - unlock content across runs
 
-Players can still chase achievements and leaderboards while experiencing a fundamentally deeper gameplay loop.
+**Design Philosophy:** Enhance Farkle, don't replace it. Every new system amplifies the core push-your-luck tension.
 
 ---
 
 ## Table of Contents
 
-1. [Core Design Philosophy](#1-core-design-philosophy)
-2. [The Scoring System](#2-the-scoring-system)
-3. [Run Structure](#3-run-structure)
-4. [Special Dice System](#4-special-dice-system)
-5. [Economy & Shop](#5-economy--shop)
-6. [Boss Blinds](#6-boss-blinds)
-7. [Consumables & Upgrades](#7-consumables--upgrades)
-8. [Challenge Modes](#8-challenge-modes)
-9. [Daily & Weekly Events](#9-daily--weekly-events)
+1. [The Gauntlet: Challenge Structure](#1-the-gauntlet-challenge-structure)
+2. [Challenge Modifiers](#2-challenge-modifiers)
+3. [Fortune Economy](#3-fortune-economy)
+4. [Special Dice](#4-special-dice)
+5. [Consumables](#5-consumables)
+6. [Permanent Upgrades](#6-permanent-upgrades)
+7. [The Shop](#7-the-shop)
+8. [Meta-Progression](#8-meta-progression)
+9. [Daily & Weekly Challenges](#9-daily--weekly-challenges)
 10. [Endless Mode](#10-endless-mode)
-11. [Meta-Progression](#11-meta-progression)
-12. [Visual & Audio Design](#12-visual--audio-design)
+11. [Achievements & Leaderboards](#11-achievements--leaderboards)
+12. [Session Flow Example](#12-session-flow-example)
 13. [Implementation Phases](#13-implementation-phases)
 
 ---
 
-## 1. Core Design Philosophy
-
-### What Makes Balatro Addictive
-
-1. **Meaningful Choices**: Every decision matters - skip a blind for a tag, or play for money?
-2. **Emergent Strategy**: Simple pieces combine into complex, satisfying synergies
-3. **Variable Rewards**: The dopamine hit of discovering powerful combos
-4. **Short Sessions**: 30-45 minute runs encourage "one more game"
-5. **Visible Progression**: Watch numbers go up in satisfying ways
-
-### Applying to Farkle
-
-Farkle already has the core "push your luck" tension. We enhance it by adding:
-
-| Balatro Element | Farkle Translation |
-|-----------------|-------------------|
-| Joker cards | Special Dice with passive abilities |
-| Chips × Mult scoring | Base Score × Multiplier formula |
-| Ante/Blind structure | Floors with escalating point targets |
-| Boss Blinds | Boss Rounds with rule modifications |
-| Planet cards | Combo Training upgrades |
-| Tarot cards | Consumable Fate Dice |
-| Vouchers | Permanent run upgrades |
-| Economy/Interest | Money system with interest cap |
-
-### Key Design Principles
-
-1. **Respect Farkle's DNA**: The core dice-rolling remains untouched
-2. **Depth Through Systems**: Layers of strategy without complexity overload
-3. **Every Run Feels Different**: Procedural shops, bosses, and dice selection
-4. **Fail Forward**: Even failed runs provide progression and learning
-5. **Skill Expression**: Good players should win more often, but luck still matters
-
----
-
-## 2. The Scoring System
-
-### Enhanced Formula
-
-**Classic Farkle**: Additive scoring (100 + 50 + 500 = 650)
-
-**Lucky Dice Mode**: **Base Score × Multiplier**
-
-```
-Final Score = (Base Points from Dice) × (1.0 + Multiplier Bonuses)
-```
-
-### Why This Matters
-
-The multiplier system creates a "race to balance" - you need both base points AND multipliers. This opens design space for:
-
-- Dice that boost base points
-- Dice that boost multipliers
-- Synergies between the two
-
-### Scoring Reference (Base Points)
-
-| Combination | Base Points |
-|-------------|-------------|
-| Single 1 | 100 |
-| Single 5 | 50 |
-| Three 1s | 1,000 |
-| Three 2s | 200 |
-| Three 3s | 300 |
-| Three 4s | 400 |
-| Three 5s | 500 |
-| Three 6s | 600 |
-| Four of a kind | 2× three of a kind |
-| Five of a kind | 4× three of a kind |
-| Six of a kind | 8× three of a kind |
-| Straight (1-6) | 1,500 |
-| Three Pairs | 1,000 |
-| Two Triplets | 2,500 |
-
-### Multiplier Display
-
-When scoring, show the calculation dramatically:
-
-```
-┌─────────────────────────────────────┐
-│  Three 5s (500)  ×  1.5x Mult      │
-│                                     │
-│         = 750 POINTS!               │
-└─────────────────────────────────────┘
-```
-
----
-
-## 3. Run Structure
+## 1. The Gauntlet: Challenge Structure
 
 ### Overview
 
-A complete run consists of **8 Antes** (stages), each containing **3 Blinds** (rounds):
+A complete run consists of **20 Challenges**, each with:
+- **Target Score** - Points needed to advance
+- **Turn Limit** - How many turns to reach the target
+- **Modifier** - Optional rule that changes gameplay (introduced after Challenge 5)
+
+### Challenge Progression
+
+| Challenge | Target | Turns | Modifier | Reward |
+|-----------|--------|-------|----------|--------|
+| 1 | 1,000 | 4 | None | 5 |
+| 2 | 1,200 | 4 | None | 5 |
+| 3 | 1,500 | 4 | None | 6 |
+| 4 | 1,800 | 4 | None | 6 |
+| 5 | 2,000 | 4 | None | 7 |
+| 6 | 2,300 | 4 | Cold Fives | 8 |
+| 7 | 2,600 | 4 | Minimum Bank | 8 |
+| 8 | 3,000 | 3 | No Singles | 9 |
+| 9 | 3,500 | 3 | Random | 10 |
+| 10 | 4,000 | 3 | **Double Modifier** | 12 |
+| 11 | 4,500 | 3 | Decay | 10 |
+| 12 | 5,000 | 3 | Farkle Limit | 11 |
+| 13 | 5,500 | 3 | Random | 12 |
+| 14 | 6,000 | 3 | The Squeeze | 13 |
+| 15 | 7,000 | 3 | **Double Modifier** | 15 |
+| 16 | 8,000 | 2 | All or Nothing | 14 |
+| 17 | 9,000 | 2 | Random | 15 |
+| 18 | 10,000 | 2 | Countdown | 16 |
+| 19 | 12,000 | 2 | Random | 18 |
+| 20 | 15,000 | 2 | **Triple Modifier** | 25 |
+
+### Difficulty Zones
 
 ```
-ANTE 1: "The Warm-Up"
-├── Small Blind: 300 points (skippable)
-├── Big Blind: 450 points (skippable)
-└── Boss Blind: 600 points (required)
-    └── SHOP ACCESS
-
-ANTE 2: "Getting Serious" (1.3× difficulty)
-├── Small Blind: 400 points
-├── Big Blind: 600 points
-└── Boss Blind: 800 points
-    └── SHOP ACCESS
-
-... continues through ANTE 8 ...
-
-ANTE 8: "Final Showdown" (5× difficulty)
-├── Small Blind: 3,000 points
-├── Big Blind: 4,500 points
-└── Boss Blind: 6,000 points (THE HOUSE)
-    └── VICTORY or ENDLESS MODE
+Challenges 1-5:   "Learning" - No modifiers, generous turns
+Challenges 6-10:  "Building" - Single modifiers introduced
+Challenges 11-15: "Testing" - Tighter margins, harder modifiers
+Challenges 16-20: "Mastery" - Only 2 turns, combined modifiers
 ```
 
-### Difficulty Scaling
+### Win & Loss Conditions
 
-| Ante | Multiplier | Small | Big | Boss |
-|------|------------|-------|-----|------|
-| 1 | 1.0× | 300 | 450 | 600 |
-| 2 | 1.3× | 400 | 600 | 800 |
-| 3 | 1.6× | 550 | 825 | 1,100 |
-| 4 | 2.0× | 750 | 1,125 | 1,500 |
-| 5 | 2.5× | 1,000 | 1,500 | 2,000 |
-| 6 | 3.2× | 1,400 | 2,100 | 2,800 |
-| 7 | 4.0× | 2,000 | 3,000 | 4,000 |
-| 8 | 5.0× | 3,000 | 4,500 | 6,000 |
+**Win:** Complete Challenge 20
 
-### Rolls Per Blind
+**Lose:**
+- Fail to reach target score within turn limit
+- Some modifiers add additional loss conditions (e.g., Farkle Limit)
 
-| Blind Type | Rolls Allowed |
-|------------|---------------|
-| Small Blind | 4 rolls |
-| Big Blind | 4 rolls |
-| Boss Blind | 3 rolls |
+### Session Length
 
-### Skip Mechanics
-
-- **Skip Small/Big Blind**: Gain a random Tag (modifier for next shop)
-- **Cannot Skip Boss Blinds**: Must defeat to progress
-- **Trade-off**: Skipping = no money reward, but valuable Tags
-
-### Run Duration Targets
-
-| Player Type | Expected Time | Typical Result |
-|-------------|---------------|----------------|
-| New Player | 20-25 min | Reach Ante 3-4 |
-| Intermediate | 30-40 min | Reach Ante 5-7 |
-| Experienced | 35-45 min | Complete run |
+- **Target:** 30-45 minutes for a full run
+- **Per Challenge:** ~2 minutes average
+- **Shop Visits:** ~1 minute each
 
 ---
 
-## 4. Special Dice System
+## 2. Challenge Modifiers
 
-### Overview
+Modifiers change the rules for a single challenge, creating variety and testing different skills.
 
-Special Dice are collectible dice with unique passive abilities that modify scoring. They're the core of build variety.
+### Scoring Modifiers
+
+| Modifier | Effect |
+|----------|--------|
+| **Cold Ones** | 1s score 0 points (but still count for combos) |
+| **Cold Fives** | 5s score 0 points (but still count for combos) |
+| **No Singles** | Loose 1s and 5s don't score; only combos count |
+| **Combo Only** | Three-of-a-kind minimum to score anything |
+| **Reversed** | 6s score like 1s (100), 1s score like 6s (in combos) |
+
+### Banking Modifiers
+
+| Modifier | Effect |
+|----------|--------|
+| **Minimum Bank** | Cannot bank less than 500 points |
+| **The Squeeze** | Must bank at least 300 every turn |
+| **All or Nothing** | Must hit full target in a single turn |
+| **Greedy** | Banking ends your entire round (not just turn) |
+| **Taxed** | 20% of banked points are lost |
+
+### Risk Modifiers
+
+| Modifier | Effect |
+|----------|--------|
+| **Farkle Limit** | 2 Farkles = instant challenge failure |
+| **One Chance** | First Farkle ends the challenge |
+| **Decay** | Target increases by 200 for each turn you don't bank |
+| **Countdown** | Target decreases by 100 per successful roll (minimum 50%) |
+| **Pressure** | 30-second timer per roll decision |
+
+### Dice Modifiers
+
+| Modifier | Effect |
+|----------|--------|
+| **Five Dice** | Play with only 5 dice instead of 6 |
+| **Sticky** | Once you keep a die, you cannot reroll it |
+| **Blind Roll** | Dice results hidden until you commit to keep/reroll |
+| **Chaos** | After each roll, one random die changes value |
+| **Cursed Die** | One die shows skulls on 2 faces (instant turn Farkle) |
+
+### Combined Modifiers (Challenges 10, 15, 20)
+
+| Challenge | Combination |
+|-----------|-------------|
+| 10 | Cold Ones + Minimum Bank |
+| 15 | No Singles + Farkle Limit |
+| 20 | Decay + The Squeeze + Five Dice |
+
+---
+
+## 3. Fortune Economy
+
+### Currency: Fortune
+
+**Fortune** (₣) is the currency of luck. Represented by a golden die pip.
+
+### Earning Fortune
+
+Fortune is earned through skillful and risky play:
+
+| Action | Fortune Earned |
+|--------|----------------|
+| Bank 1,000+ points | +1₣ |
+| Bank 2,000+ points | +2₣ |
+| Bank 3,000+ points | +4₣ |
+| Hot Dice (all 6 score, roll again) | +5₣ |
+| Risk Roll (continue with 1-2 dice) | +3₣ |
+| Streak (3+ rolls without banking) | +1₣ per roll after 2nd |
+| Three-of-a-kind or better | +1₣ |
+| Four/Five/Six-of-a-kind | +2₣/+3₣/+5₣ |
+| Full Straight (1-2-3-4-5-6) | +4₣ |
+
+### Farkle Penalty
+
+**Farkle does NOT cost Fortune.** Losing your turn's points is punishment enough. This prevents death spirals and keeps the game feeling fair.
+
+### Fortune's Favor (Saving Bonus)
+
+Your saved Fortune provides **passive gameplay bonuses**. This creates tension between spending and saving.
+
+| Fortune Held | Tier | Bonus |
+|--------------|------|-------|
+| 10-19₣ | Lucky | 5% of Farkles become "near misses" (reroll 1 die free) |
+| 20-29₣ | Fortunate | All scoring combinations worth +10% |
+| 30-39₣ | Blessed | First roll each turn scores +100 guaranteed minimum |
+| 40+₣ | Charmed | All above bonuses + Hot Dice awards +8₣ instead of +5₣ |
+
+### The Spending Decision
+
+```
+Example: You have 25₣ (Fortunate tier, +10% scoring)
+
+Shop offers:
+  - Echo Die (18₣) - powerful, would synergize with your build
+  - Reroll Token (3₣) - useful consumable
+
+Options:
+  A) Buy both (4₣ left) → Lose ALL tier bonuses
+  B) Buy only die (7₣ left) → Drop to no bonus
+  C) Buy only token (22₣ left) → Keep Fortunate +10%
+  D) Buy nothing → Maximize scoring bonus
+
+There's no obviously correct answer.
+```
+
+### Starting Fortune
+
+- **New Run:** 10₣
+- **With Upgrades:** Up to 20₣ (via meta-progression unlocks)
+
+---
+
+## 4. Special Dice
+
+### Design Philosophy
+
+Special Dice aren't passive buffs—they're **actual dice with modified faces and behaviors**. They change how you roll and keep, creating new decisions each turn.
 
 ### Dice Slots
 
-- **Start**: 5 Active Dice Slots
-- **Maximum**: 8 slots (purchasable upgrades)
-- Only dice in active slots provide effects
+- **Starting Slots:** 3
+- **Maximum Slots:** 6 (expandable via upgrades)
+- **Normal Dice:** Always have 6 total dice (special + normal = 6)
 
-### Rarity Tiers
+### Rarity & Pricing
 
-| Rarity | Border | Shop Rate | Power Level |
-|--------|--------|-----------|-------------|
-| Common | Silver | 60% | Basic effects |
-| Uncommon | Green | 25% | Medium power |
-| Rare | Blue | 12% | Build-defining |
-| Legendary | Gold | 3% | Game-changing |
+| Rarity | Shop Price | Border Color |
+|--------|------------|--------------|
+| Common | 5-10₣ | Silver |
+| Uncommon | 12-18₣ | Green |
+| Rare | 20-30₣ | Blue |
 
 ### Special Dice Catalog
 
-#### Category A: Scoring Dice
-*Modify base point values*
+#### Common Dice (5-10₣)
 
-| Die | Rarity | Effect |
-|-----|--------|--------|
-| **Golden Ace** | Uncommon | 1s score 150 instead of 100 |
-| **Platinum Five** | Uncommon | 5s score 75 instead of 50 |
-| **Triple Crown** | Rare | Three-of-a-kind +200 bonus |
-| **Straight Shooter** | Rare | Straights score 2,000 instead of 1,500 |
+| Die | Faces | Behavior |
+|-----|-------|----------|
+| **Lucky Die** | 1,1,5,5,5,5 | Harder to Farkle, but no combo potential |
+| **Loaded Die** | Normal | After rolling, nudge result ±1 (6↔1 wraps) |
+| **Streak Die** | Normal | +50₣ bonus points for each consecutive roll you keep it |
+| **Banker's Die** | Normal | +1₣ every time you bank while this die scored |
 
-#### Category B: Multiplier Dice
-*Add mult bonuses*
+#### Uncommon Dice (12-18₣)
 
-| Die | Rarity | Effect |
-|-----|--------|--------|
-| **Fire Die** | Common | +0.5× mult per 5 rolled |
-| **Ice Die** | Common | +0.5× mult per 1 rolled |
-| **Storm Die** | Uncommon | +1× mult if you roll 4+ of same number |
-| **Perfectionist** | Rare | +2× mult if ALL dice score (no duds) |
-| **Chaos Orb** | Legendary | +0.25× mult per die rolled |
+| Die | Faces | Behavior |
+|-----|-------|----------|
+| **Echo Die** | 1,2,3,4,5,⟲ | Mirror face (⟲) copies any other die you rolled |
+| **Phantom Die** | Normal | Once per turn, "unroll" it to remove a bad result |
+| **Magnetic Die** | Normal | Must keep with any die showing same number (pairs stick) |
+| **Ember Die** | Normal | Builds +50 points each roll you keep it; resets if rerolled |
+| **Insurance Die** | Normal | If you Farkle, this die's last value still scores |
 
-#### Category C: Trigger Dice
-*Activate on conditions*
+#### Rare Dice (20-30₣)
 
-| Die | Rarity | Effect |
-|-----|--------|--------|
-| **Lucky Seven** | Uncommon | Roll exactly 7 dice total: +500 bonus |
-| **The Collector** | Rare | Score all 6 dice: +$25 and +1,000 points |
-| **Farkle's Revenge** | Rare | After Farkle, next turn starts +3× mult |
-| **Hot Streak** | Uncommon | 3+ scores without banking: +1× each after 2nd |
+| Die | Faces | Behavior |
+|-----|-------|----------|
+| **Splitting Die** | 1\|2, 2\|3, 3\|4, 4\|5, 5\|6, 6\|1 | Each face counts as BOTH numbers for combos |
+| **Volatile Die** | ☠,☠,1,5,5,★ | Skull = instant turn Farkle. Star = wild (any number) |
+| **Last Stand Die** | Normal | When rolled alone (1 die left), scores triple value |
+| **Phoenix Die** | Normal | One-time: sacrifice permanently to cancel a Farkle |
+| **Golden Die** | 1,1,1,5,5,5 | All faces score; nearly impossible to contribute to Farkle |
+| **Chaos Die** | ?,?,?,?,?,? | Faces randomize each roll (shown after rolling) |
 
-#### Category D: Combo Dice
-*Synergize with other dice*
+### Dice Synergies
 
-| Die | Rarity | Effect |
-|-----|--------|--------|
-| **Mirror Die** | Rare | Copy effect of highest-rarity die (non-Legendary) |
-| **Amplifier Die** | Uncommon | All Scoring Dice effects +50% |
-| **Chain Die** | Rare | 3+ Mult Dice active: all mult +0.5× |
-| **The Twins** | Legendary | All effects trigger twice (uses 2 slots) |
+Good builds combine dice that work together:
 
-#### Category E: Risk/Reward Dice
-*High stakes*
+**"The Safe Bet"**: Lucky Die + Golden Die + Insurance Die
+- Extremely hard to Farkle, consistent small scores
 
-| Die | Rarity | Effect |
-|-----|--------|--------|
-| **Cursed Die** | Rare | +3× mult, but Farkle loses 50% game score |
-| **Gambler's Ruin** | Uncommon | Each roll: 50% +2× mult OR -1× mult |
-| **All or Nothing** | Legendary | Final bank worth 2×, but Farkle loses turn +1,000 |
-| **Glass Cannon** | Rare | +5× mult, but destroyed if you score <1,000 |
+**"Risk Taker"**: Volatile Die + Last Stand Die + Phantom Die
+- High variance, huge potential, Phantom saves bad skulls
 
-#### Category F: Economy Dice
-*Generate money*
+**"Combo Hunter"**: Splitting Die + Echo Die + Magnetic Die
+- Easier to form three/four-of-a-kinds
 
-| Die | Rarity | Effect |
-|-----|--------|--------|
-| **Coin Die** | Common | $1 per 5 banked |
-| **Banker's Die** | Uncommon | $5 when banking 1,000+ points |
-| **Investment Die** | Rare | End of game: earn 10% of score as $ (max $100) |
-| **Thief's Die** | Uncommon | Steal $10 when opponent Farkles (PvP) |
-
-### Powerful Synergy Combos
-
-**"The Inferno"**: Fire Die + Ice Die + Chaos Orb + Perfectionist
-- Roll all 6, score all = 5-8× mult potential
-
-**"The Economist"**: Coin Die + Banker's Die + Investment Die + Golden Ace
-- Generate $50-150 per game
-
-**"Double Trouble"**: The Twins + Mirror Die + Chain Die
-- Exponential effect doubling
-
-**"Phoenix Rising"**: Farkle's Revenge + Cursed Die + Glass Cannon
-- High risk, massive comeback potential
+**"The Snowball"**: Ember Die + Streak Die + Banker's Die
+- Rewards long turns without banking
 
 ---
 
-## 5. Economy & Shop
+## 5. Consumables
 
-### Currency: Chips
+Single-use items purchased in the shop and used during play.
 
-Chips are earned during runs and spent in the shop.
+### Consumable Slots
 
-#### Earning Chips
+- **Starting:** 3 slots
+- **Maximum:** 5 slots (via upgrade)
 
-| Source | Amount |
-|--------|--------|
-| Complete any round | $3 |
-| Score bonus | $1 per 500 points |
-| Farkle-free round | $2 bonus |
-| Hot dice (all 6 score) | $1 bonus |
-| Beat target by 50%+ | $3-5 bonus |
-| Defeat Boss | $8 |
+### Consumable List
 
-#### Interest System
+| Item | Cost | Effect |
+|------|------|--------|
+| **Reroll Token** | 3₣ | Reroll up to 2 kept dice once this turn |
+| **Wild Pip** | 4₣ | Declare one die as any number (1-6) for scoring |
+| **Safety Net** | 5₣ | If you Farkle this turn, keep 50% of turn points |
+| **Lucky Seven** | 6₣ | Add a 7th die for one complete turn |
+| **Second Chance** | 8₣ | After a Farkle, reroll all 6 dice once |
+| **Score Shield** | 4₣ | Next Farkle only loses turn points, not round points |
+| **Quick Bank** | 3₣ | Bank current points without ending your turn |
+| **Double Down** | 6₣ | Next scoring combination worth 2× |
+| **Modifier Skip** | 10₣ | Ignore the current challenge's modifier |
+
+### Using Consumables
+
+- Use **before rolling** (Lucky Seven, Modifier Skip)
+- Use **after rolling** (Wild Pip, Reroll Token)
+- Use **on Farkle** (Safety Net, Second Chance)
+- Use **when banking** (Quick Bank, Double Down)
+
+---
+
+## 6. Permanent Upgrades
+
+Lasting improvements purchased in Full Shops that persist for the entire run.
+
+### Scoring Upgrades
+
+| Upgrade | Cost | Effect |
+|---------|------|--------|
+| **Ace Mastery** | 15₣ | 1s score 150 instead of 100 |
+| **Five Mastery** | 15₣ | 5s score 75 instead of 50 |
+| **Triple Bonus** | 18₣ | Three-of-a-kind scores +100 base |
+| **Straight Bonus** | 20₣ | Straights score 2,000 instead of 1,500 |
+| **Hot Dice Bonus** | 15₣ | Hot Dice awards +200 bonus points |
+
+### Economy Upgrades
+
+| Upgrade | Cost | Effect |
+|---------|------|--------|
+| **Deep Pockets** | 12₣ | Hold 5 consumables instead of 3 |
+| **Fortune Finder** | 20₣ | +1₣ on all Fortune earnings |
+| **Bargain Hunter** | 15₣ | Shop prices reduced 15% |
+| **Lucky Start** | 18₣ | Begin each challenge with 100 free points |
+
+### Dice Upgrades
+
+| Upgrade | Cost | Effect |
+|---------|------|--------|
+| **Extra Slot** | 25₣ | +1 special die slot (max 6) |
+| **Die Synergy** | 20₣ | Special dice effects are 25% stronger |
+| **Quick Hands** | 15₣ | May swap one special die between challenges |
+
+### Safety Upgrades
+
+| Upgrade | Cost | Effect |
+|---------|------|--------|
+| **Farkle Insurance** | 22₣ | First Farkle each challenge loses only 50% |
+| **Lucky Break** | 18₣ | 10% chance to "save" a Farkle (auto-reroll) |
+| **Steady Hand** | 20₣ | +1 turn limit on all challenges |
+
+---
+
+## 7. The Shop
+
+### Shop Types
+
+| Type | Appears | Contents |
+|------|---------|----------|
+| **Quick Shop** | After challenges 1,2,4,5,7,8,etc. | 2 consumables, 1 die |
+| **Full Shop** | After challenges 3,6,9,12,15,18 | 3 dice, 4 consumables, 2 upgrades |
+
+### Shop Layout
 
 ```
-Interest: $1 per $5 held (max $5 per round)
-Optimal: Hold $25 = earn $5 interest
-
-Example: End round with $17 → earn $3 interest
+┌─────────────────────────────────────────────────────────┐
+│  FORTUNE'S SHOP                          Fortune: 32₣  │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  SPECIAL DICE                                           │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
+│  │ Lucky    │  │ Echo     │  │ Phantom  │              │
+│  │ Die      │  │ Die      │  │ Die      │              │
+│  │   8₣     │  │  15₣     │  │  14₣     │              │
+│  │ [Common] │  │[Uncommon]│  │[Uncommon]│              │
+│  └──────────┘  └──────────┘  └──────────┘              │
+│                                                         │
+│  CONSUMABLES                                            │
+│  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐          │
+│  │ Reroll │ │ Safety │ │ Wild   │ │ Lucky  │          │
+│  │ Token  │ │ Net    │ │ Pip    │ │ Seven  │          │
+│  │  3₣    │ │  5₣    │ │  4₣    │ │  6₣    │          │
+│  └────────┘ └────────┘ └────────┘ └────────┘          │
+│                                                         │
+│  UPGRADES                                               │
+│  ┌───────────────┐  ┌───────────────┐                  │
+│  │ Ace Mastery   │  │ Extra Slot    │                  │
+│  │ 1s → 150 pts  │  │ +1 die slot   │                  │
+│  │     15₣       │  │     25₣       │                  │
+│  └───────────────┘  └───────────────┘                  │
+│                                                         │
+│  [REROLL 2₣]                     [CONTINUE →]          │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### Shop Structure
+### Shop Actions
 
-```
-┌─────────────────────────────────────────────────┐
-│  LUCKY'S DICE SHOP                 Chips: $47  │
-├─────────────────────────────────────────────────┤
-│  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐│
-│  │ Fire   │  │ Coin   │  │ Re-Roll│  │ Shield ││
-│  │ Die    │  │ Die    │  │ Token  │  │        ││
-│  │  $6    │  │  $4    │  │  $3    │  │  $6    ││
-│  └────────┘  └────────┘  └────────┘  └────────┘│
-│                                                 │
-│  [REROLL $2]                                    │
-│                                                 │
-│  ┌──────────────┐    ┌──────────────┐          │
-│  │  DICE PACK   │    │   VOUCHER    │          │
-│  │     $6       │    │    $10       │          │
-│  └──────────────┘    └──────────────┘          │
-└─────────────────────────────────────────────────┘
-```
+| Action | Cost | Effect |
+|--------|------|--------|
+| **Reroll** | 2₣ (+1₣ each time) | Randomize all unpurchased items |
+| **Sell Die** | — | Sell owned die for 40% of purchase price |
+| **Skip** | Free | Continue without buying |
 
-### Pricing by Rarity
+### Shop Pacing
 
-| Rarity | Price Range |
-|--------|-------------|
-| Common | $3-5 |
-| Uncommon | $6-8 |
-| Rare | $10-14 |
-| Legendary | $16-22 |
-
-### Reroll Mechanics
-
-- Base cost: $2
-- +$1 per reroll in same shop
-- Resets at next shop
-
-### Pack Types
-
-| Pack | Cost | Contents |
-|------|------|----------|
-| **Dice Pack** | $6 | Choose 1 of 3 dice (70% Common, 25% Uncommon, 5% Rare) |
-| **Weighted Pack** | $10 | Choose 1 of 3 (40% Uncommon, 45% Rare, 15% Legendary) |
-| **Modifier Pack** | $5 | Choose 1 of 4 passive modifiers |
-| **Consumable Pack** | $4 | Choose 2 of 5 one-time items |
-| **Gambler's Pack** | $8 | 1 random item, any type, any rarity |
-| **Chaos Pack** | $7 | 3 items, but 1 is cursed (with upside) |
+- **Quick Shops:** Fast decisions, 30 seconds average
+- **Full Shops:** Strategic planning, 1-2 minutes
+- **No shop mid-challenge:** Clean gameplay flow
 
 ---
 
-## 6. Boss Blinds
+## 8. Meta-Progression
 
-Boss Blinds add special rules that force adaptation.
+### Stars (Permanent Currency)
 
-### Tier 1 Bosses (Antes 1-3)
+**Stars** (★) are earned across all runs and unlock permanent content.
 
-| Boss | Effect | Difficulty |
-|------|--------|------------|
-| **The Miser** | Must score 500+ before banking | Easy |
-| **The Curse** | 1s don't score, count toward Farkle | Easy-Medium |
-| **The Fog** | Current score hidden until banking | Easy |
-| **The Glutton** | Must keep ALL scoring dice (no choice) | Medium |
+### Earning Stars
 
-### Tier 2 Bosses (Antes 4-5)
+| Achievement | Stars |
+|-------------|-------|
+| Complete Challenge 5 | 1★ |
+| Complete Challenge 10 | 2★ |
+| Complete Challenge 15 | 3★ |
+| Complete Challenge 20 (win) | 5★ |
+| First win ever | 10★ bonus |
+| No-Farkle run (any length) | 2★ |
+| Earn 50₣ in single run | 1★ |
+| Earn 100₣ in single run | 2★ |
 
-| Boss | Effect | Difficulty |
-|------|--------|------------|
-| **The Mirror** | Target = your highest banked score this run | Medium |
-| **The Thief** | Lose $3 every time you bank | Medium |
-| **The Gambler** | Must bet $1-5 per roll (lose on Farkle, 2× on score) | Medium-Hard |
-| **The Taxman** | 20% of all points deducted | Medium |
+### Unlockable Content
 
-### Tier 3 Bosses (Antes 6-7)
+#### New Special Dice (unlocked for all future runs)
 
-| Boss | Effect | Difficulty |
-|------|--------|------------|
-| **The Chaos Lord** | Dice values randomize AFTER you select keeps | Hard |
-| **The Executioner** | 3 Farkles total = instant loss | Hard |
-| **The Vampire** | Each score increases requirement by 10% of points | Hard |
-| **The Twins** | Combines TWO Tier 1 boss effects | Hard |
+| Die | Star Cost | Effect |
+|-----|-----------|--------|
+| **Starter's Luck Die** | 5★ | Common die available from Challenge 1 shop |
+| **Mirror Die** | 15★ | Rare die that copies another special die's effect |
+| **Loaded Golden** | 25★ | Rare die: 1,1,5,5,★,★ (two wilds) |
+| **Quantum Die** | 40★ | Legendary: exists in superposition until observed |
 
-### Final Boss (Ante 8)
+#### Starting Bonuses
 
-**THE HOUSE** - *"The game was rigged from the start"*
+| Bonus | Star Cost | Effect |
+|-------|-----------|--------|
+| **Head Start I** | 10★ | Start runs with 15₣ instead of 10₣ |
+| **Head Start II** | 25★ | Start runs with 20₣ |
+| **Packed Bag** | 15★ | Start with 1 random consumable |
+| **Apprentice Slot** | 30★ | Start with 4 die slots instead of 3 |
 
-| Phase | Trigger | Effect |
-|-------|---------|--------|
-| 1 | Start | All Tier 2 effects active |
-| 2 | 50% score | Adds one Tier 3 effect |
-| 3 | 80% score | All dice abilities disabled |
+#### Challenge Modifiers (new modifiers added to pool)
 
----
+| Modifier | Star Cost | Effect |
+|----------|-----------|--------|
+| **Lucky Sevens** | 20★ | Adds "rolling exactly 7 total dice = +500" modifier |
+| **Jackpot** | 35★ | Adds "triple or nothing" high-risk modifier |
 
-## 7. Consumables & Upgrades
+### Prestige System
 
-### Consumables (One-Time Use)
-
-#### Common ($2-4)
-
-| Item | Effect |
-|------|--------|
-| **Re-Roll Token** | Re-roll any held dice once free |
-| **Lucky Penny** | Next roll: all 1s become 5s |
-| **Score Chip** | Add +100 to banked score |
-| **Second Wind** | After Farkle, recover 2 random dice |
-
-#### Uncommon ($5-8)
-
-| Item | Effect |
-|------|--------|
-| **Farkle Shield** | Prevent next Farkle (dice stay) |
-| **Score Doubler** | Double next scoring combination |
-| **Cash Out** | Convert banked score to $ (100 pts = $1) |
-| **Time Warp** | Undo last roll |
-
-#### Rare ($9-12)
-
-| Item | Effect |
-|------|--------|
-| **Golden Roll** | Next roll: all scoring dice give 2× |
-| **Loaded Dice** | Choose one die's result |
-| **Resurrection** | On Farkle out, keep half banked score |
-
-### Vouchers (Permanent Run Upgrades)
-
-Expensive, powerful upgrades that change gameplay.
-
-| Voucher | Effect | Cost |
-|---------|--------|------|
-| **Clearance Sale** | Rerolls cost $1 | $10 |
-| **Investor** | Interest: $1 per $4 (max $6) | $12 |
-| **Seed Money** | +$2 at start of each round | $10 |
-| **Seventh Heaven** | +1 die slot (7 total) | $16 |
-| **Safe Keeper** | Banking doesn't end turn (1×/round) | $14 |
-| **Lucky Streak** | Consecutive scores give +25 each | $12 |
-
-### Combo Training (Permanent Upgrades)
-
-Like Balatro's Planet cards - permanently upgrade specific combinations.
-
-| Training | Effect (Stacks) |
-|----------|-----------------|
-| **Triple Training** | Three-of-a-kind +50 base |
-| **Straight Practice** | Straights +200 base |
-| **Pair Mastery** | Three-pairs +100 base |
-| **Ace Affinity** | 1s score 120 instead of 100 |
+After winning 5 runs, unlock **Prestige Mode**:
+- Start from Challenge 1 with harder scaling
+- All targets increased 25%
+- Earn 2× Stars
+- Exclusive Prestige dice unlocks
 
 ---
 
-## 8. Challenge Modes
-
-Unlocked after first complete run.
-
-### The Minimalist
-*Max 3 dice slots*
-
-- All dice guaranteed Rare+
-- Dice cost 50% less
-- **Unlock**: "Minimalist" card back
-
-### Broke and Proud
-*Spend $0 in shops*
-
-- Free booster pack each ante
-- Double boss money
-- **Unlock**: "Vagrant" special die
-
-### Speed Demon
-*Complete run in 20 minutes*
-
-- 10 seconds per roll decision
-- 30 seconds per shop visit
-- Requirements reduced 20%
-- **Unlock**: "Speedster" die, leaderboard entry
-
-### One Die Wonder
-*Start each roll with 1 die*
-
-- Each score adds +1 die for next roll
-- Farkle resets to 1 die
-- Requirements reduced 40%
-- **Unlock**: "Lucky Penny" die
-
-### No Safety Net
-*One Farkle ends run*
-
-- Start with 2 anti-farkle dice
-- +1 roll per blind
-- Requirements reduced 25%
-- **Unlock**: "Perfectionist" achievement
-
-### The Gauntlet
-*Face every boss in sequence*
-
-- 12 rounds, each is a Boss
-- Shops after every 3 bosses
-- **Unlock**: "Champion" title, golden dice skin
-
----
-
-## 9. Daily & Weekly Events
+## 9. Daily & Weekly Challenges
 
 ### Daily Challenge
 
-- New seeded run every 24 hours
-- Same dice rolls for all players
-- Modified rules each day
-- Global leaderboard
+- **Resets:** Every 24 hours at midnight UTC
+- **Format:** Fixed seed—everyone gets same dice rolls
+- **Length:** 10 challenges (shortened run)
+- **Modifier:** Random daily theme
 
-| Day | Modifier |
-|-----|----------|
-| Monday | "Manic Monday" - Scores and requirements 2× |
-| Tuesday | "Two-Face" - Only 2s and 5s score |
-| Wednesday | "Wild" - Random die added each round |
-| Thursday | "Thrifty" - Shop prices 2× |
-| Friday | "Farkle Friday" - Farkle on first roll = $10 bonus |
-| Saturday | "Stacked" - Start with 5 random dice |
-| Sunday | "Funday" - All boss effects at 50% |
+| Day | Theme |
+|-----|-------|
+| Monday | "Manic Monday" - All targets and scores 2× |
+| Tuesday | "Two-sday" - Only 2s and pairs score |
+| Wednesday | "Wild Card" - Random modifier every challenge |
+| Thursday | "Thrifty" - Shop prices doubled |
+| Friday | "Farkle Friday" - Farkle gives +5₣ consolation |
+| Saturday | "Stacked" - Start with 3 random special dice |
+| Sunday | "Sunday Funday" - All modifiers at 50% strength |
 
-### Daily Rewards
+### Daily Leaderboard
 
 | Placement | Reward |
 |-----------|--------|
-| Participation | 5 Coins + 1 Ticket |
-| Top 50% | 15 Coins + 2 Tickets |
-| Top 10% | 30 Coins + Rare Pack |
-| Top 1% | 50 Coins + Legendary Pack |
-| #1 | 100 Coins + Daily Crown |
+| Participation | 1★ |
+| Top 50% | 2★ |
+| Top 10% | 3★ + Consumable Pack |
+| Top 1% | 5★ + Rare Die |
+| #1 | 10★ + Daily Crown badge |
 
 ### Weekly Challenge
 
-- Friday 00:00 - Sunday 23:59 UTC
-- Longer, complex challenges
-- Best score of multiple attempts counts
+- **Runs:** Friday 00:00 - Sunday 23:59 UTC
+- **Format:** Best score across unlimited attempts
+- **Special Rules:** Unique weekly modifiers
 
-Types:
-- **Marathon**: 3 runs back-to-back, cumulative score
-- **Specialist**: Pre-set dice loadout
-- **Boss Rush**: Continuous bosses, minimal shops
-- **Collector**: Bonus for unique dice collected
+Weekly Types:
+- **Marathon:** Complete 30 challenges, cumulative score
+- **Speedrun:** Finish 20 challenges fastest
+- **Efficiency:** Highest score with lowest Fortune spent
+- **Minimalist:** Win with max 2 special dice
 
 ---
 
 ## 10. Endless Mode
 
-After defeating The House (Ante 8), choose to continue into Endless Mode.
+### Unlocking Endless
 
-### Scaling
+Complete Challenge 20 to unlock Endless Mode for that run.
 
-```
-Ante 9+:  Base × 1.15^(Ante - 8)
+### Endless Scaling
 
-Ante 9:  3,600 / 5,400 / 7,200
-Ante 10: 4,300 / 6,450 / 8,600
-Ante 12: 6,200 / 9,300 / 12,400
-Ante 15: 10,000 / 15,000 / 20,000
-Ante 20: 22,000 / 33,000 / 44,000
-```
+| Challenge | Target | Turns | Notes |
+|-----------|--------|-------|-------|
+| 21 | 18,000 | 2 | Double modifier |
+| 22 | 21,000 | 2 | |
+| 23 | 25,000 | 2 | |
+| 24 | 30,000 | 2 | |
+| 25 | 35,000 | 2 | Triple modifier |
+| 26+ | +5,000 each | 2 | Random extreme modifiers |
 
-### Endless Modifiers
+### Endless-Only Modifiers
 
-| Ante Range | New Mechanic |
-|------------|--------------|
-| 9-10 | Nightmare Bosses (enhanced effects) |
-| 11-12 | Double boss effects |
-| 13-15 | Random die disabled each ante |
-| 16-20 | Lose 1 die slot per ante |
-| 21+ | All modifiers active |
-
-### Abyssal Bosses (Endless Only)
-
-| Boss | Effect |
-|------|--------|
-| **The Void** | 50% of dice disappear each roll |
-| **The Paradox** | Scoring dice SUBTRACT points |
-| **The Entropy** | Die effects randomly swap |
-| **The Absolute** | Requirement increases in real-time |
+| Modifier | Effect |
+|----------|--------|
+| **Entropy** | Each roll, one random die is removed from play |
+| **Reversal** | Higher numbers score less than lower numbers |
+| **Sudden Death** | Any Farkle ends the run |
+| **The Squeeze 2.0** | Must bank exactly 500-600 per turn |
+| **Chaos Storm** | All dice become Chaos Dice |
 
 ### Endless Leaderboard
 
-```
-Score = (Highest Ante × 1000) + (Total Points / 100) + (Bosses × 50)
-```
+Separate leaderboard tracking:
+- Highest challenge reached
+- Total points scored
+- Longest streak without Farkle
 
 ---
 
-## 11. Meta-Progression
+## 11. Achievements & Leaderboards
 
-### Between-Run Currency: Stars
+### Achievement Categories
 
-Stars persist forever and unlock content.
-
-#### Earning Stars
-
-| Achievement | Stars |
-|-------------|-------|
-| Complete Ante 1 | 1 |
-| Complete Ante 2 | 2 |
-| Complete Ante 3 | 3 |
-| Beat the game | 5 |
-| Farkle-free run | 4 |
-| High score milestones | 1-5 |
-
-#### Star Spending
-
-```
-┌─────────────────────────────────────────────┐
-│  UNLOCK SHOP                   Stars: 47   │
-├─────────────────────────────────────────────┤
-│  DICE UNLOCKS                               │
-│  ├─ Lucky Seven Die (5 Stars)              │
-│  ├─ Chaos Die (10 Stars)                   │
-│  └─ Golden Die (25 Stars)                  │
-│                                             │
-│  STARTING BONUSES                           │
-│  ├─ Start with +$2 (3 Stars)               │
-│  ├─ Start with +$5 (10 Stars)              │
-│  └─ Start with consumable (12 Stars)       │
-│                                             │
-│  CHALLENGES                                 │
-│  ├─ No Interest Mode (5 Stars)             │
-│  └─ Boss Rush Mode (20 Stars)              │
-└─────────────────────────────────────────────┘
-```
-
-### Unlockable Content
-
-| Category | Unlock Method |
-|----------|---------------|
-| New Dice | Star purchases |
-| Modifiers | Star purchases |
-| Vouchers | Beat higher difficulties |
-| Cosmetics | Achievements |
-| Challenge Modes | Star purchases |
-| Starting Decks | Beat with specific conditions |
-
-### Achievements → Cosmetics
+#### Progress Achievements
 
 | Achievement | Condition | Reward |
 |-------------|-----------|--------|
-| **Hot Dice** | 5,000+ in single round | Flame dice skin |
-| **Close Call** | Win with 0 pts to spare | Sweaty table theme |
-| **Minimalist** | Beat with 4 dice | Minimalist starting deck |
-| **Collector** | Discover 50 items | Museum background |
-| **Whale** | Hold $50+ | Golden table theme |
+| **First Steps** | Complete Challenge 5 | 1★ |
+| **Halfway There** | Complete Challenge 10 | 2★ |
+| **The Final Push** | Complete Challenge 15 | 3★ |
+| **Fortune's Champion** | Complete Challenge 20 | 5★, Golden Dice Skin |
+| **Endless Walker** | Reach Challenge 25 | 5★ |
+| **Endless Master** | Reach Challenge 30 | 10★, Platinum Dice Skin |
+
+#### Skill Achievements
+
+| Achievement | Condition | Reward |
+|-------------|-----------|--------|
+| **Hot Streak** | 5 Hot Dice in one run | 2★ |
+| **Untouchable** | Win without any Farkles | 5★, "Lucky" Title |
+| **Risk Taker** | Win 10 Risk Rolls in one run | 3★ |
+| **High Roller** | Bank 5,000+ in single turn | 2★ |
+| **Perfect 10** | Score exactly the target (no excess) | 2★ |
+
+#### Collection Achievements
+
+| Achievement | Condition | Reward |
+|-------------|-----------|--------|
+| **Dice Collector** | Own 10 different special dice | 3★ |
+| **Full Set** | Own all Common dice | 2★ |
+| **Rare Hunter** | Own all Rare dice | 5★ |
+| **Big Spender** | Spend 200₣ total across runs | 3★ |
+| **Fortune Favors** | Hold 50₣ at once | 2★ |
+
+### Global Leaderboards
+
+| Board | Metric |
+|-------|--------|
+| **High Score** | Single challenge highest score |
+| **Speedrun** | Fastest full run completion |
+| **Endless** | Highest challenge reached |
+| **Fortune** | Most ₣ earned in single run |
+| **Daily** | Today's seeded challenge |
+| **Weekly** | Current week's challenge |
 
 ---
 
-## 12. Visual & Audio Design
-
-### Rarity Visual Language
-
-| Rarity | Border | Background | Animation |
-|--------|--------|------------|-----------|
-| Common | Thin silver | Matte white | Subtle pulse |
-| Uncommon | Double green | Green tint | Gentle glow |
-| Rare | Thick blue + inner glow | Blue gradient | Sparkle particles |
-| Legendary | Animated gold flames | Dynamic gradient | Constant particles + shake |
-
-### Category Themes
-
-| Category | Colors | Effects | Sound |
-|----------|--------|---------|-------|
-| Scoring | Gold/silver | Shimmer, coin-flip | "Cha-ching" |
-| Multiplier | Fire/ice/storm | Element particles | Whoosh |
-| Trigger | Green/teal | Connection lines | Slot machine ding |
-| Combo | Rainbow/chrome | Lines between synergies | Harmonic chord |
-| Risk | Black/red | Ominous aura, cracks | Heartbeat |
-| Economy | Green/gold | Floating coins | Register sound |
-
-### Scoring Animation (Critical!)
-
-Balatro's magic is the **satisfying score reveal**. Each element appears sequentially:
+## 12. Session Flow Example
 
 ```
-Step 1: Base dice score appears     "500"
-Step 2: Multiplier builds           "× 1.5"
-Step 3: Final score with fanfare    "= 750!"
-Step 4: Combo bonuses pop up        "+200 (Triple Crown)"
-Step 5: Running total updates       "Bank: 2,450"
+═══════════════════════════════════════════════════════════
+                    FARKLE FORTUNE - SAMPLE RUN
+═══════════════════════════════════════════════════════════
+
+STARTING STATE
+├── Fortune: 10₣
+├── Special Dice: None (3 slots available)
+├── Consumables: None (3 slots available)
+└── Fortune's Favor: None (need 10₣ minimum)
+
+───────────────────────────────────────────────────────────
+CHALLENGE 1: "First Roll"
+Target: 1,000 | Turns: 4 | Modifier: None
+───────────────────────────────────────────────────────────
+
+Turn 1: Roll [1,3,3,3,5,6]
+  → Keep: 1 (100) + 3-3-3 (300) + 5 (50) = 450
+  → Bank: 450 points
+
+Turn 2: Roll [2,2,4,5,5,6]
+  → Keep: 5-5 (100)
+  → Roll again: [1,2,4,6]
+  → Keep: 1 (100)
+  → Bank: 200 points (Total: 650)
+
+Turn 3: Roll [1,1,2,3,5,6]
+  → Keep: 1-1 (200) + 5 (50) = 250
+  → Roll: [4,4,6]
+  → Keep: nothing... FARKLE!
+  → Lost 250, still have 650
+
+Turn 4: Roll [1,3,4,5,5,5]
+  → Keep: 1 (100) + 5-5-5 (500) = 600
+  → Bank: 600 (Total: 1,250)
+
+✓ CHALLENGE COMPLETE! Target: 1,000 | Scored: 1,250
+
+Fortune Earned:
+  +1₣ (banked 1,000+)
+  +1₣ (three-of-a-kind)
+  = 12₣ total
+
+───────────────────────────────────────────────────────────
+QUICK SHOP (after Challenge 1)
+Fortune: 12₣ | Fortune's Favor: LUCKY (10-19₣)
+───────────────────────────────────────────────────────────
+
+Available:
+  [Lucky Die - 8₣] [Reroll Token - 3₣] [Safety Net - 5₣]
+
+Decision: Buy Lucky Die (8₣)
+  → Now have 4₣, lost LUCKY bonus
+  → But have powerful die for future challenges
+
+───────────────────────────────────────────────────────────
+CHALLENGES 2-5: Building momentum...
+───────────────────────────────────────────────────────────
+
+Challenge 2: Score 1,380/1,200 ✓ (+6₣)
+Challenge 3: Score 1,620/1,500 ✓ (+6₣)
+  → FULL SHOP: Buy Echo Die (15₣), Ace Mastery (15₣)
+Challenge 4: Score 2,100/1,800 ✓ (+7₣)
+Challenge 5: Score 2,450/2,000 ✓ (+7₣)
+
+Current State:
+├── Fortune: 24₣
+├── Special Dice: Lucky Die, Echo Die
+├── Upgrades: Ace Mastery (1s = 150)
+├── Fortune's Favor: FORTUNATE (+10% scoring)
+└── Consumables: Reroll Token
+
+───────────────────────────────────────────────────────────
+CHALLENGE 8: "Cold Snap"
+Target: 3,000 | Turns: 3 | Modifier: 5s score 0
+───────────────────────────────────────────────────────────
+
+This modifier hurts! But Lucky Die still prevents Farkles,
+Echo Die can copy 1s for big points, and Ace Mastery helps.
+
+Turn 1: Roll [1,1,5,5,5,5] (Lucky Die + Echo copying 1)
+  → All 5s are worthless, but 1-1 + Echo(1) = 450
+  → Risk roll with 2 dice: [3,4] FARKLE!
+
+Turn 2: Roll [1,2,3,4,4,6]
+  → Keep 1 (150 with mastery)
+  → Roll: [1,2,4,5,6]
+  → Keep 1 (150)
+  → Roll: [2,3,6] FARKLE!
+  → Lost 300
+
+Turn 3: MUST score 3,000 in one turn...
+  → Use Reroll Token strategically
+  → Final bank: 3,200
+
+✓ CHALLENGE COMPLETE (barely!)
+
+───────────────────────────────────────────────────────────
+CHALLENGE 20: "The Gauntlet"
+Target: 15,000 | Turns: 2 | Modifier: Decay + Squeeze + 5 Dice
+───────────────────────────────────────────────────────────
+
+Final challenge. Triple modifier:
+  - Decay: Target +200 per turn without banking
+  - Squeeze: Must bank 300+ per turn
+  - Five Dice: Only 5 dice instead of 6
+
+Current Build:
+├── Dice: Lucky, Echo, Splitting, Golden, Phantom
+├── Upgrades: Ace Mastery, Triple Bonus, Hot Dice Bonus
+├── Consumables: Second Chance, Double Down, Lucky Seven
+└── Fortune: 45₣ (CHARMED tier: all bonuses active)
+
+Turn 1: Use Lucky Seven (7 dice!)
+  → Massive combo potential with Splitting Die
+  → Bank 8,500 (satisfies Squeeze)
+  → Target now 15,200 (Decay)
+
+Turn 2: Use Double Down
+  → Need 6,700+ points
+  → Hot Dice! Roll again with all 6
+  → Echo copies Splitting for quad
+  → Use Phantom to remove one bad die
+  → Final score: 17,800
+
+═══════════════════════════════════════════════════════════
+                      ★ VICTORY! ★
+═══════════════════════════════════════════════════════════
+
+Final Stats:
+├── Challenges Completed: 20/20
+├── Total Points: 87,450
+├── Fortune Earned: 156₣
+├── Fortune Spent: 142₣
+├── Hot Dice: 7
+├── Farkles: 12
+├── Time: 38 minutes
+└── Stars Earned: 5★ (win) + 2★ (no-Farkle challenge) = 7★
+
+UNLOCKED: "Fortune's Champion" Achievement
+UNLOCKED: Golden Dice Skin
+
+[CONTINUE TO ENDLESS] or [END RUN]
 ```
-
-Each step has:
-- Distinct sound effect
-- Screen shake for big numbers
-- Particle effects for multipliers
-- Color pulses matching dice involved
-
-### Audio Design Principles
-
-1. **Escalating tension**: Roll sounds get more intense with consecutive scores
-2. **Satisfying clicks**: Each dice kept makes a distinct "lock" sound
-3. **Victory fanfares**: Scale with point value
-4. **Danger tones**: Warn when approaching Farkle risk
-5. **Shop ambiance**: Relaxed, rewarding atmosphere
 
 ---
 
 ## 13. Implementation Phases
 
-### Phase 1: Core Roguelike (Foundation)
-**Estimated Scope: Large**
+### Phase 1: Core Gauntlet
+- [ ] 20-challenge structure with targets and turn limits
+- [ ] Basic win/loss conditions
+- [ ] 6 starter modifiers (Cold, Minimum Bank, etc.)
+- [ ] Fortune earning (basic actions only)
+- [ ] Simple shop (dice purchase only)
 
-- [ ] Ante/Blind structure (8 antes, 3 blinds each)
-- [ ] Basic point targets and scaling
-- [ ] Run-based progression (restart on failure)
-- [ ] 4 Tier 1 Boss Blinds
-- [ ] Simple shop (buy dice directly)
-- [ ] Basic money + interest system
-- [ ] Win/loss conditions
+### Phase 2: Special Dice
+- [ ] 6 Common dice
+- [ ] 4 Uncommon dice
+- [ ] Dice slot system (3 slots)
+- [ ] Dice selling mechanic
 
-### Phase 2: Special Dice (Core Feature)
-**Estimated Scope: Large**
+### Phase 3: Economy Depth
+- [ ] Fortune's Favor tier system
+- [ ] Consumables (8 types)
+- [ ] Full shop / Quick shop rhythm
+- [ ] Shop reroll mechanic
 
-- [ ] Dice slot system (5 slots)
-- [ ] 12 Common/Uncommon dice
-- [ ] Rarity visual system
-- [ ] Dice effects engine
-- [ ] Shop dice display
-- [ ] Selling mechanic
+### Phase 4: Upgrades & Variety
+- [ ] Permanent upgrades (12 types)
+- [ ] 3 Rare dice
+- [ ] All 15 modifiers
+- [ ] Combined modifiers for late challenges
 
-### Phase 3: Economy Expansion
-**Estimated Scope: Medium**
-
-- [ ] Pack system (4 pack types)
-- [ ] Shop reroll mechanics
-- [ ] 6 Rare dice
-- [ ] 4 Legendary dice
-- [ ] Consumable items (10+)
-
-### Phase 4: Boss Variety
-**Estimated Scope: Medium**
-
-- [ ] 4 Tier 2 Bosses
-- [ ] 4 Tier 3 Bosses
-- [ ] Final Boss (The House)
-- [ ] Boss effect engine
-- [ ] Boss intro animations
-
-### Phase 5: Depth Systems
-**Estimated Scope: Medium**
-
-- [ ] Voucher system
-- [ ] Combo Training upgrades
-- [ ] Tags (skip rewards)
-- [ ] Synergy bonus indicators
-- [ ] 5+ more dice
-
-### Phase 6: Challenge & Events
-**Estimated Scope: Medium**
-
-- [ ] 6 Challenge Modes
-- [ ] Daily Challenge system
-- [ ] Seeded runs
-- [ ] Weekly Challenge system
-- [ ] Event leaderboards
-
-### Phase 7: Endless & Meta
-**Estimated Scope: Medium**
-
-- [ ] Endless Mode
+### Phase 5: Meta-Progression
 - [ ] Star currency system
-- [ ] Unlock shop
+- [ ] Unlockable dice
+- [ ] Starting bonuses
 - [ ] Achievement system
-- [ ] Cosmetic unlocks
 
-### Phase 8: Polish & Addiction
-**Estimated Scope: Large**
+### Phase 6: Competitive Features
+- [ ] Daily challenges (seeded runs)
+- [ ] Weekly challenges
+- [ ] Global leaderboards
+- [ ] Endless mode
 
-- [ ] Dramatic scoring animations
-- [ ] Full sound design
-- [ ] Particle effects
-- [ ] Screen shake/juice
-- [ ] Tutorial/onboarding
+### Phase 7: Polish
+- [ ] Scoring animations
+- [ ] Sound design
+- [ ] Dice visual effects
+- [ ] Tutorial / onboarding
 - [ ] Balance tuning
 
 ---
 
-## Appendix A: Balance Parameters
+## Appendix A: Quick Reference
 
-```javascript
-const BALANCE_CONFIG = {
-  // Run Structure
-  BASE_ANTE_COUNT: 8,
-  ANTE_DIFFICULTY_SCALING: 1.3,
+### Fortune Earnings
+| Action | ₣ |
+|--------|---|
+| Bank 1,000+ | +1 |
+| Bank 2,000+ | +2 |
+| Bank 3,000+ | +4 |
+| Hot Dice | +5 |
+| Risk Roll (1-2 dice) | +3 |
+| Streak (per roll after 2nd) | +1 |
+| Three-of-a-kind+ | +1 |
+| Four-of-a-kind | +2 |
+| Five-of-a-kind | +3 |
+| Six-of-a-kind | +5 |
+| Straight | +4 |
 
-  // Blinds
-  SMALL_BLIND_BASE: 300,
-  BIG_BLIND_BASE: 450,
-  BOSS_BLIND_BASE: 600,
-  ROLLS_PER_BLIND: 4,
-  BOSS_ROLLS: 3,
+### Fortune's Favor
+| ₣ Held | Tier | Bonus |
+|--------|------|-------|
+| 10-19 | Lucky | 5% Farkle saves |
+| 20-29 | Fortunate | +10% scoring |
+| 30-39 | Blessed | +100 first roll |
+| 40+ | Charmed | All bonuses |
 
-  // Economy
-  SMALL_BLIND_REWARD: 3,
-  BIG_BLIND_REWARD: 4,
-  BOSS_BLIND_REWARD: 5,
-  INTEREST_RATE: 0.2,  // $1 per $5
-  INTEREST_CAP: 5,
-
-  // Shop
-  REROLL_BASE_COST: 2,
-  REROLL_ESCALATION: 1,
-
-  // Dice Slots
-  STARTING_SLOTS: 5,
-  MAX_SLOTS: 8,
-  SLOT_COST_FORMULA: "500 * 2^(slot - 5)",
-
-  // Endless
-  ENDLESS_SCALING: 1.15,  // per ante after 8
-
-  // Session Targets
-  TARGET_RUN_MINUTES: 40,
-  TARGET_ANTE_MINUTES: 5,
-};
-```
+### Pricing
+| Type | Range |
+|------|-------|
+| Common Dice | 5-10₣ |
+| Uncommon Dice | 12-18₣ |
+| Rare Dice | 20-30₣ |
+| Consumables | 3-10₣ |
+| Upgrades | 12-25₣ |
 
 ---
 
-## Appendix B: Dice Quick Reference
-
-### Scoring Dice
-| Die | Rarity | Effect |
-|-----|--------|--------|
-| Golden Ace | U | 1s = 150 pts |
-| Platinum Five | U | 5s = 75 pts |
-| Triple Crown | R | 3-of-kind +200 |
-| Straight Shooter | R | Straights = 2,000 |
-
-### Multiplier Dice
-| Die | Rarity | Effect |
-|-----|--------|--------|
-| Fire Die | C | +0.5× per 5 |
-| Ice Die | C | +0.5× per 1 |
-| Storm Die | U | +1× on 4+ same |
-| Perfectionist | R | +2× all score |
-| Chaos Orb | L | +0.25× per die |
-
-### Trigger Dice
-| Die | Rarity | Effect |
-|-----|--------|--------|
-| Lucky Seven | U | 7 dice = +500 |
-| The Collector | R | All 6 = +$25, +1000 |
-| Farkle's Revenge | R | Post-Farkle +3× |
-| Hot Streak | U | 3+ scores +1× each |
-
-### Economy Dice
-| Die | Rarity | Effect |
-|-----|--------|--------|
-| Coin Die | C | $1 per 5 banked |
-| Banker's Die | U | $5 on 1000+ bank |
-| Investment Die | R | 10% score → $ |
-
----
-
-## Appendix C: Boss Quick Reference
-
-### Tier 1 (Antes 1-3)
-- **The Miser**: Bank minimum 500
-- **The Curse**: 1s don't score
-- **The Fog**: Score hidden
-- **The Glutton**: Must keep all scoring
-
-### Tier 2 (Antes 4-5)
-- **The Mirror**: Target = your best score
-- **The Thief**: -$3 per bank
-- **The Gambler**: Bet on each roll
-- **The Taxman**: -20% all points
-
-### Tier 3 (Antes 6-7)
-- **The Chaos Lord**: Dice randomize after keep
-- **The Executioner**: 3 Farkles = loss
-- **The Vampire**: Requirement grows
-- **The Twins**: Two Tier 1 effects
-
-### Final Boss
-- **The House**: All Tier 2 → add Tier 3 → disable dice
-
----
-
-*Document Version: 1.0*
-*Inspired by: Balatro, Farkle, Yahtzee, Dicey Dungeons*
-*Target Platform: Web (Farkle Ten 2026)*
+*Document Version: 2.0*
+*Design: Farkle Fortune - Enhanced Solo Mode*
+*Platform: Farkle Ten 2026*
