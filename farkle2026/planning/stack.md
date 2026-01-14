@@ -9,6 +9,7 @@ This document details the modern technology stack for rebuilding Farkle Ten.
 | Frontend Framework | Next.js 14+ | React-based full-stack framework |
 | UI Components | Mantine v7 | Component library with hooks |
 | State Management | Zustand | Lightweight client state |
+| Authentication | Auth0 | Identity management with custom UI |
 | Database | PostgreSQL | Relational database |
 | Testing | Playwright | End-to-end testing |
 | Hosting | Heroku | Cloud platform deployment |
@@ -42,14 +43,19 @@ const nextConfig = {
 farkle2026/
 ├── src/
 │   ├── app/                 # App Router pages
-│   │   ├── layout.tsx       # Root layout
+│   │   ├── layout.tsx       # Root layout (with Auth0 UserProvider)
 │   │   ├── page.tsx         # Home/lobby page
+│   │   ├── login/           # Custom login page
 │   │   ├── game/[id]/       # Game play pages
 │   │   ├── profile/         # Profile pages
 │   │   ├── leaderboard/     # Leaderboard pages
 │   │   ├── tournament/      # Tournament pages
-│   │   └── api/             # API routes
-│   ├── components/          # React components
+│   │   └── api/
+│   │       └── auth/[auth0]/ # Auth0 SDK route handlers
+│   ├── components/
+│   │   ├── auth/            # Custom login form components
+│   │   ├── game/            # Game UI components
+│   │   └── shared/          # Shared components
 │   ├── hooks/               # Custom hooks
 │   ├── stores/              # Zustand stores
 │   ├── lib/                 # Utilities and helpers
@@ -140,6 +146,416 @@ export const useGameStore = create<GameState>((set, get) => ({
 
 ---
 
+## Authentication
+
+### Auth0
+
+**Why Auth0:**
+- Enterprise-grade identity management
+- Social login providers (Google, Facebook, Apple) built-in
+- Customizable Universal Login with branding
+- JWT-based authentication
+- Built-in security (MFA, anomaly detection, brute force protection)
+- No need to store/manage passwords
+
+**Auth0 Setup:**
+
+1. Create Auth0 Application (Regular Web Application)
+2. Configure allowed callback URLs, logout URLs, and origins
+3. Set up social connections (Google, Facebook)
+4. Customize Universal Login branding
+
+**Next.js Integration with Auth0 SDK:**
+
+```typescript
+// src/app/api/auth/[auth0]/route.ts
+import { handleAuth, handleLogin } from '@auth0/nextjs-auth0';
+
+export const GET = handleAuth({
+  login: handleLogin({
+    authorizationParams: {
+      // Request additional scopes if needed
+      scope: 'openid profile email',
+    },
+  }),
+});
+```
+
+**Protecting Pages:**
+```typescript
+// src/app/layout.tsx
+import { UserProvider } from '@auth0/nextjs-auth0/client';
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        <UserProvider>
+          <MantineProvider>{children}</MantineProvider>
+        </UserProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+**Server-side Session Access:**
+```typescript
+// In Server Components or API routes
+import { getSession } from '@auth0/nextjs-auth0';
+
+export default async function ProfilePage() {
+  const session = await getSession();
+  if (!session) redirect('/api/auth/login');
+
+  const { user } = session;
+  // user.sub = Auth0 user ID
+  // user.email, user.name, user.picture
+}
+```
+
+**Client-side Hook:**
+```typescript
+'use client';
+import { useUser } from '@auth0/nextjs-auth0/client';
+
+export function UserMenu() {
+  const { user, isLoading } = useUser();
+
+  if (isLoading) return <Skeleton />;
+  if (!user) return <LoginButton />;
+
+  return <Avatar src={user.picture} alt={user.name} />;
+}
+```
+
+### Custom Login Screen
+
+Auth0 supports fully customized login experiences using **Universal Login with Custom UI**.
+
+**Option 1: Auth0 Universal Login Customization (Recommended)**
+
+Customize via Auth0 Dashboard > Branding > Universal Login:
+
+```html
+<!-- Auth0 Dashboard > Branding > Universal Login > Advanced Options -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Farkle - Login</title>
+  <style>
+    :root {
+      --farkle-green: #2d5a27;
+      --farkle-gold: #d4af37;
+      --farkle-felt: #35654d;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, var(--farkle-green) 0%, var(--farkle-felt) 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+    }
+
+    .login-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      padding: 48px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo img {
+      height: 80px;
+    }
+
+    .logo h1 {
+      color: var(--farkle-green);
+      font-size: 28px;
+      margin: 16px 0 8px;
+    }
+
+    .logo p {
+      color: #666;
+      font-size: 14px;
+    }
+
+    /* Auth0 Lock widget styling overrides */
+    .auth0-lock-header {
+      display: none !important;
+    }
+
+    .auth0-lock-widget {
+      box-shadow: none !important;
+    }
+
+    .auth0-lock-submit {
+      background: var(--farkle-green) !important;
+    }
+
+    .auth0-lock-submit:hover {
+      background: var(--farkle-gold) !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="logo">
+      <img src="{{config.extraParams.logo_url}}" alt="Farkle Dice">
+      <h1>Farkle Ten</h1>
+      <p>Roll the dice. Beat your friends.</p>
+    </div>
+    <div id="auth0-login-container"></div>
+  </div>
+
+  <script src="https://cdn.auth0.com/js/lock/12.0/lock.min.js"></script>
+  <script>
+    var lock = new Auth0Lock(
+      '{{config.clientID}}',
+      '{{config.auth0Domain}}',
+      {
+        container: 'auth0-login-container',
+        auth: {
+          redirectUrl: '{{config.callbackURL}}',
+          responseType: 'code',
+          params: { scope: 'openid profile email' }
+        },
+        theme: {
+          primaryColor: '#2d5a27',
+          logo: '{{config.extraParams.logo_url}}'
+        },
+        languageDictionary: {
+          title: '',
+          signUpTitle: 'Create Account',
+          loginSubmitLabel: 'Roll In',
+          signUpSubmitLabel: 'Join the Game'
+        },
+        socialButtonStyle: 'big',
+        allowSignUp: true,
+        allowForgotPassword: true
+      }
+    );
+    lock.show();
+  </script>
+</body>
+</html>
+```
+
+**Option 2: Embedded Login with Custom React Components**
+
+For full control, use Auth0 SPA SDK with custom Mantine components:
+
+```typescript
+// src/components/auth/CustomLoginForm.tsx
+'use client';
+
+import { useState } from 'react';
+import {
+  Paper,
+  TextInput,
+  PasswordInput,
+  Button,
+  Title,
+  Text,
+  Divider,
+  Group,
+  Stack,
+  Anchor,
+  Center,
+  Box,
+} from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { IconBrandGoogle, IconBrandFacebook, IconDice } from '@tabler/icons-react';
+import { useAuth0 } from '@auth0/auth0-react';
+import classes from './CustomLoginForm.module.css';
+
+export function CustomLoginForm() {
+  const { loginWithRedirect } = useAuth0();
+  const [isSignUp, setIsSignUp] = useState(false);
+
+  const form = useForm({
+    initialValues: {
+      email: '',
+      password: '',
+      username: '',
+    },
+    validate: {
+      email: (val) => (/^\S+@\S+$/.test(val) ? null : 'Invalid email'),
+      password: (val) => (val.length >= 8 ? null : 'Password must be at least 8 characters'),
+    },
+  });
+
+  const handleSubmit = async (values: typeof form.values) => {
+    await loginWithRedirect({
+      authorizationParams: {
+        screen_hint: isSignUp ? 'signup' : 'login',
+        login_hint: values.email,
+      },
+    });
+  };
+
+  const handleSocialLogin = (connection: string) => {
+    loginWithRedirect({
+      authorizationParams: {
+        connection,
+      },
+    });
+  };
+
+  return (
+    <Box className={classes.wrapper}>
+      <Paper className={classes.form} radius="lg" p={40} withBorder>
+        <Center mb="xl">
+          <IconDice size={48} className={classes.logo} />
+        </Center>
+
+        <Title order={2} className={classes.title} ta="center" mb="xs">
+          {isSignUp ? 'Join Farkle Ten' : 'Welcome Back'}
+        </Title>
+
+        <Text c="dimmed" size="sm" ta="center" mb="xl">
+          {isSignUp
+            ? 'Create an account to start rolling'
+            : 'Sign in to continue your games'}
+        </Text>
+
+        <Stack gap="md" mb="md">
+          <Button
+            leftSection={<IconBrandGoogle size={20} />}
+            variant="default"
+            size="md"
+            onClick={() => handleSocialLogin('google-oauth2')}
+          >
+            Continue with Google
+          </Button>
+
+          <Button
+            leftSection={<IconBrandFacebook size={20} />}
+            variant="default"
+            size="md"
+            onClick={() => handleSocialLogin('facebook')}
+          >
+            Continue with Facebook
+          </Button>
+        </Stack>
+
+        <Divider label="Or continue with email" labelPosition="center" my="lg" />
+
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+          <Stack gap="md">
+            {isSignUp && (
+              <TextInput
+                label="Username"
+                placeholder="DiceMaster2026"
+                {...form.getInputProps('username')}
+              />
+            )}
+
+            <TextInput
+              label="Email"
+              placeholder="you@example.com"
+              {...form.getInputProps('email')}
+            />
+
+            <PasswordInput
+              label="Password"
+              placeholder="Your password"
+              {...form.getInputProps('password')}
+            />
+
+            {!isSignUp && (
+              <Anchor
+                component="button"
+                type="button"
+                c="dimmed"
+                size="xs"
+                onClick={() => loginWithRedirect({
+                  authorizationParams: { screen_hint: 'reset-password' }
+                })}
+              >
+                Forgot password?
+              </Anchor>
+            )}
+
+            <Button type="submit" fullWidth size="md" className={classes.submitButton}>
+              {isSignUp ? 'Create Account' : 'Sign In'}
+            </Button>
+          </Stack>
+        </form>
+
+        <Text ta="center" mt="md" size="sm">
+          {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
+          <Anchor component="button" onClick={() => setIsSignUp(!isSignUp)}>
+            {isSignUp ? 'Sign in' : 'Sign up'}
+          </Anchor>
+        </Text>
+      </Paper>
+    </Box>
+  );
+}
+```
+
+```css
+/* src/components/auth/CustomLoginForm.module.css */
+.wrapper {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #2d5a27 0%, #35654d 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.form {
+  max-width: 420px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.logo {
+  color: #2d5a27;
+}
+
+.title {
+  color: #2d5a27;
+}
+
+.submitButton {
+  background: #2d5a27;
+}
+
+.submitButton:hover {
+  background: #3d7a37;
+}
+```
+
+**Auth0 Dashboard Settings:**
+
+| Setting | Value |
+|---------|-------|
+| Application Type | Regular Web Application |
+| Allowed Callback URLs | `http://localhost:3000/api/auth/callback, https://farkle-2026.herokuapp.com/api/auth/callback` |
+| Allowed Logout URLs | `http://localhost:3000, https://farkle-2026.herokuapp.com` |
+| Allowed Web Origins | `http://localhost:3000, https://farkle-2026.herokuapp.com` |
+
+**Social Connections to Enable:**
+- Google OAuth 2.0
+- Facebook Login
+- Apple Sign In (optional)
+
+---
+
 ## Backend
 
 ### Next.js API Routes
@@ -149,10 +565,7 @@ API routes will be organized in the App Router:
 ```
 src/app/api/
 ├── auth/
-│   ├── login/route.ts
-│   ├── register/route.ts
-│   ├── logout/route.ts
-│   └── session/route.ts
+│   └── [auth0]/route.ts     # Auth0 SDK handlers (login, logout, callback, me)
 ├── games/
 │   ├── route.ts              # GET list, POST create
 │   ├── [id]/route.ts         # GET/PUT/DELETE game
@@ -190,9 +603,10 @@ datasource db {
 
 model User {
   id            String    @id @default(cuid())
+  auth0Id       String    @unique              // Auth0 user sub (e.g., "auth0|123" or "google-oauth2|456")
   username      String    @unique
   email         String?   @unique
-  passwordHash  String
+  picture       String?                        // Profile picture URL from Auth0
   createdAt     DateTime  @default(now())
   level         Int       @default(1)
   xp            Int       @default(0)
@@ -365,16 +779,25 @@ tests/
 # Database
 DATABASE_URL=postgres://...
 
-# Authentication
-JWT_SECRET=your-secret-key
-SESSION_SECRET=your-session-secret
-
-# External Services (optional)
-FACEBOOK_APP_ID=...
-FACEBOOK_APP_SECRET=...
+# Auth0 Configuration
+AUTH0_SECRET=<long-random-string>              # Generate with: openssl rand -hex 32
+AUTH0_BASE_URL=https://farkle-2026.herokuapp.com
+AUTH0_ISSUER_BASE_URL=https://your-tenant.auth0.com
+AUTH0_CLIENT_ID=your-client-id
+AUTH0_CLIENT_SECRET=your-client-secret
 
 # Environment
 NODE_ENV=production
+```
+
+**Local Development (.env.local):**
+```bash
+AUTH0_SECRET=<generate-locally>
+AUTH0_BASE_URL=http://localhost:3000
+AUTH0_ISSUER_BASE_URL=https://your-tenant.auth0.com
+AUTH0_CLIENT_ID=your-client-id
+AUTH0_CLIENT_SECRET=your-client-secret
+DATABASE_URL=postgresql://localhost:5432/farkle_dev
 ```
 
 **Procfile:**
@@ -442,14 +865,14 @@ npm run dev
 {
   "dependencies": {
     "next": "^14.0.0",
+    "@auth0/nextjs-auth0": "^3.5.0",
     "@mantine/core": "^7.0.0",
     "@mantine/hooks": "^7.0.0",
     "@mantine/notifications": "^7.0.0",
     "@mantine/form": "^7.0.0",
+    "@tabler/icons-react": "^3.0.0",
     "zustand": "^4.4.0",
-    "@prisma/client": "^5.0.0",
-    "bcryptjs": "^2.4.3",
-    "jose": "^5.0.0"
+    "@prisma/client": "^5.0.0"
   },
   "devDependencies": {
     "typescript": "^5.0.0",
@@ -471,7 +894,7 @@ npm run dev
 1. Set up Next.js project with TypeScript
 2. Configure Mantine theming
 3. Set up Prisma with PostgreSQL
-4. Implement authentication
+4. Integrate Auth0 with custom login screen
 
 ### Phase 2: Game Engine
 1. Port dice scoring logic
