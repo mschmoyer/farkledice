@@ -1,0 +1,76 @@
+.playerCard {
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  max-width: 500px;
+}
+
+.playerCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.playerAvatar {
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.levelBadge {
+  background-color: green !important;
+  color: yellow !important;
+  border: 1px solid black;
+  font-weight: bold;
+  min-width: 28px;
+  text-align: center;
+}
+
+.playerName {
+  color: white;
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+  line-height: 1.2;
+}
+
+.playerTitle {
+  color: #aaa !important;
+  font-style: italic;
+  line-height: 1.2;
+  margin-top: -2px;
+}
+
+.achievementScore {
+  color: #96D3F2;
+  font-size: 11px;
+  text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+
+.xpBar {
+  background: linear-gradient(to bottom, #a3a3a3 1%, #353535 51%, #9b9b9b 100%);
+}
+
+/* XP Bar with gradient based on color prop */
+.xpBar :global(.mantine-Progress-section) {
+  background: linear-gradient(to bottom, #b4e391 0%, #1d8711 50%, #b4e391 100%) !important;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .playerCard {
+    max-width: 100%;
+  }
+
+  .playerAvatar {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .playerName {
+    font-size: 12px;
+  }
+
+  .playerTitle {
+    font-size: 10px;
+  }
+
+  .achievementScore {
+    font-size: 10px;
+  }
+}

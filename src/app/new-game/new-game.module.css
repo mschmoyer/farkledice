@@ -1,0 +1,55 @@
+/* New Game Page Styles */
+
+.pageContainer {
+  background: linear-gradient(135deg, #1a4d1a 0%, #2d5a27 100%);
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+
+.pageHeader {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  color: #fff;
+  font-size: 2rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.formWrapper {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .pageContainer {
+    padding: 1rem;
+  }
+
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+
+  .formWrapper {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .pageContainer {
+    padding: 0.75rem;
+  }
+
+  .pageTitle {
+    font-size: 1.25rem;
+  }
+
+  .formWrapper {
+    padding: 1rem;
+    border-radius: 8px;
+  }
+}

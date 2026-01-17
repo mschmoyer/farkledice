@@ -1,0 +1,98 @@
+.gameCard {
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  max-width: 600px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.1) 100%);
+}
+
+.gameCard:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  filter: brightness(1.1);
+}
+
+.opponentAvatar {
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  background-color: rgba(0, 0, 0, 0.4);
+  color: white;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.opponentText {
+  color: white;
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+  line-height: 1.2;
+}
+
+.statusText {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  font-style: italic;
+}
+
+.modeBadge {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-weight: bold;
+  min-width: 70px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Status-specific gradients */
+.gameCard[style*="#ff8c00"] {
+  background: linear-gradient(to bottom, #ff8c00 0%, #e07b00 50%, #ff8c00 100%);
+}
+
+.gameCard[style*="#cc5500"] {
+  background: linear-gradient(to bottom, #cc5500 0%, #b34a00 50%, #cc5500 100%);
+}
+
+.gameCard[style*="#666"] {
+  background: linear-gradient(to bottom, #666 0%, #555 50%, #666 100%);
+}
+
+.gameCard[style*="#4299e1"] {
+  background: linear-gradient(to bottom, #4299e1 0%, #3182ce 50%, #4299e1 100%);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .gameCard {
+    max-width: 100%;
+    padding: 12px;
+  }
+
+  .opponentAvatar {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 10px;
+  }
+
+  .opponentText {
+    font-size: 13px;
+  }
+
+  .statusText {
+    font-size: 11px;
+  }
+
+  .modeBadge {
+    font-size: 10px;
+    min-width: 60px;
+    padding: 4px 8px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  .opponentText {
+    font-size: 12px;
+  }
+
+  .statusText {
+    font-size: 10px;
+  }
+}

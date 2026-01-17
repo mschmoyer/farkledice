@@ -1,0 +1,35 @@
+.idleCard {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: 2px solid #5a67d8;
+  max-width: 500px;
+  margin: 40px auto;
+}
+
+.idleTitle {
+  color: white;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.idleText {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.refreshButton {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  border: none;
+  color: white;
+  font-weight: 600;
+  font-size: 1.1rem;
+  padding: 12px 32px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.refreshButton:hover {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+}

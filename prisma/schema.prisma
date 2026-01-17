@@ -1,0 +1,203 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Enums
+enum GameMode {
+  TEN_ROUND
+  STANDARD
+}
+
+enum GameType {
+  RANDOM
+  FRIEND
+  PRACTICE
+}
+
+enum GameStatus {
+  WAITING
+  ACTIVE
+  FINISHED
+}
+
+enum PlayerStatus {
+  ACTIVE
+  FORFEITED
+  COMPLETED
+}
+
+enum FriendStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+// User model - REQ-030
+model User {
+  id               String            @id @default(cuid())
+  auth0Id          String            @unique
+  username         String            @unique
+  email            String?           @unique
+  picture          String?
+  createdAt        DateTime          @default(now())
+  level            Int               @default(1)
+  xp               Int               @default(0)
+  title            String?
+  achievementScore Int               @default(0)
+
+  // Relations
+  games            GamePlayer[]
+  achievements     UserAchievement[]
+  friends          Friendship[]      @relation("UserFriends")
+  friendOf         Friendship[]      @relation("FriendOf")
+  stats            UserStats?
+
+  @@map("users")
+}
+
+// Game model - REQ-031
+model Game {
+  id           String     @id @default(cuid())
+  mode         GameMode
+  type         GameType
+  status       GameStatus
+  targetScore  Int?
+  breakInScore Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  expiresAt    DateTime?
+
+  // Relations
+  players      GamePlayer[]
+  rounds       Round[]
+
+  @@map("games")
+}
+
+// GamePlayer model - REQ-032
+model GamePlayer {
+  id           String       @id @default(cuid())
+  gameId       String
+  userId       String
+  playerNumber Int
+  score        Int          @default(0)
+  currentRound Int          @default(1)
+  status       PlayerStatus @default(ACTIVE)
+
+  // Relations
+  game         Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+  rounds       Round[]
+
+  @@unique([gameId, userId])
+  @@unique([gameId, playerNumber])
+  @@map("game_players")
+}
+
+// Round model - REQ-033
+model Round {
+  id           String     @id @default(cuid())
+  gameId       String
+  gamePlayerId String
+  roundNumber  Int
+  score        Int        @default(0)
+  turnCount    Int        @default(0)
+  farkleCount  Int        @default(0)
+  createdAt    DateTime   @default(now())
+
+  // Relations
+  game         Game       @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gamePlayer   GamePlayer @relation(fields: [gamePlayerId], references: [id], onDelete: Cascade)
+  sets         DiceSet[]
+
+  @@map("rounds")
+}
+
+// DiceSet model - REQ-033
+model DiceSet {
+  id         String   @id @default(cuid())
+  roundId    String
+  setNumber  Int
+  diceValues String   // JSON array of dice values
+  diceKept   String   // JSON array of kept dice
+  score      Int      @default(0)
+  isFarkle   Boolean  @default(false)
+
+  // Relations
+  round      Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@map("dice_sets")
+}
+
+// Achievement model - REQ-034
+model Achievement {
+  id               String            @id @default(cuid())
+  name             String            @unique
+  description      String
+  points           Int
+  imageUrl         String?
+  category         String
+  threshold        Int?
+
+  // Relations
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+// UserAchievement model - REQ-034
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  achievementId String
+  earnedAt      DateTime    @default(now())
+  acknowledged  Boolean     @default(false)
+
+  // Relations
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+// Friendship model - REQ-035
+model Friendship {
+  id        String       @id @default(cuid())
+  userId    String
+  friendId  String
+  status    FriendStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+
+  // Relations
+  user      User         @relation("UserFriends", fields: [userId], references: [id], onDelete: Cascade)
+  friend    User         @relation("FriendOf", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+  @@map("friendships")
+}
+
+// UserStats model - for tracking player statistics
+model UserStats {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  gamesPlayed  Int      @default(0)
+  gamesWon     Int      @default(0)
+  totalScore   Int      @default(0)
+  highestRound Int      @default(0)
+  highestGame  Int      @default(0)
+  totalFarkles Int      @default(0)
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_stats")
+}

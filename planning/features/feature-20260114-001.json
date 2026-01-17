@@ -1,0 +1,308 @@
+{
+  "id": "feature-20260114-001",
+  "title": "Basic Stack and Lobby Page",
+  "description": "Build out the basic stack for Farkle 2026 and implement the full-featured lobby page. Uses Next.js 14+, Mantine v7, Zustand, Auth0, PostgreSQL/Prisma. Supports both 10-Round and Standard game modes. Hosted on Heroku.",
+  "created_at": "2026-01-14T20:30:00Z",
+  "status": "completed",
+  "completed_at": "2026-01-15T00:45:00Z",
+
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "detail": "Next.js 14+ project setup with TypeScript and App Router",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-002",
+      "detail": "Mantine v7 UI component library integration",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-003",
+      "detail": "Zustand state management setup",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-004",
+      "detail": "Auth0 authentication with custom login UI",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-005",
+      "detail": "PostgreSQL database with Prisma ORM",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-006",
+      "detail": "Project configured for Heroku deployment",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-007",
+      "detail": "Development logging to file system",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-008",
+      "detail": "Users can log in via Auth0 Universal Login",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-009",
+      "detail": "Social login support (Google, Facebook)",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-010",
+      "detail": "Custom branded login screen matching Farkle theme",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-011",
+      "detail": "Protected routes requiring authentication",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-012",
+      "detail": "User session management with Auth0",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-013",
+      "detail": "Display player card with username, level, title, and achievement score",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-014",
+      "detail": "Show XP progress bar with current/required XP",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-015",
+      "detail": "List all active games for the player",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-016",
+      "detail": "Color-code games by status (your turn, waiting, finished)",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-017",
+      "detail": "Display game cards showing opponents and status",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-018",
+      "detail": "Show 'New Game' button prominently",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-019",
+      "detail": "Display navigation buttons (Profile, Friends, Leaderboard)",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-020",
+      "detail": "Show tournament button when active tournament exists",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-021",
+      "detail": "Display Double XP indicator when active",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-022",
+      "detail": "Auto-refresh lobby data via polling",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-023",
+      "detail": "Handle idle state after extended inactivity",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-024",
+      "detail": "Support creating 10-Round mode games",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-025",
+      "detail": "Support creating Standard mode games",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-026",
+      "detail": "Allow random game matchmaking (2 or 4 players)",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-027",
+      "detail": "Allow friend game creation with friend selection",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-028",
+      "detail": "Allow solo practice games",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-029",
+      "detail": "Configure game options (break-in, points to win for Standard)",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-030",
+      "detail": "User table with Auth0 integration",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-031",
+      "detail": "Game table supporting both game modes",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-032",
+      "detail": "Player-game relationship tracking",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-033",
+      "detail": "Round and set data storage",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-034",
+      "detail": "Achievement system tables",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-035",
+      "detail": "Friend relationships table",
+      "status": "satisfied"
+    }
+  ],
+
+  "tasks": [
+    {
+      "id": "task-001",
+      "type": "implementation",
+      "requirement_ids": ["REQ-001"],
+      "description": "Initialize Next.js 14 project with TypeScript",
+      "status": "completed",
+      "completed_at": "2026-01-14T21:16:00Z"
+    },
+    {
+      "id": "task-002",
+      "type": "implementation",
+      "requirement_ids": ["REQ-002", "REQ-003"],
+      "description": "Install and configure Mantine v7 and Zustand",
+      "status": "completed",
+      "completed_at": "2026-01-14T21:30:00Z"
+    },
+    {
+      "id": "task-003",
+      "type": "implementation",
+      "requirement_ids": ["REQ-005", "REQ-030", "REQ-031", "REQ-032", "REQ-033", "REQ-034", "REQ-035"],
+      "description": "Set up Prisma with PostgreSQL and create database schema",
+      "status": "completed",
+      "completed_at": "2026-01-14T21:45:00Z"
+    },
+    {
+      "id": "task-004",
+      "type": "implementation",
+      "requirement_ids": ["REQ-004", "REQ-008", "REQ-009", "REQ-010", "REQ-011", "REQ-012"],
+      "description": "Integrate Auth0 with custom login UI and social providers",
+      "status": "completed",
+      "completed_at": "2026-01-14T22:00:00Z"
+    },
+    {
+      "id": "task-005",
+      "type": "implementation",
+      "requirement_ids": ["REQ-007"],
+      "description": "Implement development file logging system",
+      "status": "completed",
+      "completed_at": "2026-01-14T22:00:00Z"
+    },
+    {
+      "id": "task-006",
+      "type": "implementation",
+      "requirement_ids": ["REQ-006"],
+      "description": "Configure project for Heroku deployment (Procfile, env vars, build config)",
+      "status": "completed",
+      "completed_at": "2026-01-14T21:16:00Z"
+    },
+    {
+      "id": "task-007",
+      "type": "implementation",
+      "requirement_ids": ["REQ-013", "REQ-014"],
+      "description": "Create PlayerCard component with stats, level, and XP bar",
+      "status": "completed",
+      "completed_at": "2026-01-14T23:30:00Z"
+    },
+    {
+      "id": "task-008",
+      "type": "implementation",
+      "requirement_ids": ["REQ-015", "REQ-016", "REQ-017"],
+      "description": "Create GameCard component with status color coding",
+      "status": "completed",
+      "completed_at": "2026-01-14T23:45:00Z"
+    },
+    {
+      "id": "task-009",
+      "type": "implementation",
+      "requirement_ids": ["REQ-013", "REQ-014", "REQ-015", "REQ-016", "REQ-017", "REQ-018", "REQ-019", "REQ-020", "REQ-021"],
+      "description": "Build lobby page layout with all UI components",
+      "status": "completed",
+      "completed_at": "2026-01-14T23:55:00Z"
+    },
+    {
+      "id": "task-010",
+      "type": "implementation",
+      "requirement_ids": ["REQ-022", "REQ-023"],
+      "description": "Implement lobby auto-refresh polling and idle state handling",
+      "status": "completed",
+      "completed_at": "2026-01-14T23:59:00Z"
+    },
+    {
+      "id": "task-011",
+      "type": "implementation",
+      "requirement_ids": ["REQ-024", "REQ-025", "REQ-026", "REQ-027", "REQ-028", "REQ-029"],
+      "description": "Build New Game page with mode selection and game options",
+      "status": "completed",
+      "completed_at": "2026-01-14T23:59:00Z"
+    },
+    {
+      "id": "task-012",
+      "type": "implementation",
+      "requirement_ids": ["REQ-015", "REQ-022"],
+      "description": "Create API endpoint for lobby data (GET /api/lobby)",
+      "status": "completed",
+      "completed_at": "2026-01-14T23:59:00Z"
+    },
+    {
+      "id": "task-013",
+      "type": "implementation",
+      "requirement_ids": ["REQ-024", "REQ-025", "REQ-026", "REQ-027", "REQ-028", "REQ-029"],
+      "description": "Create API endpoint for game creation (POST /api/games)",
+      "status": "completed",
+      "completed_at": "2026-01-15T00:30:00Z"
+    },
+    {
+      "id": "task-FINAL",
+      "type": "verification",
+      "requirement_ids": [],
+      "description": "[ORCHESTRATOR] Final verification - verify all requirements are satisfied",
+      "status": "completed",
+      "completed_at": "2026-01-15T00:45:00Z",
+      "note": "This task is completed by the Orchestrator, NOT a coder agent",
+      "verification_results": {
+        "requirements_total": 35,
+        "requirements_satisfied": 35,
+        "tasks_completed": 13,
+        "verified_at": "2026-01-15T00:45:00Z"
+      }
+    }
+  ]
+}

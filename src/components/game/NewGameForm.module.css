@@ -1,0 +1,182 @@
+/* New Game Form Component Styles */
+
+.formContainer {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.stepper {
+  background-color: transparent;
+}
+
+.stepTitle {
+  color: #fff;
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+}
+
+.stepDescription {
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 1rem;
+}
+
+/* Radio Button Styles */
+.radioRoot {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.2s ease;
+}
+
+.radioRoot:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.radioLabel {
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.radioDescription {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.radioSmall {
+  color: #fff;
+}
+
+/* Sub-options */
+.subOption {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.subOptionLabel {
+  color: #fff;
+}
+
+/* Standard Mode Options */
+.standardOptions {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.selectLabel {
+  color: #fff;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.selectDescription {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Confirmation Step */
+.confirmationBox {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.confirmationItem {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.confirmationItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.confirmationLabel {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.confirmationValue {
+  color: #fff;
+}
+
+.friendName {
+  color: rgba(255, 255, 255, 0.9);
+  padding-left: 0.5rem;
+}
+
+.confirmationWarning {
+  background-color: rgba(255, 193, 7, 0.15);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.confirmationWarning text {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Create Button */
+.createButton {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  font-weight: 700;
+  height: 48px;
+  padding: 0 2rem;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  transition: all 0.3s ease;
+}
+
+.createButton:hover {
+  background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(76, 175, 80, 0.5);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .formContainer {
+    max-width: 100%;
+  }
+
+  .stepTitle {
+    font-size: 1.25rem;
+  }
+
+  .radioRoot {
+    padding: 0.75rem;
+  }
+
+  .confirmationBox {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stepTitle {
+    font-size: 1.125rem;
+  }
+
+  .radioLabel {
+    font-size: 0.9rem;
+  }
+
+  .radioDescription {
+    font-size: 0.8rem;
+  }
+
+  .createButton {
+    width: 100%;
+  }
+}
