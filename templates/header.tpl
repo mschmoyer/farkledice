@@ -3,16 +3,7 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 	<meta name="Description" content="{$title} is a lightning fast online game of Farkle. Earn rewards, achievements, and compete for a top spot on the leaderboards!">
-	
-	<meta property="og:url" content="http://www.farkledice.com"/>    
-	<meta property="og:image" content="http://www.farkledice.com/images/fb-icon.png"/>
-    <meta property="og:title" content="{$title}"/>
-    <meta property="og:type" content="game"/>   
-    <meta property="og:site_name" content="{$title}"/>
-    <meta property="fb:admins" content="9202698"/>
-    <meta property="og:description" content="{$title} is a lightning fast online game of Farkle. Earn rewards, achievements, and compete for a top spot on the leaderboards!"/>
-	<meta property="fb:app_id" content="271148502945493"/>
-	
+
 	{if $mobilemode || $tabletmode}
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		
@@ -61,25 +52,7 @@
 	
 	<link rel="icon" href="/images/favicon.ico" type="image/x-icon"/>
 	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon"/>
-	
-	{literal}
-	<script type="text/javascript">
 
-		//window.applicationCache.swapCache();
-	
-	  var _gaq = _gaq || [];
-	  _gaq.push(['_setAccount', 'UA-28314970-1']);
-	  _gaq.push(['_trackPageview']);
-
-	  (function() {
-		var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-		ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-		var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-	  })();
-
-	</script>
-	{/literal}
-	
 	<link rel="stylesheet" type="text/css" href="/css/mobile.css?vers=1.1" />
 	<link rel="stylesheet" type="text/css" href="/css/farkle.css?vers=1.1" />
 	{*{if $mobilemode}<link rel="stylesheet" type="text/css" href="/css/mobile_farkle.css" />{/if}*}

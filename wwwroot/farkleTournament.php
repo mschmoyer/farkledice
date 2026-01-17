@@ -62,8 +62,8 @@ function CreateTournament( $playercap, $tformat, $launchHours, $name, $lobbyImag
 		$maxAchId++;
 		$randIcon = "tournament" . rand(1,3) . ".png";
 		
-		$sql = "insert into farkle_achievements values ($maxAchId, 'Win $name', 
-			CONCAT('Hosted ', DATE_FORMAT( NOW()+INTERVAL '$launchHours' HOUR, '%M %D, %Y') ), 35, '$randIcon')";
+		$sql = "insert into farkle_achievements values ($maxAchId, 'Win $name',
+			CONCAT('Hosted ', TO_CHAR( NOW()+INTERVAL '$launchHours' HOUR, 'Mon DD, YYYY') ), 35, '$randIcon')";
 		$rc = db_command($sql);
 		
 		BaseUtil_Debug( "CreateTournament: Will award achievement #$maxAchId for winning this tournament.", 1 );
@@ -331,7 +331,7 @@ function GenerateTournamentRound( $tid )
 		// chance to get a bye round. 
 		$sql = "SELECT * FROM (
 			select (select count(*) from farkle_tournaments_games where tournamentid=$tid and byeplayerid=d.playerid) as byes, 
-				a.playerid, IFNULL(a.fullname, a.username) as username, d.seednum, d.losses, a.email
+				a.playerid, COALESCE(a.fullname, a.username) as username, d.seednum, d.losses, a.email
 				from farkle_players a, farkle_tournaments_games c, farkle_tournaments_players d
 				where 
 					d.losses < $lossesTillDone and
@@ -339,7 +339,7 @@ function GenerateTournamentRound( $tid )
 					a.playerid=d.playerid
 			UNION
 			select (select count(*) from farkle_tournaments_games where tournamentid=$tid and byeplayerid=b.playerid) as byes, 
-				b.playerid, IFNULL(b.fullname, b.username) as username, c.seednum, c.losses, b.email
+				b.playerid, COALESCE(b.fullname, b.username) as username, c.seednum, c.losses, b.email
 				from farkle_tournaments_games a, farkle_players b, farkle_tournaments_players c
 				where a.byeplayerid > 0 and a.gameid=0 and a.tournamentid=$tid and a.roundnum=$lastRound and
 				a.byeplayerid=b.playerid and 
@@ -438,7 +438,7 @@ function TournamentFinish( $tid, $winningplayer )
 	$rc = db_command($sql);
 	
 	// Information on the winning player
-	$sql = "select IFNULL(a.fullname, a.username) as username, b.roundnum, b.achievementid
+	$sql = "select COALESCE(a.fullname, a.username) as username, b.roundnum, b.achievementid
 		from farkle_players a, farkle_tournaments b 
 		where a.playerid=$winningplayer and b.tournamentid=$tid";
 	$w = db_select_query( $sql, SQL_SINGLE_ROW );
@@ -469,13 +469,13 @@ function TournamentFinish( $tid, $winningplayer )
 function GetTournamentStatus( $tid, $playerid )
 {
 	$gameInfo = 0;
-	$sql = "select DATE_FORMAT(a.launchdate, '%b %D @ %l:00 %p') as launchdate, a.finishdate, 
-			a.winningplayer, a.roundnum, a.tname, a.tformat, a.roundhours, a.pointstowin, a.mintostart, 
+	$sql = "select TO_CHAR(a.launchdate, 'Mon DD @ HH12:00 AM') as launchdate, a.finishdate,
+			a.winningplayer, a.roundnum, a.tname, a.tformat, a.roundhours, a.pointstowin, a.mintostart,
 			a.playercap, a.startcondition, gamemode,
 			j.imagefile as imagefile, j.title, j.description, j.worth,
-			DATE_FORMAT( (a.roundstartdate + interval a.roundhours HOUR), '%b %D @ %l:00 %p') as nextrounddate,
+			TO_CHAR( (a.roundstartdate + interval a.roundhours HOUR), 'Mon DD @ HH12:00 AM') as nextrounddate,
 			(select count(*) from farkle_tournaments_players b where b.tournamentid=a.tournamentid) as numplayers,
-			IFNULL((select 1 from farkle_tournaments_players c where c.tournamentid=a.tournamentid and playerid=$playerid),0) as participant
+			COALESCE((select 1 from farkle_tournaments_players c where c.tournamentid=a.tournamentid and playerid=$playerid),0) as participant
 		FROM farkle_tournaments a, farkle_achievements j where a.achievementid=j.achievementid and tournamentid=$tid";
 	$tInfo = db_select_query( $sql, SQL_SINGLE_ROW );
 	
@@ -484,11 +484,11 @@ function GetTournamentStatus( $tid, $playerid )
 	{
 		$innerPiece = "select a.roundnum, b.winningplayer, a.gameid, b.gamemode, b.currentturn, b.playerstring, 
 				c.playerid as p1id, 
-				IFNULL(c.fullname, c.username) as p1u, 
+				COALESCE(c.fullname, c.username) as p1u, 
 				d.playerround as p1rnd,
 				d.playerscore as firstplayerscore,
 				e.playerid as p2id, 
-				IFNULL(e.fullname, e.username) as p2u, 
+				COALESCE(e.fullname, e.username) as p2u, 
 				f.playerround as p2rnd,
 				f.playerscore as secondplayerscore,
 				(c.playerid=$playerid || e.playerid=$playerid) as yourplayer
@@ -507,8 +507,8 @@ function GetTournamentStatus( $tid, $playerid )
 			";
 		$innerPiece .= " UNION ";
 		$innerPiece .= "select a.roundnum, a.byeplayerid as winningplayer, 0 as gameid, 0 asgamemode, 0 as currentturn, 
-				CONCAT(IFNULL(fullname, username),' - Bye Round') as playerstring,
-				a.byeplayerid as p1id, IFNULL(c.fullname, c.username) as p1u, 0 as p1s, 0 as p1rnd, 
+				CONCAT(COALESCE(fullname, username),' - Bye Round') as playerstring,
+				a.byeplayerid as p1id, COALESCE(c.fullname, c.username) as p1u, 0 as p1s, 0 as p1rnd, 
 				'0' as p2id, 'bye' as p2u, 0 as p2s, 0 as p2rnd,
 				 (c.playerid=$playerid) as yourplayer
 			from farkle_tournaments_games a, farkle_players c
@@ -518,7 +518,7 @@ function GetTournamentStatus( $tid, $playerid )
 		$gameInfo = db_select_query( $sql, SQL_MULTI_ROW );
 	}
 
-	$sql = "select IFNULL(a.fullname, a.username) as username, a.playerid, a.playertitle, a.cardcolor, a.facebookid, a.playerlevel,
+	$sql = "select COALESCE(a.fullname, a.username) as username, a.playerid, a.playertitle, a.cardcolor, a.playerlevel,
 		b.seednum
 		from farkle_players a, farkle_tournaments_players b
 		where a.playerid=b.playerid and b.tournamentid=$tid
@@ -566,8 +566,8 @@ function EmailTournamentPlayers( $tid, $v_subj, $v_msg, $all=1 )
 function GetActiveTournaments()
 {
 	// Get the lowest unfinished tournament. 
-	$sql = "select min(tournamentid) as tournamentid, lobbyImage, datediff(now(),finishdate) as DaysSinceFinished
-	from farkle_tournaments 
+	$sql = "select min(tournamentid) as tournamentid, lobbyImage, EXTRACT(DAY FROM (now() - finishdate)) as DaysSinceFinished
+	from farkle_tournaments
 	where winningplayer = 0 or finishdate > NOW() - interval '3' day
 	group by lobbyimage";
 	$tInfo = db_select_query( $sql, SQL_SINGLE_ROW );

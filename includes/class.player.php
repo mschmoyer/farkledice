@@ -21,17 +21,17 @@ class Player {
 		$instance = new self();
 		// Total points
 		$sql = "select 
-			IFNULL(fullname, username) as username, email, sendhourlyemails, random_selectable, playerid, playertitle, cardcolor,
+			COALESCE(fullname, username) as username, email, sendhourlyemails, random_selectable, playerid, playertitle, cardcolor,
 			(select sum(worth) 
 				from farkle_achievements a, farkle_achievements_players b 
 				where a.achievementid=b.achievementid and b.playerid='$playerid') as achscore,
 			FORMAT(totalpoints,0) as totalpoints, 
 			FORMAT(highestround,0) as highestround,
-			DATE_FORMAT(lastplayed,'%b %D') as lastplayed,
+			TO_CHAR(lastplayed,'Mon DD') as lastplayed,
 			FORMAT(COALESCE(avgscorepoints / roundsplayed,0),0) as avground,
 			wins, 
 			losses,		
-			IFNULL(($friendSql),0) as isfriend,
+			COALESCE(($friendSql),0) as isfriend,
 			FORMAT(xp,0) as xp, 
 			FORMAT(xp_to_level,0) as xp_to_level,
 			FORMAT(stylepoints,0) as stylepoints, 

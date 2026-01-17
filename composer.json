@@ -1,0 +1,18 @@
+{
+  "name": "farkledice/farkle-ten",
+  "description": "Farkle Ten multiplayer dice game",
+  "type": "project",
+  "require": {
+    "php": "^8.3",
+    "ext-pdo": "*",
+    "ext-pdo_pgsql": "*",
+    "ext-mbstring": "*",
+    "smarty/smarty": "^4.5"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.0"
+  },
+  "autoload": {
+    "classmap": ["includes/"]
+  }
+}

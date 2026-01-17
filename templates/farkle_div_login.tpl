@@ -6,15 +6,6 @@
 	</div>
 	
 	<div class="loginBox">
-		{*<div class="loginBox">
-			 Facebook <div class="fb-login-button" data-show-faces="false" data-width="300" data-height="44" data-max-rows="1"></div> 
-		</div>*}
-		
-		{if 1==1 || $device != "ios_app"}
-			<img src="/images/fbloginbutton.png" onClick="FacebookLogin()">
-			<br/>
-		{/if}
-		
 		<input type="button" class="mobileButton" buttonColor="green" value="Farkle Login" onClick="$('#farkleLoginDiv').toggle();" style="width: 250px;">
 		
 		<div id="farkleLoginDiv" style="display: none;">

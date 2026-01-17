@@ -286,8 +286,8 @@ function Ach_GetNewAchievement( $playerid )
 	
 	// Get any un-awarded achievements
 	$sql = "select b.achievementid as achievementid, title, description, worth, imagefile
-			from farkle_achievements_players a, farkle_achievements b 
-			where a.playerid=$playerid and a.achievementid=b.achievementid and a.awarded=0 LIMIT 0,1";
+			from farkle_achievements_players a, farkle_achievements b
+			where a.playerid=$playerid and a.achievementid=b.achievementid and a.awarded=false LIMIT 1";
 	$achData = db_select_query( $sql, SQL_SINGLE_ROW );
 	if( isset($achData) ) return $achData;
 	return 0;		
@@ -354,11 +354,11 @@ function GetAchievements( $playerid )
 	$achData = Array();
 		
 	// Get all achievements but set earned=1 for ones the player has
-	$sql = "select 1 as earned, a.*, b.achievedate, DATE_FORMAT(b.achievedate,'%b %D, %Y') as formatteddate
+	$sql = "select 1 as earned, a.*, b.achievedate, TO_CHAR(b.achievedate,'Mon DD, YYYY') as formatteddate
 				from farkle_achievements a, farkle_achievements_players b
 				where a.achievementid=b.achievementid and b.playerid=$playerid
 			UNION
-			select 0 as earned, c.*, null as achievedate, DATE_FORMAT(NOW(),'%b %D, %Y') as formatteddate
+			select 0 as earned, c.*, null as achievedate, TO_CHAR(NOW(),'Mon DD, YYYY') as formatteddate
 				from farkle_achievements c 
 				where not exists (select 1 from farkle_achievements_players d 
 					where d.achievementid=c.achievementid and d.playerid=$playerid)
@@ -384,7 +384,7 @@ function AckAchievement( $playerid, $achievementid )
 	if( !empty($achievementid) && !empty($playerid) )
 	{
 		// Set this as awarded so we don't show it again
-		$sql = "update farkle_achievements_players set awarded=1 where playerid=$playerid and achievementid=$achievementid";
+		$sql = "update farkle_achievements_players set awarded=true where playerid=$playerid and achievementid=$achievementid";
 		$result = db_command($sql);	
 		return 1;
 	}

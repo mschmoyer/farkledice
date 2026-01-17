@@ -86,13 +86,13 @@
 	$smarty = new Smarty();
 
 	$smarty->template_dir = $dir . "/templates/$curfolder";
-	BaseUtil_Debug( "Template_dir = ".$smarty->template_dir, 31 );	
+	BaseUtil_Debug( "Template_dir = " . (is_array($smarty->template_dir) ? print_r($smarty->template_dir, true) : $smarty->template_dir), 31 );	
 	$smarty->compile_dir = 	$dir.'/backbone/templates_c/';
 	BaseUtil_Debug( "compile_dir = ".$smarty->compile_dir, 31 );
 	$smarty->cache_dir = 	$dir.'/backbone/cache/';
 	BaseUtil_Debug( "cache_dir = ".$smarty->cache_dir, 31 );
 	$smarty->config_dir = 	$dir.'/backbone/configs/';
-	BaseUtil_Debug( "config_dir = ".$smarty->config_dir, 31 );
+	BaseUtil_Debug( "config_dir = " . (is_array($smarty->config_dir) ? print_r($smarty->config_dir, true) : $smarty->config_dir), 31 );
 	
 	$smarty->assign('wwwroot', $dir . "/$gFolder");
 	BaseUtil_Debug( "wwwroot = ".$dir . "/$gFolder", 31 );
@@ -128,6 +128,7 @@
 		$gTabletMode = 1;
 		
 	$smarty->assign('mobilemode', $gMobileMode);
+	$smarty->assign('mobileMode', $gMobileMode);  // PHP 8.3 fix: case-sensitive variable for template
 	$smarty->assign('tabletmode', $gTabletMode);	
 	//$_SESSION['mobilemode'] = $gMobileMode;
 	BaseUtil_Debug( "MobileMode = $gMobileMode, TabletMode = $gTabletMode", 31 );

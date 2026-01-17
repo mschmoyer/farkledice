@@ -1,0 +1,36 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/*.log
+logs/docker-server.log
+*.log
+error_log
+!logs/.gitkeep
+
+# Docker volumes
+docker/backbone/
+docker/configs/
+
+# Smarty cache and compiled templates
+backbone/
+configs/siteconfig.ini
+
+# Sensitive configuration
+*.ini
+!docker/siteconfig.ini
+
+# Dependencies
+vendor/
+node_modules/
+
+# Planning (keep structure, ignore feature files in progress if desired)
+# planning/features/*.json

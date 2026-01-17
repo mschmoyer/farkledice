@@ -1,0 +1,17 @@
+{
+  "features": [
+    {
+      "id": "feature-20260117-001",
+      "title": "Phase 1: Modernization - PHP 8.3, PostgreSQL, Heroku Ready",
+      "status": "in_progress",
+      "created_at": "2026-01-17T00:00:00Z"
+    },
+    {
+      "id": "feature-20260117-002",
+      "title": "Remove Facebook and Google AdSense Integration",
+      "status": "completed",
+      "created_at": "2026-01-17T19:00:00Z",
+      "completed_at": "2026-01-17T22:45:00Z"
+    }
+  ]
+}

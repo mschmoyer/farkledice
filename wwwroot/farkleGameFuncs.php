@@ -271,7 +271,7 @@ function GetFarkleGameName( $gameid, $gameWith, $thePlayers, $maxTurns=2 )
 	
 	// Get names of players (the starting player first)
 
-	$sql = "select distinct IFNULL(fullname, username) as username, playerid 
+	$sql = "select distinct COALESCE(fullname, username) as username, playerid 
 				from farkle_players where playerid in ($players)";
 	$pNameData = db_select_query( $sql, SQL_MULTI_ROW );
 
@@ -381,10 +381,10 @@ function CreateNewRandomGameWithPlayers( $gameMode, $randomPlayers, $avoidPlayer
 		$avoidSql = " and playerid not in ($avoidPlayerid)";
 	}
 	
-	$sql = "select playerid	from farkle_players 
+	$sql = "select playerid	from farkle_players
 		where lastplayed > now()-interval '2' week and random_selectable > 0 $avoidSql
-		order by lastplayed desc 
-		LIMIT 0, 20";
+		order by lastplayed desc
+		LIMIT 20";
 	$randomPlayerid = db_select_query( $sql, SQL_SINGLE_VALUE );	
 	
 	if( !empty($randomPlayerid) ) 
@@ -554,10 +554,10 @@ function FarkleSendUpdate( $playerid, $gameid )
 	}
 	
 	// Get the current and max turn
-	$sql = "select a.currentturn, a.currentround, a.maxturns, a.winningplayer, a.mintostart, 
+	$sql = "select a.currentturn, a.currentround, a.maxturns, a.winningplayer, a.mintostart,
 		a.pointstowin, a.gameid, a.gamemode, a.gamewith, b.playerround,
-		DATE_FORMAT(a.gameexpire, '%b %D @ %l:00 %p') as gameexpire,
-		DATE_FORMAT(a.gamefinish, '%b %D @ %l:00 %p') as gamefinish,
+		TO_CHAR(a.gameexpire, 'Mon DD @ HH12:00 AM') as gameexpire,
+		TO_CHAR(a.gamefinish, 'Mon DD @ HH12:00 AM') as gamefinish,
 		(select playerid from farkle_games_players where playerturn=currentturn and gameid=a.gameid) as currentplayer, 
 		lastturn, titleredeemed, b.winacknowledged
 		from farkle_games a, farkle_games_players b
@@ -583,10 +583,10 @@ function FarkleSendUpdate( $playerid, $gameid )
 	
 	BaseUtil_Debug( __FUNCTION__ . ": CurrentRound = $currentRound", 1 );
 	
-	// If they are viewing a game after it has been won then make sure it dissapears off the main screen and appears on the player screen. 
+	// If they are viewing a game after it has been won then make sure it dissapears off the main screen and appears on the player screen.
 	if( $turnData['winacknowledged'] == '0' && $turnData['winningplayer'] > 0 )
 	{
-		$sql = "update farkle_games_players set winacknowledged=1 where gameid=$gameid and playerid=$playerid";
+		$sql = "update farkle_games_players set winacknowledged=true where gameid=$gameid and playerid=$playerid";
 		$rc = db_command($sql);
 	}
 	
@@ -632,8 +632,8 @@ function FarkleSendUpdate( $playerid, $gameid )
 
 	// Get dice & scored values for the 6 dice. We can tell which dice the player has saved in this data
 	$sql = "select d1, d2, d3, d4, d5, d6 from farkle_sets
-		where gameid=$gameid and roundnum=$currentRound and playerid=$curplayerid 
-		order by setnum desc LIMIT 0,2";
+		where gameid=$gameid and roundnum=$currentRound and playerid=$curplayerid
+		order by setnum desc LIMIT 2";
 	$setData = db_select_query( $sql, SQL_MULTI_ROW );		
 	
 	if( !empty($setData) ) $setData = ConvertTableToDiceArray($setData[0]);
@@ -645,14 +645,14 @@ function FarkleSendUpdate( $playerid, $gameid )
 	
 	$rollingScore = "";
 	if( $turnData['gamemode'] == GAME_MODE_10ROUND )
-		$rollingScore = "IFNULL((select sum(roundscore) from farkle_rounds where playerid=a.playerid and gameid=$gameid and roundnum<$currentRound),0) as rollingscore, ";
+		$rollingScore = "COALESCE((select sum(roundscore) from farkle_rounds where playerid=a.playerid and gameid=$gameid and roundnum<$currentRound),0) as rollingscore, ";
 	
 	// Get information about the players
-	$sql = "select IFNULL(fullname,username) as username, a.playerid, a.playerround,
-		a.playerscore, b.facebookid, b.cardcolor, b.playerlevel,
+	$sql = "select COALESCE(fullname,username) as username, a.playerid, a.playerround,
+		a.playerscore, b.cardcolor, b.playerlevel,
 		a.lastxpgain, a.lastroundscore, $rollingScore
-		IFNULL((select IFNULL(sum(setscore),0) from farkle_sets where playerid=a.playerid and gameid=$gameid and roundnum=$currentRound),0) as roundscore,			
-		a.playerturn, IFNULL(b.playertitle,'') as playertitle, b.titlelevel,
+		COALESCE((select COALESCE(sum(setscore),0) from farkle_sets where playerid=a.playerid and gameid=$gameid and roundnum=$currentRound),0) as roundscore,
+		a.playerturn, COALESCE(b.playertitle,'') as playertitle, b.titlelevel,
 		NOW() - a.lastplayed as lastplayedseconds
 		from farkle_games_players a, farkle_players b
 		where a.gameid=$gameid and a.playerid=b.playerid
@@ -930,7 +930,7 @@ function FarklePass( $playerid, $gameid, $savedDice, $farkled = 0, $updateTime =
 		if( $setScore > 0 )
 		{
 			// Get values of all sets. We'll sum it up for roundscore and count the number for bonus multipliers
-			$sql = "select IFNULL(setscore,0) as setscore from farkle_sets where gameid=$gameid and playerid=$playerid and roundnum=$currentRound";
+			$sql = "select COALESCE(setscore,0) as setscore from farkle_sets where gameid=$gameid and playerid=$playerid and roundnum=$currentRound";
 			$sets = db_select_query( $sql, SQL_MULTI_ROW );
 			foreach( $sets as $s ) 
 			{ 
@@ -983,7 +983,7 @@ function FarklePass( $playerid, $gameid, $savedDice, $farkled = 0, $updateTime =
 
 	// Append data to query if necessary
 	$farkleSql = ( $farkled ? ",farkles=farkles+1" : "" );
-	$highest10Round = ( $gameData['gamemode'] == GAME_MODE_10ROUND ? ", highest10round=GREATEST(IFNULL(highest10Round,0), $playerScore)" : "" );
+	$highest10Round = ( $gameData['gamemode'] == GAME_MODE_10ROUND ? ", highest10round=GREATEST(COALESCE(highest10Round,0), $playerScore)" : "" );
 	
 	if( $roundScore > 750 ) 
 	{	
@@ -997,7 +997,7 @@ function FarklePass( $playerid, $gameid, $savedDice, $farkled = 0, $updateTime =
 	// Update player stats
 	$sql = "update farkle_players set  
 		lastplayed=NOW(),			
-		highestround=GREATEST(IFNULL(highestround,0),$roundScore),
+		highestround=GREATEST(COALESCE(highestround,0),$roundScore),
 		totalpoints=totalpoints+$roundScore,
 		roundsplayed=roundsplayed+1,
 		avgscorepoints=avgscorepoints+$roundScore
@@ -1050,7 +1050,7 @@ function GameIsCompleted( $gameid, $maxTurns )
 	if( $playersDone >= $maxTurns )
 	{
 		// Select the playerid with the highest score in this game. 
-		$sql = "select a.playerid, a.playerscore, IFNULL(b.fullname, b.username) as username, 
+		$sql = "select a.playerid, a.playerscore, COALESCE(b.fullname, b.username) as username, 
 			(select max(roundscore) from farkle_rounds where playerid=a.playerid and gameid=a.gameid) as highestRound
 			from farkle_games_players a, farkle_players b
 			where a.gameid=$gameid and a.playerid=b.playerid

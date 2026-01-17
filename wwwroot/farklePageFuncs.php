@@ -7,7 +7,6 @@
 
 require_once('../includes/baseutil.php');
 require_once('dbutil.php');
-//require_once("facebook.php");
 require_once('farkleAchievements.php');
 require_once('farkleLevel.php');
 require_once('farkleUtil.php'); 
@@ -92,28 +91,28 @@ function GetStats( $playerid, $recordInSession = 1 )
 		$_SESSION['farkle']['lastknownscreen'] = 'playerinfo';
 		$_SESSION['farkle']['lastplayerinfoid'] = $playerid;
 	}
-	$usernameSql = "select IFNULL(fullname, username) as username from farkle_players where playerid='$playerid'";
+	$usernameSql = "select COALESCE(fullname, username) as username from farkle_players where playerid='$playerid'";
 	$friendSql = "select 1 from farkle_friends where sourceid='" . $_SESSION['playerid'] . "' and friendid=$playerid";
 	
 	// Total points
-	$sql = "select 
-		IFNULL(fullname, username) as username, email, sendhourlyemails, random_selectable, playerid, playertitle, cardcolor, cardbg,
-		(select sum(worth) 
-			from farkle_achievements a, farkle_achievements_players b 
+	$sql = "select
+		COALESCE(fullname, username) as username, email, sendhourlyemails, random_selectable, playerid, playertitle, cardcolor, cardbg,
+		(select sum(worth)
+			from farkle_achievements a, farkle_achievements_players b
 			where a.achievementid=b.achievementid and b.playerid='$playerid') as achscore,
-		FORMAT(totalpoints,0) as totalpoints, 
-		FORMAT(highestround,0) as highestround,
-		DATE_FORMAT(lastplayed,'%b %D') as lastplayed,
-		FORMAT(COALESCE(avgscorepoints / roundsplayed,0),0) as avground,
-		wins, 
-		losses,		
-		IFNULL(($friendSql),0) as isfriend,
-		FORMAT(xp,0) as xp, 
-		FORMAT(xp_to_level,0) as xp_to_level,
-		FORMAT(stylepoints,0) as stylepoints, 
+		totalpoints,
+		highestround,
+		TO_CHAR(lastplayed,'Mon DD') as lastplayed,
+		COALESCE(avgscorepoints / NULLIF(roundsplayed,0),0) as avground,
+		wins,
+		losses,
+		COALESCE(($friendSql),0) as isfriend,
+		xp,
+		xp_to_level,
+		stylepoints,
 		playerlevel,
-		FORMAT(highest10round,0) as highest10round, 
-		FORMAT(farkles,0) as farkles
+		highest10round,
+		farkles
 		from farkle_players where playerid='$playerid'";
 	$stats = db_select_query( $sql, SQL_SINGLE_ROW );
 	 
@@ -126,15 +125,15 @@ function GetStats( $playerid, $recordInSession = 1 )
 
 function GetPlayerInfo( $playerid )
 {
-	$sql = "select IFNULL(fullname, username) as username, playertitle, cardcolor, cardbg, 
-			facebookid,	playerlevel, xp, xp_to_level,
-			(select sum(worth) 
-				from farkle_achievements a, farkle_achievements_players b 
-				where a.achievementid=b.achievementid and b.playerid=$playerid) as achscore			
-		from farkle_players 
+	$sql = "select COALESCE(fullname, username) as username, playertitle, cardcolor, cardbg,
+			playerlevel, xp, xp_to_level,
+			(select sum(worth)
+				from farkle_achievements a, farkle_achievements_players b
+				where a.achievementid=b.achievementid and b.playerid=$playerid) as achscore
+		from farkle_players
 		where playerid=$playerid";
 	$playerInfo = db_select_query( $sql, SQL_SINGLE_ROW );
-	
+
 	return $playerInfo;
 }
 
@@ -178,13 +177,13 @@ function GetGames( $playerid, $completed, $limit = 20, $skipSolo = 0 )
 	}
 	else
 	{
-		// We want completed and unfinished games. We want to put completed games on top. 
-		$winPlayerClause = " (winningplayer=0 or (winningplayer>0 and a.winacknowledged=0)) and a.playerturn < 999 ";
-		$orderByClause = " b.winningplayer desc, 
-						(finishedplayers=b.maxturns-1 && playerround>1 && playerround < 11) desc, 
-						(finishedplayers=b.maxturns-1 && playerround=1) desc, 
+		// We want completed and unfinished games. We want to put completed games on top.
+		$winPlayerClause = " (winningplayer=0 or (winningplayer>0 and a.winacknowledged=false)) and a.playerturn < 999 ";
+		$orderByClause = " b.winningplayer desc,
+						(finishedplayers=b.maxturns-1 AND playerround>1 AND playerround < 11) desc,
+						(finishedplayers=b.maxturns-1 AND playerround=1) desc,
 						(a.playerround>1 and a.playerround < 11 and finishedplayers < b.maxturns) desc,
-						(a.playerround<11) desc, 
+						(a.playerround<11) desc,
 						b.gamestart asc ";
 	}
 	
@@ -193,14 +192,14 @@ function GetGames( $playerid, $completed, $limit = 20, $skipSolo = 0 )
 	
 	$sql = "select * from (
 		select a.gameid, b.currentturn, b.maxturns, b.winningplayer, a.playerturn, a.playerround, b.gamemode,
-		DATE_FORMAT(b.gamefinish,'%b %D') as gamefinish, b.playerstring,
+		TO_CHAR(b.gamefinish,'Mon DD') as gamefinish, b.playerstring,
 		((a.playerturn=b.currentturn and b.gamemode=1) or (a.playerround<11 and b.gamemode=2)) as yourturn,
 		(select count(*) from farkle_games_players where gameid=b.gameid and playerround>=11 and b.gamemode=2) as finishedplayers
-		from farkle_games_players a, farkle_games b 
+		from farkle_games_players a, farkle_games b
 		where playerid='$playerid' and a.gameid=b.gameid $skipSql
-		and $winPlayerClause 
+		and $winPlayerClause
 		order by $orderByClause) x
-		LIMIT 0, $limit";
+		LIMIT $limit OFFSET 0";
 		
 	$gamedata = db_select_query( $sql, SQL_MULTI_ROW );
 	
@@ -298,7 +297,7 @@ function GameWinningEmail( $gameid, $winnerid, $reason )
 	BaseUtil_Debug( "GameWinningEmail: entered.", 7 );	
 	
 	// Select all the losers of the game
-	$sql = "select email, IFNULL(a.fullname, a.username) as username, c.playerscore as score
+	$sql = "select email, COALESCE(a.fullname, a.username) as username, c.playerscore as score
 		from farkle_players a, farkle_games b, farkle_games_players c
 		where b.gameid=$gameid and c.gameid=b.gameid and a.playerid=c.playerid
 		order by score desc";

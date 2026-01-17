@@ -1,0 +1,54 @@
+services:
+  web:
+    build: .
+    container_name: farkle_web
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/backbone:/var/www/backbone
+      - ./docker/configs:/var/www/configs
+    environment:
+      - APACHE_DOCUMENT_ROOT=/var/www/html/wwwroot
+      - DB_HOST=db
+      - DB_NAME=farkle_db
+      - DB_USER=farkle_user
+      - DB_PASS=farkle_pass
+    depends_on:
+      - db
+    networks:
+      - farkle_network
+
+  db:
+    image: postgres:16-alpine
+    container_name: farkle_db
+    environment:
+      POSTGRES_DB: farkle_db
+      POSTGRES_USER: farkle_user
+      POSTGRES_PASSWORD: farkle_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - farkle_network
+
+  adminer:
+    image: adminer:latest
+    container_name: farkle_adminer
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+    networks:
+      - farkle_network
+
+networks:
+  farkle_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

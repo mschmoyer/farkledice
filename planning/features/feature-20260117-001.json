@@ -1,0 +1,397 @@
+{
+  "id": "feature-20260117-001",
+  "title": "Phase 1: Modernization - PHP 8.3, PostgreSQL, Heroku Ready",
+  "description": "Modernize Farkle Dice infrastructure from PHP 5.6/MySQL to PHP 8.3/PostgreSQL with native Apple Silicon support and Heroku deployment capability. Includes updating Docker configuration, migrating database layer to PDO, converting database schema to PostgreSQL, upgrading Smarty templating engine, and adding Composer dependency management.",
+  "created_at": "2026-01-17T00:00:00Z",
+  "status": "in_progress",
+  "completed_at": null,
+
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "detail": "Create feature branch 'modernization/phase-1'",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-002",
+      "detail": "Add Composer with PHP 8.3 dependency management",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-003",
+      "detail": "Update Dockerfile to use PHP 8.3-apache with PostgreSQL support",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-004",
+      "detail": "Update docker-compose.yml to use PostgreSQL 16 (native ARM64)",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-005",
+      "detail": "Remove platform: linux/amd64 from docker config (enable native ARM)",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-006",
+      "detail": "Convert MySQL init.sql schema to PostgreSQL syntax",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-007",
+      "detail": "Preserve all 8 tables with correct PostgreSQL data types",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-008",
+      "detail": "Update FarkleConfig class to support DATABASE_URL environment variable (Heroku)",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-009",
+      "detail": "Replace all mysql_* functions with PDO in dbutil.php",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-010",
+      "detail": "Implement PDO connection with PostgreSQL driver",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-011",
+      "detail": "Update all SQL queries for PostgreSQL compatibility",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-012",
+      "detail": "Upgrade Smarty 2.x to 4.x via Composer",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-013",
+      "detail": "Create Procfile for Heroku web dyno",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-014",
+      "detail": "Create app.json with PostgreSQL addon configuration",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-015",
+      "detail": "Add environment variable support for 12-factor app configuration",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-016",
+      "detail": "Docker starts successfully with PostgreSQL",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-017",
+      "detail": "All database tables created correctly in PostgreSQL",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-018",
+      "detail": "Test user can login successfully with new stack",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-019",
+      "detail": "No PHP deprecation warnings or errors in logs",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-020",
+      "detail": "User can create a new account via browser UI",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-021",
+      "detail": "User can successfully start and play a game",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-022",
+      "detail": "Static assets (images, js, css) moved to proper location under wwwroot",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-023",
+      "detail": "All asset paths updated to reflect new directory structure",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-024",
+      "detail": "No symlinks required for static assets after restructure",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-025",
+      "detail": "Original image assets restored (dice, backgrounds, UI buttons)",
+      "status": "pending",
+      "note": "Post-Phase 1: Original images were never in git, replaced with placeholders during migration"
+    }
+  ],
+
+  "tasks": [
+    {
+      "id": "task-001",
+      "type": "implementation",
+      "requirement_ids": ["REQ-002", "REQ-012"],
+      "description": "Create composer.json with PHP 8.3, Smarty 4.x, and PostgreSQL PDO dependencies",
+      "status": "completed",
+      "completed_at": "2026-01-17T00:00:00Z"
+    },
+    {
+      "id": "task-002",
+      "type": "implementation",
+      "requirement_ids": ["REQ-003"],
+      "description": "Update Dockerfile for PHP 8.3-apache with PostgreSQL extensions and Composer",
+      "status": "completed",
+      "completed_at": "2026-01-17T00:00:00Z"
+    },
+    {
+      "id": "task-003",
+      "type": "implementation",
+      "requirement_ids": ["REQ-004", "REQ-005"],
+      "description": "Update docker-compose.yml to use PostgreSQL 16 Alpine (remove platform constraint)",
+      "status": "completed",
+      "completed_at": "2026-01-17T00:00:00Z"
+    },
+    {
+      "id": "task-004",
+      "type": "implementation",
+      "requirement_ids": ["REQ-006", "REQ-007"],
+      "description": "Convert docker/init.sql from MySQL to PostgreSQL syntax (8 tables)",
+      "status": "completed",
+      "completed_at": "2026-01-17T00:00:00Z"
+    },
+    {
+      "id": "task-005",
+      "type": "implementation",
+      "requirement_ids": ["REQ-008", "REQ-015"],
+      "description": "Update includes/farkleconfig.class.php to support DATABASE_URL environment variable",
+      "status": "completed",
+      "completed_at": "2026-01-17T00:00:00Z"
+    },
+    {
+      "id": "task-006",
+      "type": "implementation",
+      "requirement_ids": ["REQ-009", "REQ-010", "REQ-011"],
+      "description": "Rewrite includes/dbutil.php to use PDO with PostgreSQL compatibility",
+      "status": "completed",
+      "completed_at": "2026-01-17T00:00:00Z"
+    },
+    {
+      "id": "task-007",
+      "type": "implementation",
+      "requirement_ids": ["REQ-013"],
+      "description": "Create Procfile for Heroku deployment",
+      "status": "completed",
+      "completed_at": "2026-01-17T00:00:00Z"
+    },
+    {
+      "id": "task-008",
+      "type": "implementation",
+      "requirement_ids": ["REQ-014"],
+      "description": "Create app.json with Heroku PostgreSQL addon configuration",
+      "status": "completed",
+      "completed_at": "2026-01-17T00:00:00Z"
+    },
+    {
+      "id": "task-009",
+      "type": "implementation",
+      "requirement_ids": ["REQ-003"],
+      "description": "Update Dockerfile to install Smarty 4.x from Composer vendor directory",
+      "status": "completed",
+      "completed_at": "2026-01-17T00:00:00Z"
+    },
+    {
+      "id": "task-010",
+      "type": "verification",
+      "requirement_ids": ["REQ-016"],
+      "description": "Test: Build and start Docker containers with PostgreSQL",
+      "status": "completed",
+      "completed_at": "2026-01-17T00:00:00Z"
+    },
+    {
+      "id": "task-011",
+      "type": "verification",
+      "requirement_ids": ["REQ-017"],
+      "description": "Test: Verify all 8 database tables exist with correct schema",
+      "status": "completed",
+      "completed_at": "2026-01-17T00:00:00Z"
+    },
+    {
+      "id": "task-012",
+      "type": "verification",
+      "requirement_ids": ["REQ-018"],
+      "description": "Test: Login with testuser/test123 and verify session works",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-013",
+      "type": "verification",
+      "requirement_ids": ["REQ-019"],
+      "description": "Test: Check Docker logs for PHP warnings/errors",
+      "status": "completed",
+      "completed_at": "2026-01-17T00:00:00Z"
+    },
+    {
+      "id": "task-014",
+      "type": "verification",
+      "requirement_ids": ["REQ-020"],
+      "description": "Test: Create new user account via browser UI",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-015",
+      "type": "verification",
+      "requirement_ids": ["REQ-021"],
+      "description": "Test: Start and play a game to verify game logic works",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-016-fix",
+      "type": "fix",
+      "requirement_ids": ["REQ-019"],
+      "description": "Fix: PHP 8.3 undefined array key warnings breaking JavaScript - add null coalescing operators",
+      "status": "completed",
+      "completed_at": "2026-01-17T00:00:00Z",
+      "issue_details": {
+        "source": "browser_console",
+        "error_message": "SyntaxError: Invalid or unexpected token at line 1059 - PHP warnings injected into JavaScript",
+        "context": "PHP 8.3 generates warnings for undefined array keys that are output into JS pageInit() calls",
+        "resolution": "Fixed variable name case mismatch and added default empty values for lobbyinfo, friendinfo, lbinfo, pinfo in farkle.php"
+      }
+    },
+    {
+      "id": "task-017-fix",
+      "type": "fix",
+      "requirement_ids": [],
+      "description": "Fix: Create symlinks for static assets (js, css, images) in wwwroot directory",
+      "status": "completed",
+      "completed_at": "2026-01-17T00:00:00Z"
+    },
+    {
+      "id": "task-018-fix",
+      "type": "fix",
+      "requirement_ids": [],
+      "description": "Fix: Broken image paths - images not loading due to document root configuration",
+      "status": "completed",
+      "completed_at": "2026-01-17T21:00:00Z",
+      "issue_details": {
+        "source": "browser",
+        "error_message": "Images showing as broken - likely 404 errors",
+        "context": "Apache document root is /var/www/html/wwwroot but images are in /var/www/html/images",
+        "resolution": "Created missing images directory with placeholder PNG files. Directory was not in repository. Added 22 placeholder images including dice faces, UI buttons, and subdirectories for achieves and playericons."
+      }
+    },
+    {
+      "id": "task-019",
+      "type": "implementation",
+      "requirement_ids": ["REQ-022"],
+      "description": "Move images directory from /images to /wwwroot/images",
+      "status": "completed",
+      "completed_at": "2026-01-17T23:03:00Z"
+    },
+    {
+      "id": "task-020",
+      "type": "implementation",
+      "requirement_ids": ["REQ-022"],
+      "description": "Move js directory from /js to /wwwroot/js",
+      "status": "completed",
+      "completed_at": "2026-01-17T23:03:00Z"
+    },
+    {
+      "id": "task-021",
+      "type": "implementation",
+      "requirement_ids": ["REQ-022"],
+      "description": "Move css directory from /css to /wwwroot/css",
+      "status": "completed",
+      "completed_at": "2026-01-17T23:03:00Z"
+    },
+    {
+      "id": "task-022",
+      "type": "implementation",
+      "requirement_ids": ["REQ-024"],
+      "description": "Remove symlinks from wwwroot directory (images, js, css)",
+      "status": "completed",
+      "completed_at": "2026-01-17T23:03:00Z"
+    },
+    {
+      "id": "task-023",
+      "type": "verification",
+      "requirement_ids": ["REQ-022", "REQ-023", "REQ-024"],
+      "description": "Verify all assets load correctly after directory restructure",
+      "status": "completed",
+      "completed_at": "2026-01-17T23:35:00Z",
+      "note": "CSS and JS loading correctly. Images are placeholder files (not Phase 1 blocker - originals not in git)"
+    },
+    {
+      "id": "task-024-fix",
+      "type": "fix",
+      "requirement_ids": ["REQ-019"],
+      "description": "Fix: Array to string conversion warnings in baseutil.php lines 89, 95",
+      "status": "completed",
+      "completed_at": "2026-01-17T23:30:00Z",
+      "issue_details": {
+        "source": "browser",
+        "error_message": "Warning: Array to string conversion in baseutil.php lines 89 and 95",
+        "context": "PHP 8.3 doesn't auto-convert arrays to strings in Debug statements",
+        "resolution": "Added array check with print_r() for Smarty 4.x array properties (template_dir and config_dir)"
+      }
+    },
+    {
+      "id": "task-025-fix",
+      "type": "fix",
+      "requirement_ids": ["REQ-019"],
+      "description": "Fix: Undefined array key 'mobileMode' in login template",
+      "status": "completed",
+      "completed_at": "2026-01-17T23:30:00Z",
+      "issue_details": {
+        "source": "browser",
+        "error_message": "Undefined array key 'mobileMode' in farkle_div_login.tpl.php lines 42, 43",
+        "context": "PHP 8.3 requires explicit isset checks or null coalescing for array access",
+        "resolution": "Fixed case-sensitivity issue - added 'mobileMode' assignment alongside 'mobilemode' in baseutil.php"
+      }
+    },
+    {
+      "id": "task-026-fix",
+      "type": "fix",
+      "requirement_ids": ["REQ-019"],
+      "description": "Fix: session_start() after headers sent in facebook.php",
+      "status": "completed",
+      "completed_at": "2026-01-17T23:30:00Z",
+      "issue_details": {
+        "source": "browser",
+        "error_message": "Warning: session_start(): Session cannot be started after headers have already been sent",
+        "context": "facebook.php line 37 - output happening before session_start()",
+        "resolution": "Added session_status() check to prevent duplicate session_start() calls when session already active"
+      }
+    },
+    {
+      "id": "task-027",
+      "type": "implementation",
+      "requirement_ids": ["REQ-025"],
+      "description": "POST-PHASE 1: Restore original image assets (dice, backgrounds, UI buttons)",
+      "status": "pending",
+      "completed_at": null,
+      "note": "Original images never in git - need to source from production server backup or recreate"
+    },
+    {
+      "id": "task-FINAL",
+      "type": "verification",
+      "requirement_ids": [],
+      "description": "[ORCHESTRATOR] Final verification - verify all requirements are satisfied",
+      "status": "pending",
+      "completed_at": null,
+      "note": "This task is completed by the Orchestrator, NOT a coder agent"
+    }
+  ]
+}

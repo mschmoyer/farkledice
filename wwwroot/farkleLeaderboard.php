@@ -146,7 +146,7 @@ function Leaderboard_RefreshData( $force = false )
 	$sql = "SELECT 0 INTO @rank";
 	$result = mysql_query ($sql);
 	$sql = "select t1.*, @rank:=@rank+1 AS lbrank from 
-		(select 3 as lbindex, playerid, IFNULL(fullname, username) as username, playerlevel,
+		(select 3 as lbindex, playerid, COALESCE(fullname, username) as username, playerlevel,
 		wins as first_int, losses as second_int, FORMAT(COALESCE(wins/losses, 1),2) as first_string, 
 		null as second_string
 		from farkle_players 
@@ -159,7 +159,7 @@ function Leaderboard_RefreshData( $force = false )
 	$sql = "SELECT 0 INTO @rank";
 	$result = mysql_query ($sql);
 	$sql = "select t1.*, @rank:=@rank+1 AS lbrank from 
-		(select 4 as lbindex, playerid, IFNULL(fullname, username) as username, playerlevel,
+		(select 4 as lbindex, playerid, COALESCE(fullname, username) as username, playerlevel,
 		0 as first_int, 0 as second_int, FORMAT(highest10Round,0) as first_string, null as second_string
 		from farkle_players 	
 		order by farkle_players.highest10Round desc $limitClause) t1";
@@ -171,7 +171,7 @@ function Leaderboard_RefreshData( $force = false )
 	$sql = "SELECT 0 INTO @rank";
 	$result = mysql_query ($sql);
 	$sql = "select t1.*, @rank:=@rank+1 as lbrank from
-		(select 5 as lbindex, a.playerid, IFNULL(fullname, username) as username, a.playerlevel,
+		(select 5 as lbindex, a.playerid, COALESCE(fullname, username) as username, a.playerlevel,
 		sum(worth) as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players a, farkle_achievements_players b, farkle_achievements c
 		where a.playerid=b.playerid and b.achievementid=c.achievementid 		
@@ -193,7 +193,7 @@ function Leaderboard_RefreshDaily()
 	$result = db_command($sql);	
 
 	// Update the day of week. 
-	$sql = "update siteinfo set paramvalue=DATE_FORMAT(NOW()-interval'1'day, '%W, %M %e') where paramid=3";
+	$sql = "update siteinfo set paramvalue=TO_CHAR(NOW()-interval'1'day, 'Day, Mon DD') where paramid=3";
 	$result = db_command($sql);	
 	
 	// Today Stats	
@@ -201,7 +201,7 @@ function Leaderboard_RefreshDaily()
 	$sql = "SELECT 0 INTO @rank";
 	$result = mysql_query ($sql);
 	$sql = "select t1.*, @rank:=@rank+1 as lbrank from 
-		(select 0 as lbindex, a.playerid, IFNULL(fullname, username) as username, playerlevel, 
+		(select 0 as lbindex, a.playerid, COALESCE(fullname, username) as username, playerlevel, 
 		playerscore as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players a, farkle_games_players b
 		where a.playerid=b.playerid and DAY(b.lastplayed) = DAY(NOW()-interval'1'day) and b.lastplayed > NOW() - interval '3' day
@@ -213,7 +213,7 @@ function Leaderboard_RefreshDaily()
 	$sql = "SELECT 0 INTO @rank";
 	$result = mysql_query ($sql);
 	$sql = "select t1.*, @rank:=@rank+1 as lbrank from
-		(select 1 as lbindex, a.playerid, IFNULL(fullname, username) as username, playerlevel,
+		(select 1 as lbindex, a.playerid, COALESCE(fullname, username) as username, playerlevel,
 		count(*) as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players a, farkle_games_players b, farkle_rounds c
 		where a.playerid=b.playerid and DAY(b.lastplayed) = DAY(NOW()-interval'1'day) and b.lastplayed > NOW() - interval '3' day
@@ -227,7 +227,7 @@ function Leaderboard_RefreshDaily()
 	$sql = "SELECT 0 INTO @rank";
 	$result = mysql_query ($sql);
 	$sql = "select t1.*, @rank:=@rank+1 as lbrank from
-		(select 2 as lbindex, a.playerid, IFNULL(fullname, username) as username, playerlevel,
+		(select 2 as lbindex, a.playerid, COALESCE(fullname, username) as username, playerlevel,
 		count(*) as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players a, farkle_games c
 		where c.winningplayer=a.playerid 

@@ -50,12 +50,6 @@
 	</div>
 	
 	<div id="divFriendButtons2">
-		<div id="divLobbyFBInvite" align="center">
-			<br/>
-			<input type="button" class="mobileButton" value="Invite Facebook Friends!" 
-					onClick="sendRequestViaMultiFriendSelector()" buttonColor="blue" {if $mobilemode}style="font-size: 14px;"{/if}>
-		</div>
-		
 		<input type="button" class="mobileButton" buttoncolor="red" value="Back" onClick="PageGoBack()">
 	</div>
 		

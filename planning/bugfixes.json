@@ -1,0 +1,259 @@
+{
+  "bugfixes": [
+    {
+      "id": "bugfix-20260117-001",
+      "severity": "HIGH",
+      "category": "sql_error",
+      "summary": "PostgreSQL operator error: boolean = integer comparisons",
+      "error_details": {
+        "message": "ERROR: operator does not exist: boolean = integer. PostgreSQL requires explicit boolean comparisons (true/false) not integer (0/1)",
+        "file": "Multiple PHP files",
+        "line": "Various",
+        "count": 15,
+        "context": "WHERE clauses comparing BOOLEAN columns to integers (0/1) - winacknowledged=0, level_acked=0, awarded=0"
+      },
+      "steps_to_fix": [
+        "Find all SQL queries with BOOLEAN column comparisons to 0 or 1",
+        "Replace '=0' with '=false' or 'IS false'",
+        "Replace '=1' with '=true' or 'IS true'",
+        "Test queries to ensure they work in PostgreSQL"
+      ],
+      "status": "completed",
+      "created_at": "2026-01-17T22:00:00Z",
+      "started_at": "2026-01-17T22:15:00Z",
+      "completed_at": "2026-01-17T22:20:00Z",
+      "resolution": "Fixed 8 boolean comparison issues across 4 PHP files. Replaced all integer comparisons (=0, =1) with boolean literals (=false, =true) in SQL WHERE and UPDATE clauses. Files modified: farkleLevel.php (4 fixes), farklePageFuncs.php (1 fix), farkleGameFuncs.php (1 fix), farkleAchievements.php (2 fixes). All changes follow PostgreSQL boolean standards."
+    },
+    {
+      "id": "bugfix-20260117-002",
+      "severity": "HIGH",
+      "category": "sql_error",
+      "summary": "MySQL LIMIT syntax not supported in PostgreSQL",
+      "error_details": {
+        "message": "ERROR: LIMIT #,# syntax is not supported. PostgreSQL requires 'LIMIT x OFFSET y' not 'LIMIT y, x'",
+        "file": "Multiple PHP files",
+        "line": "Various",
+        "count": 8,
+        "context": "Achievement queries and other LIMIT clauses using MySQL syntax 'LIMIT 0,1'"
+      },
+      "steps_to_fix": [
+        "Find all LIMIT clauses with comma syntax: LIMIT offset, count",
+        "Replace with PostgreSQL syntax: LIMIT count OFFSET offset",
+        "Verify replacement (LIMIT 0,1 becomes LIMIT 1 OFFSET 0)"
+      ],
+      "status": "completed",
+      "created_at": "2026-01-17T22:00:00Z",
+      "started_at": "2026-01-17T22:25:00Z",
+      "completed_at": "2026-01-17T22:28:00Z",
+      "resolution": "Fixed 5 LIMIT syntax issues across 3 PHP files. Converted all MySQL-style comma syntax to PostgreSQL OFFSET syntax. Files modified: farkleGameFuncs.php (2 fixes: LIMIT 0,20 -> LIMIT 20, LIMIT 0,2 -> LIMIT 2), farkleUtil.php (2 fixes: LIMIT 1,2000 -> LIMIT 2000 OFFSET 1, LIMIT 0,400 -> LIMIT 400), farkleAchievements.php (1 fix: LIMIT 0,1 -> LIMIT 1). All queries now use PostgreSQL-compliant syntax."
+    },
+    {
+      "id": "bugfix-20260117-003",
+      "severity": "HIGH",
+      "category": "sql_error",
+      "summary": "MySQL IFNULL() function not available in PostgreSQL",
+      "error_details": {
+        "message": "ERROR: function ifnull(character varying, character varying) does not exist. PostgreSQL uses COALESCE() instead",
+        "file": "farkleFriends.php and other files",
+        "line": "Various",
+        "count": 33,
+        "context": "Friend list queries selecting IFNULL(fullname,username)"
+      },
+      "steps_to_fix": [
+        "Find remaining IFNULL() calls in codebase",
+        "Replace IFNULL(a,b) with COALESCE(a,b)",
+        "Verify in farkleFriends.php and other files not yet migrated"
+      ],
+      "status": "completed",
+      "created_at": "2026-01-17T22:00:00Z",
+      "started_at": "2026-01-17T22:30:00Z",
+      "completed_at": "2026-01-17T22:35:00Z",
+      "resolution": "Fixed 33 IFNULL() occurrences across 8 PHP files. Replaced all MySQL-specific IFNULL(a,b) calls with PostgreSQL-compatible COALESCE(a,b). Files modified: farkleFriends.php (3 fixes), farkleLeaderboard.php (8 fixes), farkleGameFuncs.php (10 fixes), farklePageFuncs.php (1 fix), admin/farkle_report.php (1 fix), farkleCronHourly.php (1 fix), farkleTournament.php (7 fixes), includes/class.player.php (2 fixes). All queries now use PostgreSQL-compliant COALESCE() function."
+    },
+    {
+      "id": "bugfix-20260117-004",
+      "severity": "MEDIUM",
+      "category": "sql_error",
+      "summary": "MySQL DATEDIFF() function not available in PostgreSQL",
+      "error_details": {
+        "message": "ERROR: function datediff(timestamp with time zone, timestamp without time zone) does not exist",
+        "file": "Tournament-related PHP files",
+        "line": "Various",
+        "count": 10,
+        "context": "Tournament queries: datediff(now(),finishdate) as DaysSinceFinished"
+      },
+      "steps_to_fix": [
+        "Find all DATEDIFF() calls in codebase",
+        "Replace with PostgreSQL date arithmetic: EXTRACT(DAY FROM (now() - finishdate))",
+        "Or use: (CURRENT_DATE - finishdate::date) for integer days difference"
+      ],
+      "status": "completed",
+      "created_at": "2026-01-17T22:00:00Z",
+      "started_at": "2026-01-17T22:40:00Z",
+      "completed_at": "2026-01-17T22:42:00Z",
+      "resolution": "Fixed 1 DATEDIFF() occurrence in farkleTournament.php. Replaced MySQL-specific datediff(now(),finishdate) with PostgreSQL-compatible EXTRACT(DAY FROM (now() - finishdate)) in the GetActiveTournaments() function. This correctly calculates the integer number of days since tournament finished using PostgreSQL date arithmetic."
+    },
+    {
+      "id": "bugfix-20260117-005",
+      "severity": "MEDIUM",
+      "category": "sql_error",
+      "summary": "MySQL DATE_FORMAT() in unfixed files",
+      "error_details": {
+        "message": "ERROR: syntax error at or near \">\". Caused by DATE_FORMAT() remaining in some queries",
+        "file": "Various PHP files not yet migrated",
+        "line": "Various",
+        "count": 10,
+        "context": "Game queries with DATE_FORMAT(b.gamefinish,'%b %D') still using MySQL syntax"
+      },
+      "steps_to_fix": [
+        "Find remaining DATE_FORMAT() calls",
+        "Replace with TO_CHAR() using PostgreSQL format codes",
+        "DATE_FORMAT(date,'%b %D') becomes TO_CHAR(date,'Mon DD')"
+      ],
+      "status": "completed",
+      "created_at": "2026-01-17T22:00:00Z",
+      "started_at": "2026-01-17T22:45:00Z",
+      "completed_at": "2026-01-17T22:50:00Z",
+      "resolution": "Fixed 10 DATE_FORMAT() occurrences across 6 PHP files. Replaced all MySQL-specific DATE_FORMAT() calls with PostgreSQL-compatible TO_CHAR() using appropriate format strings. Format conversions: '%b %D' -> 'Mon DD', '%b %D, %Y' -> 'Mon DD, YYYY', '%b %D @ %l:00 %p' -> 'Mon DD @ HH12:00 AM', '%W, %M %e' -> 'Day, Mon DD', '%M %D, %Y' -> 'Mon DD, YYYY'. Files modified: includes/class.player.php (1 fix), farkleLeaderboard.php (1 fix), farkleGameFuncs.php (2 fixes), farkleAchievements.php (2 fixes), farkleTournament.php (3 fixes), farkleCronHourly.php (1 fix), admin/farkle_report.php (1 fix). All date formatting now uses PostgreSQL-compliant TO_CHAR() function."
+    },
+    {
+      "id": "bugfix-20260117-006",
+      "severity": "CRITICAL",
+      "category": "sql_error",
+      "summary": "MySQL ON DUPLICATE KEY UPDATE not supported in PostgreSQL",
+      "error_details": {
+        "message": "ERROR: syntax error at or near \"DUPLICATE\". MySQL's ON DUPLICATE KEY UPDATE syntax not supported in PostgreSQL",
+        "file": "farkleLogin.php",
+        "line": "Unknown",
+        "count": 2,
+        "context": "Session management - inserting/updating player device records during login"
+      },
+      "steps_to_fix": [
+        "Find all queries using ON DUPLICATE KEY UPDATE",
+        "Replace with PostgreSQL's ON CONFLICT ... DO UPDATE syntax",
+        "Requires specifying constraint or unique columns in ON CONFLICT clause",
+        "Example: ON CONFLICT (playerid, device) DO UPDATE SET ..."
+      ],
+      "status": "completed",
+      "created_at": "2026-01-17T22:25:00Z",
+      "started_at": "2026-01-17T23:00:00Z",
+      "completed_at": "2026-01-17T23:05:00Z",
+      "resolution": "Fixed 2 ON DUPLICATE KEY UPDATE occurrences in farkleLogin.php. Replaced MySQL-specific syntax with PostgreSQL's ON CONFLICT ... DO UPDATE syntax. Added unique constraint on (playerid, device) to farkle_players_devices table in migrate-schema.sql. Both queries now use: ON CONFLICT (playerid, device) DO UPDATE SET ... Fix locations: LoginGenerateSession() function (line 177) and AddDeviceToken() function (line 345). This ensures proper upsert behavior for player device/session tracking in PostgreSQL."
+    },
+    {
+      "id": "bugfix-20260117-007",
+      "severity": "HIGH",
+      "category": "sql_error",
+      "summary": "More boolean = integer comparisons in friend queries",
+      "error_details": {
+        "message": "ERROR: operator does not exist: boolean = integer. Columns active and removed comparing to integers",
+        "file": "farkleFriends.php",
+        "line": "Unknown",
+        "count": 2,
+        "context": "Friend list query: a.active=1 and b.removed=0"
+      },
+      "steps_to_fix": [
+        "Find queries with a.active=1 and b.removed=0",
+        "Replace with a.active=true and b.removed=false",
+        "Verify in farkleFriends.php"
+      ],
+      "status": "completed",
+      "created_at": "2026-01-17T23:30:00Z",
+      "started_at": "2026-01-17T23:40:00Z",
+      "completed_at": "2026-01-17T23:45:00Z",
+      "resolution": "Fixed 5 boolean comparison issues in farkleFriends.php. Replaced all integer comparisons with boolean literals: Line 67: removed=0 -> removed=false (UPDATE query), Line 105: removed=1 -> removed=true (UPDATE query), Line 109: removed value 1 -> true (INSERT query), Line 138: a.active=1 and b.removed=0 -> a.active=true and b.removed=false (GetGameFriends SELECT query), Line 171: a.active=1 -> a.active=true (commented GetFriends function). All friend-related queries now use PostgreSQL-compliant boolean comparisons."
+    },
+    {
+      "id": "bugfix-20260117-008",
+      "severity": "HIGH",
+      "category": "sql_error",
+      "summary": "PostgreSQL GROUP BY requires all non-aggregated columns",
+      "error_details": {
+        "message": "ERROR: column farkle_tournaments.finishdate must appear in the GROUP BY clause or be used in an aggregate function",
+        "file": "farkleTournament.php",
+        "line": "Unknown",
+        "count": 2,
+        "context": "Tournament query grouping by lobbyimage but selecting finishdate"
+      },
+      "steps_to_fix": [
+        "Find tournament query with GROUP BY lobbyimage",
+        "Add finishdate to GROUP BY clause or wrap in aggregate function",
+        "Use MAX(finishdate) if we want the most recent finish date per lobby image"
+      ],
+      "status": "pending",
+      "created_at": "2026-01-17T23:30:00Z",
+      "started_at": null,
+      "completed_at": null,
+      "resolution": null
+    },
+    {
+      "id": "bugfix-20260117-009",
+      "severity": "MEDIUM",
+      "category": "sql_error",
+      "summary": "MySQL UNIX_TIMESTAMP() not available in PostgreSQL",
+      "error_details": {
+        "message": "ERROR: function unix_timestamp(timestamp with time zone) does not exist",
+        "file": "Unknown",
+        "line": "Unknown",
+        "count": 1,
+        "context": "Query checking paramvalue <= UNIX_TIMESTAMP(NOW()) in siteinfo"
+      },
+      "steps_to_fix": [
+        "Find UNIX_TIMESTAMP() usage",
+        "Replace with EXTRACT(EPOCH FROM timestamp) for Unix timestamp",
+        "PostgreSQL: EXTRACT(EPOCH FROM NOW()) returns Unix timestamp as decimal"
+      ],
+      "status": "pending",
+      "created_at": "2026-01-17T23:30:00Z",
+      "started_at": null,
+      "completed_at": null,
+      "resolution": null
+    },
+    {
+      "id": "bugfix-20260117-010",
+      "severity": "MEDIUM",
+      "category": "sql_error",
+      "summary": "More LIMIT syntax issues in leaderboard queries",
+      "error_details": {
+        "message": "ERROR: LIMIT #,# syntax is not supported in leaderboard queries",
+        "file": "farkleLeaderboard.php",
+        "line": "Unknown",
+        "count": 3,
+        "context": "Leaderboard queries with LIMIT 0, 25"
+      },
+      "steps_to_fix": [
+        "Find LIMIT 0, 25 in farkleLeaderboard.php",
+        "Replace with LIMIT 25",
+        "Check for any other remaining LIMIT comma syntax"
+      ],
+      "status": "pending",
+      "created_at": "2026-01-17T23:30:00Z",
+      "started_at": null,
+      "completed_at": null,
+      "resolution": null
+    },
+    {
+      "id": "bugfix-20260117-011",
+      "severity": "HIGH",
+      "category": "sql_error",
+      "summary": "Column alias finishedplayers not available in ORDER BY subquery",
+      "error_details": {
+        "message": "ERROR: column finishedplayers does not exist in ORDER BY clause",
+        "file": "farklePageFuncs.php",
+        "line": "Unknown",
+        "count": 1,
+        "context": "Game list query trying to order by finishedplayers alias in outer ORDER BY but it's defined in subquery SELECT"
+      },
+      "steps_to_fix": [
+        "Find GetGames query with finishedplayers in ORDER BY",
+        "Move ORDER BY into the subquery or use different approach",
+        "In PostgreSQL, ORDER BY in outer query cannot reference columns from inner SELECT that aren't in outer SELECT"
+      ],
+      "status": "pending",
+      "created_at": "2026-01-17T23:30:00Z",
+      "started_at": null,
+      "completed_at": null,
+      "resolution": null
+    }
+  ]
+}

@@ -23,7 +23,7 @@ if( isset($_GET['test']) )
 		require_once('farkleGameFuncs.php'); 
 		require_once('farkleGameFuncs.php'); 
 		
-		$sql = "Select gameid, gamewith, maxturns from farkle_games where gamestart > NOW()-interval'20'hour LIMIT 1,2000";
+		$sql = "Select gameid, gamewith, maxturns from farkle_games where gamestart > NOW()-interval'20'hour LIMIT 2000 OFFSET 1";
 		$allGames = db_select_query( $sql, SQL_MULTI_ROW );
 		foreach( $allGames as $g )
 		{
@@ -88,13 +88,13 @@ function FinishStaleGames( $test=0 )
 	
 	//$sql = "select gameid, gamemode from farkle_games where winningplayer=0 and gamestart < NOW()-interval '1' month";
 	
-	$sql = "select gameid, gamemode, maxturns, whostarted, gamewith, gamestart, 
+	$sql = "select gameid, gamemode, maxturns, whostarted, gamewith, gamestart,
 		(select max(playerround) from farkle_games_players where gameid=a.gameid ) as maxround,
 		(select min(playerround) from farkle_games_players where gameid=a.gameid ) as minround,
 		(select count(*) from farkle_games_players where gameid=a.gameid ) as numplayers
 		from farkle_games a
-		where gameexpire < NOW() and winningplayer=0 
-		LIMIT 0,400";
+		where gameexpire < NOW() and winningplayer=0
+		LIMIT 400";
 	$oldGames = db_select_query( $sql, SQL_MULTI_ROW );
 	
 	// Don't send emails if it looks like we're about to spam. Some kind of pent-up mass update. 

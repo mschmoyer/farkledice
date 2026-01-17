@@ -1,0 +1,30 @@
+{
+  "name": "Farkle Ten",
+  "description": "Online multiplayer Farkle dice game",
+  "keywords": ["php", "game", "multiplayer", "dice"],
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini",
+      "as": "DATABASE"
+    },
+    {
+      "plan": "heroku-redis:mini",
+      "as": "REDIS"
+    }
+  ],
+  "env": {
+    "APP_ENV": {
+      "description": "Application environment",
+      "value": "production"
+    },
+    "SESSION_SECRET": {
+      "description": "Secret key for session encryption",
+      "generator": "secret"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/php"
+    }
+  ]
+}
