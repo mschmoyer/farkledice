@@ -32,7 +32,21 @@ CREATE TABLE IF NOT EXISTS farkle_players (
   xp INTEGER DEFAULT 0,
   wins INTEGER DEFAULT 0,
   losses INTEGER DEFAULT 0,
-  games_played INTEGER DEFAULT 0
+  games_played INTEGER DEFAULT 0,
+  cardcolor VARCHAR(100) DEFAULT 'green',
+  cardbg VARCHAR(100) DEFAULT NULL,
+  sendhourlyemails INTEGER DEFAULT 1,
+  random_selectable INTEGER DEFAULT 1,
+  totalpoints INTEGER DEFAULT 0,
+  highestround INTEGER DEFAULT 0,
+  farkles INTEGER DEFAULT 0,
+  prestige INTEGER DEFAULT 0,
+  titlelevel INTEGER DEFAULT 0,
+  level_acked INTEGER DEFAULT 0,
+  title VARCHAR(100) DEFAULT NULL,
+  avgscorepoints INTEGER DEFAULT 0,
+  roundsplayed INTEGER DEFAULT 0,
+  xp_to_level INTEGER DEFAULT 100
 );
 
 -- Create players devices table for session management
@@ -72,7 +86,8 @@ CREATE TABLE IF NOT EXISTS farkle_games (
   playerarray TEXT DEFAULT NULL,
   titleredeemed INTEGER DEFAULT 0,
   gameexpire TIMESTAMP DEFAULT NULL,
-  playerstring VARCHAR(255) DEFAULT NULL
+  playerstring VARCHAR(255) DEFAULT NULL,
+  gamefinish TIMESTAMP DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_whostarted ON farkle_games(whostarted);
