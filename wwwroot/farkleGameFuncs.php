@@ -351,8 +351,8 @@ function FarkleJoinRandomGame( $gameMode=GAME_MODE_10ROUND, $theRandomPlayers=2 
 		BaseUtil_Debug( __FUNCTION__ . ": LastRandomGame Session var = {$_SESSION['lastrandomgame']}", 1 );
 	}
 	
-	$potSize = GetRandomGamePotSize(); 
-	if( $potSize > 3 ) // Must be at least a small pot of different players to play against before joining
+	$potSize = GetRandomGamePotSize();
+	if( $potSize > 0 ) // Join any existing unfilled random game
 	{
 		//$newGameId = JoinAlreadyStartedRandomGame( $randomPlayers, $gameMode, $avoidPlayerid );
 		$newGameId = JoinAlreadyStartedRandomGame( $randomPlayers, $gameMode );
@@ -458,7 +458,7 @@ function JoinAlreadyStartedRandomGame( $randomPlayers, $gameMode=GAME_MODE_10ROU
 				and gamemode=$gameMode and gamestart > NOW() - interval '3' day
 				and a.gameid=b.gameid and b.playerid != {$_SESSION['playerid']}
 				$playersToAvoid
-				order by RAND() 
+				order by RANDOM() 
 				LIMIT 1";
 	$foundGameId = db_select_query( $sql, SQL_SINGLE_VALUE );	
 	

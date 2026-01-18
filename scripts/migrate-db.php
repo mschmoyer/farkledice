@@ -83,128 +83,145 @@ function get_db_connection() {
 
 $dbh = get_db_connection();
 
-// Read the SQL file
-$sql_file = 'docker/init.sql';
-if (!file_exists($sql_file)) {
-	die("ERROR: SQL file not found: {$sql_file}\n");
-}
-
-echo "Reading SQL file: {$sql_file}\n";
-$sql_content = file_get_contents($sql_file);
-if ($sql_content === false) {
-	die("ERROR: Failed to read SQL file\n");
-}
-
-echo "SQL file loaded successfully (" . strlen($sql_content) . " bytes)\n\n";
-
-echo "Database connection ready\n\n";
-
-// Split SQL into individual statements
-// We need to be careful with multi-line statements and comments
-echo "Parsing SQL statements...\n";
-$statements = [];
-$current_statement = '';
-$lines = explode("\n", $sql_content);
-
-foreach ($lines as $line) {
-	// Remove inline comments (anything after -- on a line)
-	$comment_pos = strpos($line, '--');
-	if ($comment_pos !== false) {
-		$line = substr($line, 0, $comment_pos);
+// Function to execute SQL file
+function execute_sql_file($dbh, $sql_file) {
+	if (!file_exists($sql_file)) {
+		echo "WARNING: SQL file not found: {$sql_file}\n";
+		return ['success' => 0, 'errors' => 0];
 	}
 
-	$line = trim($line);
-
-	// Skip empty lines
-	if (empty($line)) {
-		continue;
+	echo "\nReading SQL file: {$sql_file}\n";
+	$sql_content = file_get_contents($sql_file);
+	if ($sql_content === false) {
+		echo "ERROR: Failed to read SQL file\n";
+		return ['success' => 0, 'errors' => 1];
 	}
 
-	// Add line to current statement
-	$current_statement .= $line . ' ';
+	echo "SQL file loaded successfully (" . strlen($sql_content) . " bytes)\n";
 
-	// Check if statement is complete (ends with semicolon)
-	if (substr(rtrim($line), -1) === ';') {
-		$statements[] = trim($current_statement);
-		$current_statement = '';
-	}
-}
+	// We need to be careful with multi-line statements and comments
+	echo "Parsing SQL statements...\n";
+	$statements = [];
+	$current_statement = '';
+	$lines = explode("\n", $sql_content);
 
-// Add any remaining statement
-if (!empty(trim($current_statement))) {
-	$statements[] = trim($current_statement);
-}
+	foreach ($lines as $line) {
+		// Remove inline comments (anything after -- on a line)
+		$comment_pos = strpos($line, '--');
+		if ($comment_pos !== false) {
+			$line = substr($line, 0, $comment_pos);
+		}
 
-echo "Found " . count($statements) . " SQL statements\n\n";
+		$line = trim($line);
 
-// Execute statements
-$success_count = 0;
-$error_count = 0;
+		// Skip empty lines
+		if (empty($line)) {
+			continue;
+		}
 
-echo "Executing SQL statements...\n";
-echo "----------------------------------------\n";
+		// Add line to current statement
+		$current_statement .= $line . ' ';
 
-foreach ($statements as $index => $statement) {
-	$statement_num = $index + 1;
-
-	// Determine statement type for better output
-	$statement_type = 'UNKNOWN';
-	if (stripos($statement, 'CREATE TABLE') !== false) {
-		preg_match('/CREATE TABLE.*?(\w+)\s*\(/i', $statement, $matches);
-		$statement_type = 'CREATE TABLE ' . ($matches[1] ?? '');
-	} elseif (stripos($statement, 'CREATE INDEX') !== false) {
-		preg_match('/CREATE INDEX.*?(\w+)/i', $statement, $matches);
-		$statement_type = 'CREATE INDEX ' . ($matches[1] ?? '');
-	} elseif (stripos($statement, 'CREATE TYPE') !== false) {
-		preg_match('/CREATE TYPE\s+(\w+)/i', $statement, $matches);
-		$statement_type = 'CREATE TYPE ' . ($matches[1] ?? '');
-	} elseif (stripos($statement, 'INSERT INTO') !== false) {
-		preg_match('/INSERT INTO\s+(\w+)/i', $statement, $matches);
-		$statement_type = 'INSERT INTO ' . ($matches[1] ?? '');
-	}
-
-	echo "[{$statement_num}/" . count($statements) . "] {$statement_type}... ";
-
-	try {
-		$dbh->exec($statement);
-		echo "OK\n";
-		$success_count++;
-	} catch (PDOException $e) {
-		$error_msg = $e->getMessage();
-
-		// Check if error is benign (e.g., "already exists")
-		if (stripos($error_msg, 'already exists') !== false) {
-			echo "SKIPPED (already exists)\n";
-			$success_count++;
-		} elseif (stripos($error_msg, 'duplicate key') !== false) {
-			echo "SKIPPED (duplicate)\n";
-			$success_count++;
-		} else {
-			echo "FAILED\n";
-			echo "   Error: " . $error_msg . "\n";
-			$error_count++;
-
-			// Show first 100 chars of statement for debugging
-			$preview = substr($statement, 0, 100);
-			if (strlen($statement) > 100) {
-				$preview .= '...';
-			}
-			echo "   Statement: " . $preview . "\n";
+		// Check if statement is complete (ends with semicolon)
+		if (substr(rtrim($line), -1) === ';') {
+			$statements[] = trim($current_statement);
+			$current_statement = '';
 		}
 	}
+
+	// Add any remaining statement
+	if (!empty(trim($current_statement))) {
+		$statements[] = trim($current_statement);
+	}
+
+	echo "Found " . count($statements) . " SQL statements\n";
+
+	// Execute statements
+	$success_count = 0;
+	$error_count = 0;
+
+	echo "Executing SQL statements...\n";
+	echo "----------------------------------------\n";
+
+	foreach ($statements as $index => $statement) {
+		$statement_num = $index + 1;
+
+		// Determine statement type for better output
+		$statement_type = 'UNKNOWN';
+		if (stripos($statement, 'CREATE TABLE') !== false) {
+			preg_match('/CREATE TABLE.*?(\w+)\s*\(/i', $statement, $matches);
+			$statement_type = 'CREATE TABLE ' . ($matches[1] ?? '');
+		} elseif (stripos($statement, 'CREATE INDEX') !== false) {
+			preg_match('/CREATE INDEX.*?(\w+)/i', $statement, $matches);
+			$statement_type = 'CREATE INDEX ' . ($matches[1] ?? '');
+		} elseif (stripos($statement, 'CREATE TYPE') !== false) {
+			preg_match('/CREATE TYPE\s+(\w+)/i', $statement, $matches);
+			$statement_type = 'CREATE TYPE ' . ($matches[1] ?? '');
+		} elseif (stripos($statement, 'INSERT INTO') !== false) {
+			preg_match('/INSERT INTO\s+(\w+)/i', $statement, $matches);
+			$statement_type = 'INSERT INTO ' . ($matches[1] ?? '');
+		} elseif (stripos($statement, 'ALTER TABLE') !== false) {
+			preg_match('/ALTER TABLE\s+(\w+)/i', $statement, $matches);
+			$statement_type = 'ALTER TABLE ' . ($matches[1] ?? '');
+		} elseif (stripos($statement, 'DO $$') !== false) {
+			$statement_type = 'DO BLOCK (migration)';
+		}
+
+		echo "[{$statement_num}/" . count($statements) . "] {$statement_type}... ";
+
+		try {
+			$dbh->exec($statement);
+			echo "OK\n";
+			$success_count++;
+		} catch (PDOException $e) {
+			$error_msg = $e->getMessage();
+
+			// Check if error is benign (e.g., "already exists")
+			if (stripos($error_msg, 'already exists') !== false) {
+				echo "SKIPPED (already exists)\n";
+				$success_count++;
+			} elseif (stripos($error_msg, 'duplicate key') !== false) {
+				echo "SKIPPED (duplicate)\n";
+				$success_count++;
+			} else {
+				echo "FAILED\n";
+				echo "   Error: " . $error_msg . "\n";
+				$error_count++;
+
+				// Show first 100 chars of statement for debugging
+				$preview = substr($statement, 0, 100);
+				if (strlen($statement) > 100) {
+					$preview .= '...';
+				}
+				echo "   Statement: " . $preview . "\n";
+			}
+		}
+	}
+
+	echo "----------------------------------------\n";
+
+	return ['success' => $success_count, 'errors' => $error_count];
 }
 
-echo "----------------------------------------\n\n";
+// Execute main schema file
+echo "Step 1: Executing base schema (init.sql)\n";
+$result1 = execute_sql_file($dbh, 'docker/init.sql');
+
+// Execute migration file
+echo "\nStep 2: Executing schema migrations (migrate-schema.sql)\n";
+$result2 = execute_sql_file($dbh, 'docker/migrate-schema.sql');
 
 // Summary
-echo "========================================\n";
+$total_success = $result1['success'] + $result2['success'];
+$total_errors = $result1['errors'] + $result2['errors'];
+
+echo "\n========================================\n";
 echo "Migration Summary\n";
 echo "========================================\n";
-echo "Total statements: " . count($statements) . "\n";
-echo "Successful: {$success_count}\n";
-echo "Errors: {$error_count}\n\n";
+echo "Successful statements: {$total_success}\n";
+echo "Errors: {$total_errors}\n\n";
 
-if ($error_count === 0) {
+if ($total_errors === 0) {
 	echo "Migration completed successfully!\n";
 	exit(0);
 } else {

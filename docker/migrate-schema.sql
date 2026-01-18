@@ -276,8 +276,9 @@ CREATE TABLE IF NOT EXISTS siteinfo (
 -- Insert default siteinfo values
 INSERT INTO siteinfo (paramid, paramname, paramvalue) VALUES
   (1, 'last_leaderboard_refresh', '0'),
+  (2, 'last_daily_leaderboard_refresh', '0'),
   (3, 'day_of_week', 'Monday'),
-  (4, 'double_xp_flag', '0')
+  (4, 'last_cleanup', '0')
 ON CONFLICT (paramid) DO NOTHING;
 
 -- Create backup tables for prestige feature
