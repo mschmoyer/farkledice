@@ -23,8 +23,9 @@
     {
       "id": "feature-20260118-001",
       "title": "Admin Player Management with Re-Invite System",
-      "status": "in_progress",
-      "created_at": "2026-01-18T12:00:00Z"
+      "status": "completed",
+      "created_at": "2026-01-18T12:00:00Z",
+      "completed_at": "2026-01-18T14:00:00Z"
     }
   ]
 }
