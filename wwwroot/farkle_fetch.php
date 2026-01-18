@@ -7,6 +7,9 @@
 	require_once('dbutil.php');
 	require_once('farkleLogin.php');
 	require_once('farkleBackgroundTasks.php');
+	require_once('farkleBotTurn.php');
+	require_once('farkleBotAI.php');
+	require_once('farkleBotMessages.php');
 
 	BaseUtil_Debug( "Entered farkle_fetch.php", 7 );
 	//include_once("analyticstracking.php");
@@ -98,13 +101,105 @@
 				
 				// Tournament Commands
 				else if( $p['action'] == 'gettournamentinfo' ) 	$rc = GetTournamentStatus( $p['tid'], $p['playerid'] );
-				else if( $p['action'] == 'addplayertotourney' ) $rc = AddPlayerToTournament( $p['tid'], $p['playerid'] );	
-				else if( $p['action'] == 't_removeplayer' ) 	$rc = RemovePlayerFromTournament( $p['tid'], $p['playerid'] );	
-				
+				else if( $p['action'] == 'addplayertotourney' ) $rc = AddPlayerToTournament( $p['tid'], $p['playerid'] );
+				else if( $p['action'] == 't_removeplayer' ) 	$rc = RemovePlayerFromTournament( $p['tid'], $p['playerid'] );
+
+				// Bot Player Commands
+				else if( $p['action'] == 'startbotgame' )
+				{
+					// Validate algorithm parameter
+					$algorithm = $_POST['algorithm'] ?? null;
+					if (!in_array($algorithm, ['easy', 'medium', 'hard'])) {
+						$rc = Array('Error' => 'Invalid bot difficulty. Choose easy, medium, or hard.');
+					} else {
+						// Select random bot with matching algorithm
+						$sql = "SELECT playerid, username FROM farkle_players
+						        WHERE is_bot = TRUE AND bot_algorithm = :algorithm
+						        ORDER BY RANDOM() LIMIT 1";
+						$dbh = db_connect();
+						$stmt = $dbh->prepare($sql);
+						$stmt->execute([':algorithm' => $algorithm]);
+						$botPlayer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+						if (!$botPlayer) {
+							$rc = Array('Error' => 'No bot available for this difficulty.');
+						} else {
+							// Create 1v1 game (10-round mode)
+							$players = json_encode([$_SESSION['playerid'], $botPlayer['playerid']]);
+							$gameResult = FarkleNewGame($players, 0, 10000, GAME_WITH_FRIENDS, GAME_MODE_10ROUND, false, 2);
+
+							if (isset($gameResult['Error'])) {
+								$rc = $gameResult;
+							} else if (isset($gameResult['gameid'])) {
+								// Set bot play mode to interactive
+								$sql = "UPDATE farkle_games SET bot_play_mode = 'interactive' WHERE gameid = :gameid";
+								$stmt = $dbh->prepare($sql);
+								$stmt->execute([':gameid' => $gameResult['gameid']]);
+
+								// Return game info
+								$rc = Array(
+									'gameid' => $gameResult['gameid'],
+									'botname' => $botPlayer['username'],
+									'Error' => null
+								);
+							} else {
+								$rc = Array('Error' => 'Failed to create bot game.');
+							}
+						}
+					}
+				}
+				else if( $p['action'] == 'getbotstatus' )
+				{
+					$gameId = intval($_POST['gameid'] ?? 0);
+					$botPlayerId = intval($_POST['botplayerid'] ?? 0);
+
+					if ($gameId <= 0 || $botPlayerId <= 0) {
+						$rc = Array('Error' => 'Invalid game or player ID.');
+					} else {
+						// Get current bot turn state
+						$state = Bot_GetTurnState($gameId, $botPlayerId);
+
+						if ($state) {
+							$rc = Array(
+								'stateid' => $state['stateid'],
+								'current_step' => $state['current_step'],
+								'dice_kept' => $state['dice_kept'],
+								'turn_score' => $state['turn_score'],
+								'dice_remaining' => $state['dice_remaining'],
+								'last_roll' => $state['last_roll'],
+								'last_message' => $state['last_message'],
+								'Error' => null
+							);
+						} else {
+							$rc = Array('Error' => 'No turn state found for this bot.');
+						}
+					}
+				}
+				else if( $p['action'] == 'executebotstep' )
+				{
+					$gameId = intval($_POST['gameid'] ?? 0);
+					$botPlayerId = intval($_POST['botplayerid'] ?? 0);
+
+					if ($gameId <= 0 || $botPlayerId <= 0) {
+						$rc = Array('Error' => 'Invalid game or player ID.');
+					} else {
+						// Execute next step in bot's turn
+						$result = Bot_ExecuteStep($gameId, $botPlayerId);
+
+						if (isset($result['error'])) {
+							$rc = Array('Error' => $result['error']);
+						} else {
+							// Return step result
+							$rc = $result;
+							$rc['Error'] = null;
+						}
+					}
+				}
+
 				//else if( $p['action'] == 'sendreminder' )		$rc = SendReminder( $p['gameid'] );
 				//else if( $p['action'] == 'redeemtitle' )		$rc = RedeemTitle( $_SESSION['playerid'], $p['gameid'], $p['choice'], $p['titlevalue'] );
 				//else if( $p['action'] == 'prestige' ) 		$rc = PlayerPrestige( $p['playerid'] );
-				
+
 				else
 				{
 					// Unknown action

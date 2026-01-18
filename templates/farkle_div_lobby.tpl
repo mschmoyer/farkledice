@@ -62,6 +62,7 @@
 			</tr></td>*}
 						
 			<tr><td><input type="button" class="mobileButton lobbybutton" value="New Game" 		onClick="ShowNewGame()" 		id="btnLobbyNewGame"></td></tr>
+			<tr><td><input type="button" class="mobileButton lobbybutton btn-bot-game" value="🤖 Play a Bot" onClick="showBotGameModal()" id="btnLobbyPlayBot"></td></tr>
 			<tr><td><input type="button" class="mobileButton lobbybutton" buttoncolor="blue" 	value="Tournament" 				id="btnLobbyTournament"></td></tr>
 			{*<tr><td><input type="button" class="mobileButton lobbybutton" value="Register" 	onClick="ShowRegister()" 		id="btnLobbyRegister" ></td></tr>*}
 			<tr><td><input type="button" class="mobileButton lobbybutton" value="My Profile" 	onClick="ShowMyPlayerInfo()" 	id="btnLobbyMyProfile"></td></tr>

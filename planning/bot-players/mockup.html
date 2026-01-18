@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Player UI Mockup - Farkle Dice</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Bot Selection Modal */
+        .bot-select-modal {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+        }
+
+        .bot-select-modal h2 {
+            color: #333;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .bot-option {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .bot-option:hover {
+            border-color: #2196f3;
+            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .bot-option h3 {
+            margin: 0 0 8px 0;
+            font-size: 18px;
+        }
+
+        .bot-option p {
+            margin: 0 0 4px 0;
+            color: #666;
+        }
+
+        .bot-option small {
+            color: #999;
+            font-size: 12px;
+        }
+
+        /* Game Board */
+        .game-board {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .scoreboard {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .player-score {
+            background: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .player-score.bot-player {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+
+        .player-score.bot-player::after {
+            content: " 🤖";
+        }
+
+        .player-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .player-points {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* Bot Chat Area */
+        .bot-chat-container {
+            background-color: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 20px 0;
+        }
+
+        .bot-chat-header {
+            font-weight: bold;
+            color: #1976d2;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .bot-chat-messages {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .bot-message {
+            background-color: white;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin: 6px 0;
+            font-size: 13px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .bot-message-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .bot-message-text {
+            flex-grow: 1;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        /* Dice Display */
+        .dice-area {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .die {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            line-height: 50px;
+            text-align: center;
+            background: white;
+            border: 3px solid #333;
+            border-radius: 8px;
+            margin: 6px;
+            font-size: 28px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .die.kept {
+            background: #4caf50;
+            color: white;
+            border-color: #2e7d32;
+        }
+
+        @keyframes shakeDice {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(-5px) rotate(-5deg); }
+            50% { transform: translateY(-5px) rotate(5deg); }
+            75% { transform: translateX(5px) rotate(-5deg); }
+        }
+
+        .dice-rolling .die {
+            animation: shakeDice 0.5s ease-in-out;
+        }
+
+        /* Bot Status */
+        .bot-status {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 12px 0;
+            text-align: center;
+            font-weight: bold;
+            color: #856404;
+        }
+
+        .bot-status i {
+            margin-right: 8px;
+        }
+
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 8px 4px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #fafafa;
+            border-radius: 8px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 16px;
+            font-size: 20px;
+        }
+
+        /* Icons */
+        .fa {
+            font-style: normal;
+        }
+
+        .fa-robot::before { content: "🤖 "; }
+        .fa-dice::before { content: "🎲 "; }
+        .fa-check-circle::before { content: "✅ "; }
+        .fa-times-circle::before { content: "❌ "; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎲 Bot Player UI Mockup</h1>
+
+        <!-- Section 1: Bot Selection Modal -->
+        <div class="section">
+            <h2>1. Bot Selection (Lobby)</h2>
+            <div class="bot-select-modal">
+                <h2>Play Against a Bot</h2>
+                <p style="text-align: center; color: #666; margin-bottom: 20px;">Choose your opponent's difficulty:</p>
+
+                <div class="bot-option">
+                    <h3>🟢 Easy</h3>
+                    <p>Friendly and makes mistakes - great for learning!</p>
+                    <small>Bots: Byte, Chip, Beep</small>
+                </div>
+
+                <div class="bot-option">
+                    <h3>🟡 Medium</h3>
+                    <p>Solid tactical play with strategic thinking</p>
+                    <small>Bots: Cyber, Logic, Binary</small>
+                </div>
+
+                <div class="bot-option">
+                    <h3>🔴 Hard</h3>
+                    <p>Advanced AI with optimal decision-making</p>
+                    <small>Bots: Neural, Quantum, Apex</small>
+                </div>
+
+                <div style="text-align: center; margin-top: 16px;">
+                    <button class="btn">Start Game</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Game Board with Bot Chat -->
+        <div class="section">
+            <h2>2. Interactive Bot Game</h2>
+
+            <!-- Scoreboard -->
+            <div class="scoreboard">
+                <div class="player-score">
+                    <div class="player-name">testuser</div>
+                    <div class="player-points">Score: 2,450</div>
+                    <div class="player-points">Round 5/10</div>
+                </div>
+
+                <div class="player-score bot-player">
+                    <div class="player-name">Cyber the Tactical Bot</div>
+                    <div class="player-points">Score: 2,800</div>
+                    <div class="player-points">Level 5</div>
+                </div>
+            </div>
+
+            <!-- Bot Chat Messages -->
+            <div class="bot-chat-container">
+                <div class="bot-chat-header">
+                    <i class="fa fa-robot"></i> Bot Commentary
+                </div>
+                <div class="bot-chat-messages">
+                    <div class="bot-message">
+                        <span class="bot-message-icon">🤖</span>
+                        <span class="bot-message-text">Greetings testuser. Let's have a strategic game.</span>
+                    </div>
+                    <div class="bot-message">
+                        <span class="bot-message-icon">🤖</span>
+                        <span class="bot-message-text">Keeping two 1s for 200 points - best ratio here.</span>
+                    </div>
+                    <div class="bot-message">
+                        <span class="bot-message-icon">🤖</span>
+                        <span class="bot-message-text">Rolling again - 15.4% farkle risk is acceptable.</span>
+                    </div>
+                    <div class="bot-message">
+                        <span class="bot-message-icon">🤖</span>
+                        <span class="bot-message-text">Farkled. That was within the 15.4% probability. 😐</span>
+                    </div>
+                    <div class="bot-message">
+                        <span class="bot-message-icon">🤖</span>
+                        <span class="bot-message-text">You're ahead by 350 points, testuser! Time to adjust my strategy.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bot Status -->
+            <div class="bot-status">
+                <i class="fa fa-dice"></i> Cyber is rolling 4 dice...
+            </div>
+
+            <!-- Dice Display -->
+            <div class="dice-area">
+                <div style="text-align: center; margin-bottom: 10px; font-weight: bold;">
+                    Rolled:
+                </div>
+                <div style="text-align: center;">
+                    <span class="die">1</span>
+                    <span class="die">1</span>
+                    <span class="die kept">5</span>
+                    <span class="die">3</span>
+                    <span class="die">4</span>
+                    <span class="die">6</span>
+                </div>
+                <div style="text-align: center; margin-top: 12px; color: #666; font-size: 14px;">
+                    Kept: 5 (50 pts) • Turn Score: 250
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Different Bot Personalities -->
+        <div class="section">
+            <h2>3. Bot Personality Examples</h2>
+
+            <div style="margin: 12px 0;">
+                <strong>Easy Bot (Byte):</strong>
+                <div class="bot-message" style="margin-top: 6px;">
+                    <span class="bot-message-icon">🤖</span>
+                    <span class="bot-message-text">I just scored 200 points, testuser! How bout them apples? 🎲</span>
+                </div>
+                <div class="bot-message">
+                    <span class="bot-message-icon">🤖</span>
+                    <span class="bot-message-text">Uh oh, only 1 round left! Better go hard! 😤</span>
+                </div>
+            </div>
+
+            <div style="margin: 12px 0;">
+                <strong>Medium Bot (Logic):</strong>
+                <div class="bot-message" style="margin-top: 6px;">
+                    <span class="bot-message-icon">🤖</span>
+                    <span class="bot-message-text">Round 9 of 10. Endgame strategy engaged.</span>
+                </div>
+                <div class="bot-message">
+                    <span class="bot-message-icon">🤖</span>
+                    <span class="bot-message-text">Behind by 150 points. Increasing aggression accordingly.</span>
+                </div>
+            </div>
+
+            <div style="margin: 12px 0;">
+                <strong>Hard Bot (Neural):</strong>
+                <div class="bot-message" style="margin-top: 6px;">
+                    <span class="bot-message-icon">🤖</span>
+                    <span class="bot-message-text">Your 450 points was decent, testuser. But I've calculated the optimal counter-strategy.</span>
+                </div>
+                <div class="bot-message">
+                    <span class="bot-message-icon">🤖</span>
+                    <span class="bot-message-text">Victory achieved. 6,840 to 6,215. As calculated.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Mobile View -->
+        <div class="section">
+            <h2>4. Key Features</h2>
+            <ul style="line-height: 1.8; color: #333;">
+                <li>✅ <strong>Dynamic Variables:</strong> Messages use $player_username, $bot_last_keep_score, $round, etc.</li>
+                <li>✅ <strong>Introduction Messages:</strong> Bot greets player at game start</li>
+                <li>✅ <strong>Conclusion Messages:</strong> Bot comments on final result with scores</li>
+                <li>✅ <strong>Last 5 Messages:</strong> Chat area shows recent commentary</li>
+                <li>✅ <strong>Auto-Scroll:</strong> Newest messages appear at bottom</li>
+                <li>✅ <strong>Personality-Driven:</strong> Each bot has distinct tone and vocabulary</li>
+                <li>✅ <strong>Context-Aware:</strong> References current game state (lead, round, player actions)</li>
+                <li>✅ <strong>Smooth Animations:</strong> Dice rolling, message sliding</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; padding: 20px; color: #666;">
+            <p><strong>UI Mockup</strong> - Bot Player Feature</p>
+            <p style="font-size: 12px; margin-top: 8px;">
+                This mockup demonstrates the bot selection modal, interactive gameplay with chat, and different bot personalities.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

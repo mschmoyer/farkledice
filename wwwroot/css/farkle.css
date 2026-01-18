@@ -892,3 +892,88 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a3a3a3', end
 		width: 220px;
 	}
 }
+
+/* Bot Game Selection Modal */
+.bot-select-modal {
+	background: white;
+	border-radius: 12px;
+	padding: 24px;
+	max-width: 500px;
+	width: 90%;
+	max-height: 90vh;
+	overflow-y: auto;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.bot-select-modal h2 {
+	color: #333;
+	margin: 0 0 16px 0;
+	text-align: center;
+	font-size: 24px;
+}
+
+.bot-select-modal p {
+	color: #666;
+	margin: 0 0 20px 0;
+	text-align: center;
+}
+
+.bot-option {
+	background: white;
+	border: 2px solid #e0e0e0;
+	border-radius: 8px;
+	padding: 16px;
+	margin: 12px 0;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.bot-option:hover {
+	border-color: #2196f3;
+	box-shadow: 0 4px 8px rgba(33, 150, 243, 0.2);
+	transform: translateY(-2px);
+}
+
+.bot-option h3 {
+	margin: 0 0 8px 0;
+	font-size: 18px;
+	color: #333;
+}
+
+.bot-option p {
+	margin: 0 0 4px 0;
+	color: #666;
+	font-size: 14px;
+	text-align: left;
+}
+
+.bot-option small {
+	color: #999;
+	font-size: 12px;
+}
+
+/* Bot Button Styling */
+.btn-bot-game {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+	color: white !important;
+}
+
+/* Mobile responsiveness for bot modal */
+@media (max-width: 600px) {
+	.bot-select-modal {
+		padding: 16px;
+		width: 95%;
+	}
+
+	.bot-select-modal h2 {
+		font-size: 20px;
+	}
+
+	.bot-option {
+		padding: 12px;
+	}
+
+	.bot-option h3 {
+		font-size: 16px;
+	}
+}
