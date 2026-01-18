@@ -245,11 +245,11 @@ function EndLastTournamentRound( $tid, $lastRound )
 
 function CheckTournaments( )
 {
-	// Check to see if any tournaments are due for a round end. Run in the Cron job. 
-	$sql = "select tournamentid, roundnum, roundstartdate, NOW() + INTERVAL roundhours HOUR, roundhours, 
-		(NOW()-(roundstartdate + INTERVAL roundhours HOUR)) as timedelta,
-		 (select min(winningplayer) 
-			from farkle_games b, farkle_tournaments_games c 
+	// Check to see if any tournaments are due for a round end. Run in the Cron job.
+	$sql = "select tournamentid, roundnum, roundstartdate, NOW() + (roundhours || ' HOURS')::INTERVAL, roundhours,
+		(NOW()-(roundstartdate + (roundhours || ' HOURS')::INTERVAL)) as timedelta,
+		 (select min(winningplayer)
+			from farkle_games b, farkle_tournaments_games c
 			where b.gameid=c.gameid and c.tournamentid=a.tournamentid) as lowestWinnerId
 		from farkle_tournaments a
 		where winningplayer=0 and roundnum > 0";

@@ -10,7 +10,7 @@ Farkle Ten is an online multiplayer dice game written in PHP and JavaScript. The
 - Social features: friend system, leaderboards, achievements, and tournaments
 - Mobile and tablet support with responsive design
 
-Live site: www.farkledice.com
+Live site: https://www.farkledice.com
 
 ## Local Development with Docker
 
