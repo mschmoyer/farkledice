@@ -117,6 +117,12 @@
     Deny from all
 </FilesMatch>
 
+# Block test files from production
+<FilesMatch "^test_.*\.php$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
 # Directory browsing
 Options -Indexes
 
