@@ -24,6 +24,40 @@ Access at http://localhost:8080 (see DOCKER.md for full instructions)
 
 Test credentials: `testuser` / `test123`
 
+## Heroku Production Environment
+
+**App:** `farkledice` | **URL:** https://farkledice-03baf34d5c97.herokuapp.com/
+
+**Quick Commands:**
+```bash
+# Deploy changes
+git push heroku modernization/phase-1:main
+
+# View logs (real-time)
+heroku logs --tail -a farkledice
+
+# Access database
+heroku pg:psql -a farkledice
+
+# Run migration script
+heroku run php scripts/migrate-db.php -a farkledice
+
+# Restart app
+heroku restart -a farkledice
+```
+
+**Database:**
+- PostgreSQL Essential-0 (~$5/month)
+- Sessions stored in database (`farkle_sessions` table)
+- DATABASE_URL env var auto-configured
+
+**Key Differences from Local:**
+- Smarty templates compile to `/tmp/smarty/` (ephemeral filesystem)
+- Database credentials via `DATABASE_URL` environment variable
+- HTTPS enforced via `.htaccess`
+
+See `HEROKU.md` for complete deployment guide.
+
 ## Feature Development
 
 Use the orchestrator for structured feature development:
@@ -49,8 +83,9 @@ The backend follows a classic PHP architecture with Smarty templating:
 
 **Core Infrastructure:**
 - `includes/baseutil.php` - Core utilities, session management, Smarty initialization, mobile/tablet detection
-- `includes/dbutil.php` - Database abstraction layer using deprecated mysql_* functions
-- `includes/farkleconfig.class.php` - Configuration management via `../configs/siteconfig.ini`
+- `includes/dbutil.php` - Database abstraction layer using PDO with PostgreSQL
+- `includes/session-handler.php` - Database-backed session handler for Heroku
+- `includes/farkleconfig.class.php` - Configuration management (supports DATABASE_URL, env vars, or config file)
 
 **Game Logic:**
 - `wwwroot/farkleGameFuncs.php` - Main game functions (create games, manage turns, validate moves)
@@ -113,14 +148,23 @@ Templates are in `templates/` directory:
 
 ### Database
 
-Database connection configured via:
-- Database: `mikeschm_db`
-- Config file: `../configs/siteconfig.ini`
-- Connection: `db_connect()` in `dbutil.php`
+**PostgreSQL 16** (migrated from MySQL)
+- Connection: `db_connect()` in `dbutil.php` using PDO
+- Local: Config from `../configs/siteconfig.ini` or env vars (DB_HOST, DB_USER, etc.)
+- Heroku: Auto-configured via `DATABASE_URL` environment variable
 
-Key tables (based on code):
+**Key tables:**
+- `farkle_players` - User accounts and profiles
+- `farkle_players_devices` - Session/device tracking
+- `farkle_sessions` - Database-backed PHP sessions
 - `farkle_games` - Game instances
 - `farkle_games_players` - Player participation in games
+- `farkle_achievements` - Achievement definitions
+- `farkle_player_achievements` - Player achievement unlocks
+- `farkle_friends` - Friend relationships
+- `farkle_tournaments` - Tournament data
+
+Schema: `docker/init.sql` | Migration: `scripts/migrate-db.php`
 
 ### Game Constants
 
@@ -162,7 +206,9 @@ Automatic user agent detection in `baseutil.php`:
 
 ## Important Notes
 
-- This codebase uses deprecated `mysql_*` functions (replaced by mysqli/PDO in modern PHP)
-- Working directory changes to `wwwroot/` on initialization via `baseutil.php`
-- Templates use Smarty engine with compiled templates in `../backbone/templates_c/`
-- Entry point `index.php` redirects to `wwwroot/farkle.php`
+- **Modernized:** Uses PDO with PostgreSQL (migrated from deprecated mysql_* functions)
+- **Composer:** Uses Smarty 4.5 via Composer (vendor/autoload.php)
+- **Working directory:** Changes to `wwwroot/` on initialization via `baseutil.php`
+- **Template compilation:** Local uses `../backbone/templates_c/`, Heroku uses `/tmp/smarty/`
+- **Entry point:** `index.php` redirects to `wwwroot/farkle.php`
+- **Sessions:** Database-backed (not file-based) for Heroku compatibility
