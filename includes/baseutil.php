@@ -91,7 +91,7 @@
 
 	// Load Smarty via Composer autoloader
 	require_once($dir . '/vendor/autoload.php');
-	$smarty = new Smarty\Smarty();
+	$smarty = new Smarty();
 
 	$smarty->template_dir = $dir . "/templates/$curfolder";
 	BaseUtil_Debug( "Template_dir = " . (is_array($smarty->template_dir) ? print_r($smarty->template_dir, true) : $smarty->template_dir), 31 );
