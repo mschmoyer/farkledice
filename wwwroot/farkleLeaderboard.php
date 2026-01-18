@@ -249,8 +249,9 @@ function Leaderboard_RefreshData( $force = false )
 	// PostgreSQL: No need for @rank user variable - use ROW_NUMBER() instead
 	$sql = "select t1.*, ROW_NUMBER() OVER () AS lbrank from
 		(select 4 as lbindex, playerid, COALESCE(fullname, username) as username, playerlevel,
-		0 as first_int, 0 as second_int, TO_CHAR(highest10Round,'FM999999990') as first_string, null as second_string
+		highest10Round as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players
+		where highest10Round IS NOT NULL
 		order by farkle_players.highest10Round desc $limitClause) t1";
 	$insert_sql = "insert into farkle_lbdata ($sql)";
 	$result = db_command($insert_sql);	
@@ -280,10 +281,10 @@ function Leaderboard_RefreshDaily()
 	$sql = "delete from farkle_lbdata where lbindex in (0,1,2)";
 	$result = db_command($sql);	
 
-	// Update the day of week. 
-	$sql = "update siteinfo set paramvalue=TO_CHAR(NOW()-interval'1'day, 'Day, Mon DD') where paramid=3";
-	$result = db_command($sql);	
-	
+	// Update the day of week.
+	$sql = "update siteinfo set paramvalue=TO_CHAR(NOW(), 'Day, Mon DD') where paramid=3";
+	$result = db_command($sql);
+
 	// Today Stats
 	// Highest game scores today
 	// PostgreSQL: No need for @rank user variable - use ROW_NUMBER() instead
@@ -291,24 +292,24 @@ function Leaderboard_RefreshDaily()
 		(select 0 as lbindex, a.playerid, COALESCE(fullname, username) as username, playerlevel,
 		playerscore as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players a, farkle_games_players b
-		where a.playerid=b.playerid and EXTRACT(DAY FROM b.lastplayed) = EXTRACT(DAY FROM NOW()-interval'1'day) and b.lastplayed > NOW() - interval '3' day
+		where a.playerid=b.playerid and EXTRACT(DAY FROM b.lastplayed) = EXTRACT(DAY FROM NOW()) and b.lastplayed > NOW() - interval '3' day
 		order by playerscore desc LIMIT $maxDataRows) t1";
 	$insert_sql = "insert into farkle_lbdata ($sql)";
-	$result = db_command($insert_sql);	
-	
+	$result = db_command($insert_sql);
+
 	// Top 5 "Farklers" today
 	// PostgreSQL: No need for @rank user variable - use ROW_NUMBER() instead
 	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
 		(select 1 as lbindex, a.playerid, COALESCE(fullname, username) as username, playerlevel,
 		count(*) as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players a, farkle_games_players b, farkle_rounds c
-		where a.playerid=b.playerid and EXTRACT(DAY FROM b.lastplayed) = EXTRACT(DAY FROM NOW()-interval'1'day) and b.lastplayed > NOW() - interval '3' day
+		where a.playerid=b.playerid and EXTRACT(DAY FROM b.lastplayed) = EXTRACT(DAY FROM NOW()) and b.lastplayed > NOW() - interval '3' day
 		and a.playerid=c.playerid and b.gameid=c.gameid and c.roundscore=0
 		group by username, playerid
 		order by first_int desc LIMIT $maxDataRows) t1";
 	$insert_sql = "insert into farkle_lbdata ($sql)";
-	$result = db_command($insert_sql);	
-	
+	$result = db_command($insert_sql);
+
 	// Today's Most Wins
 	// PostgreSQL: No need for @rank user variable - use ROW_NUMBER() instead
 	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
@@ -316,7 +317,7 @@ function Leaderboard_RefreshDaily()
 		count(*) as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players a, farkle_games c
 		where c.winningplayer=a.playerid
-		and EXTRACT(DAY FROM c.gamefinish) = EXTRACT(DAY FROM NOW()-interval'1'day)
+		and EXTRACT(DAY FROM c.gamefinish) = EXTRACT(DAY FROM NOW())
 		and c.gamefinish > NOW() - interval '3' day
 		and c.gamewith in (".GAME_WITH_RANDOM.",".GAME_WITH_FRIENDS.")
 		group by username, playerid

@@ -157,7 +157,7 @@ function PopulateLeaderboard()
 			'<tr '+(lbPlayerid==playerid?'row3':(j%2==0?'row1':'row2'))+' playerid="' + lbPlayerid + '">'+
 				'<td>'+lbData[j].lbrank+'</td>'+
 				'<td>'+GetLevelHTML( lbData[j].playerlevel )+lbData[j].username+'</td>'+
-				'<td align="center">'+lbData[j].first_string+'</td>'+
+				'<td align="center">'+addCommas(lbData[j].first_int)+'</td>'+
 			'</tr>');
 	}
 	

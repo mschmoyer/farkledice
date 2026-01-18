@@ -1,57 +1,48 @@
-<!--<!DOCTYPE html>-->
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-	<meta name="Description" content="{$title} is a lightning fast online game of Farkle. Earn rewards, achievements, and compete for a top spot on the leaderboards!">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-	{if $mobilemode || $tabletmode}
-		<meta name="apple-mobile-web-app-capable" content="yes" />
-		
-		{*{if $mobilemode}
-			<meta name="viewport" content="width=device-width, user-scalable=0"> <!-- user-scalable=no;"/> -->
-		{else}
-			<meta name="viewport" content="width=device-width, initial-scale=1.5, maximum-scale=2, minimum-scale=0.9, user-scalable=0">
-		{/if}*}
-		<meta name="viewport" content="initial-scale=1, maximum-scale=1">
-		<!--<meta name="viewport" content="width=240, height=320, user-scalable=yes,initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0" />-->
-		<link rel="stylesheet" type="text/css" href="/css/mobile.css?modified=18-dec-2012" />
-		
-		<meta name="apple-mobile-web-app-title" content="{$title}">
-		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
-		<link rel="apple-touch-icon-precomposed" sizes="114x114" href="/images/apple-touch-icon-114x114-precomposed.png" />
-		<link rel="apple-touch-icon-precomposed" sizes="72x72" href="/images/apple-touch-icon-72x72-precomposed.png" />
-		<link rel="apple-touch-icon-precomposed" href="/images/apple-touch-icon-57x57-precomposed.png" />
-		<link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
-		
-		<!-- iPhone -->
-		<link href="/images/apple-startup-iPhone.png" media="(device-width: 320px) and (device-height: 480px) and (-webkit-device-pixel-ratio: 1)" rel="apple-touch-startup-image">
-
-		<!-- iPhone (Retina) -->
-		<link href="/images/apple-startup-iPhone-RETINA.png" media="(device-width: 320px) and (device-height: 480px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image">
-
-		{*
-		<!-- iPhone 5 -->
-		<link href="http://www.example.com/mobile/images/apple-startup-iPhone-Tall-RETINA.png"  media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image">
-
-		<!-- iPad Portrait -->
-		<link href="http://www.example.com/mobile/images/apple-startup-iPad-Portrait.png" media="(device-width: 768px) and (device-height: 1024px) and (orientation: portrait) and (-webkit-device-pixel-ratio: 1)" rel="apple-touch-startup-image">
-
-		<!-- iPad Landscape -->
-		<link href="http://www.example.com/mobile/images/apple-startup-iPad-Landscape.png" media="(device-width: 768px) and (device-height: 1024px) and (orientation: landscape) and (-webkit-device-pixel-ratio: 1)" rel="apple-touch-startup-image">
-
-		<!-- iPad Portrait (Retina) -->
-		<link href="http://www.example.com/mobile/images/apple-startup-iPad-RETINA-Portrait.png" media="(device-width: 768px) and (device-height: 1024px) and (orientation: portrait) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image">
-
-		<!-- iPad Landscape (Retina) -->
-		<link href="http://www.example.com/mobile/images/apple-startup-iPad-RETINA-Landscape.png" media="(device-width: 768px) and (device-height: 1024px) and (orientation: landscape) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image">
-		*}		
-	{/if}
-
-	
 	<title>{$title} | The exciting dice game of strategy and luck</title>
-	
-	<link rel="icon" href="/images/favicon.ico" type="image/x-icon"/>
-	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon"/>
+	<meta name="description" content="{$title} is a lightning fast online game of Farkle. Earn rewards, achievements, and compete for a top spot on the leaderboards!">
+
+	<!-- Open Graph / Facebook / SMS Link Previews -->
+	<meta property="og:type" content="website">
+	<meta property="og:url" content="https://www.farkledice.com/">
+	<meta property="og:title" content="{$title} - Free Online Dice Game">
+	<meta property="og:description" content="Play Farkle online! A fast-paced dice game of strategy and luck. Challenge friends, earn achievements, and climb the leaderboards.">
+	<meta property="og:image" content="https://www.farkledice.com/images/farkle-ten-hero.png">
+	<meta property="og:image:width" content="1456">
+	<meta property="og:image:height" content="816">
+	<meta property="og:site_name" content="{$title}">
+
+	<!-- Twitter Card -->
+	<meta name="twitter:card" content="summary_large_image">
+	<meta name="twitter:title" content="{$title} - Free Online Dice Game">
+	<meta name="twitter:description" content="Play Farkle online! A fast-paced dice game of strategy and luck. Challenge friends and climb the leaderboards.">
+	<meta name="twitter:image" content="https://www.farkledice.com/images/farkle-ten-hero.png">
+
+	<!-- Theme Color for browser UI -->
+	<meta name="theme-color" content="#2e7d32">
+	<meta name="msapplication-TileColor" content="#2e7d32">
+
+	<!-- iOS Web App Configuration -->
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-title" content="{$title}">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+	<!-- Icons -->
+	<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+	<link rel="icon" type="image/png" sizes="512x512" href="/images/site-icon.png">
+	<link rel="apple-touch-icon" href="/images/site-icon.png">
+
+	<!-- iOS Splash Screen -->
+	<link rel="apple-touch-startup-image" href="/images/farkle-loading-screen.png">
+
+	<!-- Web App Manifest -->
+	<link rel="manifest" href="/manifest.json">
 
 	<link rel="stylesheet" type="text/css" href="/css/mobile.css?vers=1.1" />
 	<link rel="stylesheet" type="text/css" href="/css/farkle.css?vers=1.1" />

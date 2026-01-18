@@ -7,6 +7,8 @@
     RewriteBase /
 
     # Force HTTPS in production (Heroku uses X-Forwarded-Proto header)
+    # Skip HTTPS redirect for localhost/127.0.0.1
+    RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:[0-9]+)?$ [NC]
     RewriteCond %{HTTP:X-Forwarded-Proto} !https
     RewriteCond %{HTTPS} off
     RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
@@ -41,7 +43,8 @@
     # Session configuration
     php_value session.name "FarkleOnline"
     php_flag session.cookie_httponly On
-    php_flag session.cookie_secure On
+    # Note: session.cookie_secure cannot be set conditionally in .htaccess
+    # It's handled in PHP code based on HTTPS detection
     php_value session.cookie_samesite "Lax"
 
     # File upload limits

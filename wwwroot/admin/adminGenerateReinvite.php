@@ -12,12 +12,13 @@
 
 require_once('../../includes/baseutil.php');
 require_once('dbutil.php');
+require_once('farkleLogin.php');
 
 // Set JSON content type
 header('Content-Type: application/json');
 
 // Initialize session
-BaseUtil_SessSet();
+Farkle_SessSet();
 
 // Check admin access
 if (!isset($_SESSION['adminlevel']) || $_SESSION['adminlevel'] <= 0) {

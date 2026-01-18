@@ -8,7 +8,7 @@
 	require_once('farkleLogin.php');
 
 	$loginSucceeded = Farkle_SessSet();
-	
+
 
 	/*if( isset( $_REQUEST['device'] ) ) {
 		$smarty->assign('device', $_REQUEST['device'] ); 

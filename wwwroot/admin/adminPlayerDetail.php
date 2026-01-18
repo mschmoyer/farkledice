@@ -10,8 +10,9 @@
 
 require_once('../../includes/baseutil.php');
 require_once('dbutil.php');
+require_once('farkleLogin.php');
 
-BaseUtil_SessSet();
+Farkle_SessSet();
 
 // Check admin access - redirect if not admin
 if (!isset($_SESSION['adminlevel']) || $_SESSION['adminlevel'] <= 0) {
@@ -34,18 +35,15 @@ $sql = "SELECT
             email,
             fullname,
             adminlevel,
-            TO_CHAR(created_date, 'Mon DD, YYYY HH12:MI AM') as created_date_formatted,
-            TO_CHAR(last_login, 'Mon DD, YYYY HH12:MI AM') as last_login_formatted,
+            TO_CHAR(createdate, 'Mon DD, YYYY HH12:MI AM') as created_date_formatted,
             TO_CHAR(lastplayed, 'Mon DD, YYYY HH12:MI AM') as lastplayed_formatted,
             remoteaddr,
             playerlevel,
             playertitle,
-            lobbyimage,
             xp,
             xp_to_level,
             wins,
             losses,
-            games_played,
             cardcolor,
             cardbg,
             sendhourlyemails,
@@ -116,5 +114,5 @@ $smarty->assign('completedGames', $completedGames);
 $smarty->assign('activeGames', $activeGames);
 
 // Display the template
-$smarty->display('admin/admin_player_detail.tpl');
+$smarty->display('admin_player_detail.tpl');
 ?>

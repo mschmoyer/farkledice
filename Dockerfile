@@ -11,8 +11,8 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
+# Enable Apache modules (rewrite and SSL)
+RUN a2enmod rewrite ssl headers
 
 # Set working directory
 WORKDIR /var/www/html
@@ -43,8 +43,29 @@ RUN chmod -R 777 /var/www/backbone/templates_c /var/www/backbone/cache /var/www/
 RUN mkdir -p /var/www/backbone/libs && \
     cp -r vendor/smarty/smarty/libs/* /var/www/backbone/libs/ 2>/dev/null || true
 
-# Expose port 80
-EXPOSE 80
+# Generate self-signed SSL certificate for local development
+RUN mkdir -p /etc/apache2/ssl && \
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/apache2/ssl/localhost.key \
+    -out /etc/apache2/ssl/localhost.crt \
+    -subj "/C=US/ST=Local/L=Local/O=Dev/CN=localhost"
+
+# Configure SSL virtual host
+RUN echo '<VirtualHost *:443>\n\
+    ServerAdmin webmaster@localhost\n\
+    DocumentRoot ${APACHE_DOCUMENT_ROOT}\n\
+    SSLEngine on\n\
+    SSLCertificateFile /etc/apache2/ssl/localhost.crt\n\
+    SSLCertificateKeyFile /etc/apache2/ssl/localhost.key\n\
+    ErrorLog ${APACHE_LOG_DIR}/error.log\n\
+    CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
+</VirtualHost>' > /etc/apache2/sites-available/default-ssl.conf
+
+# Enable SSL site
+RUN a2ensite default-ssl
+
+# Expose ports 80 and 443
+EXPOSE 80 443
 
 # Start Apache
 CMD ["apache2-foreground"]

@@ -197,11 +197,11 @@ function HideAllWindows()
 	//if( divTournamentListObj.is(":visible") ) gLastPage = divTournamentListObj;
 	//divTournamentListObj.hide();
 	
-	/*if( divAdminObj )
+	if( divAdminObj )
 	{
 		if( divAdminObj.is(":visible") ) gLastPage = divAdminObj;
 		divAdminObj.hide();
-	}*/
+	}
 }
 
 function PageGoBack()

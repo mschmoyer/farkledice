@@ -178,7 +178,7 @@ function CreateGameWithPlayers( $players, $whostarted=0, $expireDays = 2, $gameW
 		values 
 			($currentTurn, ".count($players).", NOW(), 0, 
 			0, $whostarted, '$thePlayers', $titleRedeemed, $gameMode, 
-			NOW() + interval '$expireDays' day, '$playerNames', $gameWith )";
+			NOW() + ($expireDays || ' days')::INTERVAL, '$playerNames', $gameWith )";
 	$result = db_command($sql);
 
 	// Get the gameid of the game we just created
@@ -382,7 +382,7 @@ function CreateNewRandomGameWithPlayers( $gameMode, $randomPlayers, $avoidPlayer
 	}
 	
 	$sql = "select playerid	from farkle_players
-		where lastplayed > now()-interval '2' week and random_selectable > 0 $avoidSql
+		where lastplayed > NOW() - interval '2 weeks' and random_selectable > 0 $avoidSql
 		order by lastplayed desc
 		LIMIT 20";
 	$randomPlayerid = db_select_query( $sql, SQL_SINGLE_VALUE );	
@@ -407,7 +407,7 @@ function CreateNewRandomGame( $randomPlayers, $gameMode=GAME_MODE_10ROUND )
 			playerstring, gamewith ) 
 		values 
 			(1, $randomPlayers, NOW(), 10000, 0,
-			{$_SESSION['playerid']}, '[{$_SESSION['playerid']}]', $gameMode, NOW() + interval '$gameDays' day, 
+			{$_SESSION['playerid']}, '[{$_SESSION['playerid']}]', $gameMode, NOW() + ($gameDays || ' days')::INTERVAL, 
 			'Random Game', ".GAME_WITH_RANDOM." )";
 			
 	if( db_command($sql) )

@@ -10,8 +10,9 @@
 
 require_once('../../includes/baseutil.php');
 require_once('dbutil.php');
+require_once('farkleLogin.php');
 
-BaseUtil_SessSet();
+Farkle_SessSet();
 
 // Check admin access - redirect if not admin
 if (!isset($_SESSION['adminlevel']) || $_SESSION['adminlevel'] <= 0) {
@@ -68,5 +69,5 @@ $smarty->assign('perPage', $perPage);
 $smarty->assign('search', htmlspecialchars($search));
 
 // Display the template
-$smarty->display('admin/admin_players.tpl');
+$smarty->display('admin_players.tpl');
 ?>
