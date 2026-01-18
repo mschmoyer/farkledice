@@ -21,12 +21,30 @@ CREATE TABLE IF NOT EXISTS farkle_players (
   sessionid VARCHAR(64),
   created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_login TIMESTAMP DEFAULT NULL,
+  lastplayed TIMESTAMP DEFAULT NULL,
+  createdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  remoteaddr VARCHAR(50) DEFAULT NULL,
   level INTEGER DEFAULT 1,
   xp INTEGER DEFAULT 0,
   wins INTEGER DEFAULT 0,
   losses INTEGER DEFAULT 0,
   games_played INTEGER DEFAULT 0
 );
+
+-- Create players devices table for session management
+CREATE TABLE IF NOT EXISTS farkle_players_devices (
+  id SERIAL PRIMARY KEY,
+  playerid INTEGER NOT NULL,
+  sessionid VARCHAR(64),
+  device VARCHAR(100),
+  token VARCHAR(255),
+  lastused TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  agentstring TEXT,
+  UNIQUE (playerid, device)
+);
+
+CREATE INDEX IF NOT EXISTS idx_device_playerid ON farkle_players_devices(playerid);
+CREATE INDEX IF NOT EXISTS idx_device_sessionid ON farkle_players_devices(sessionid);
 
 -- Create games table
 CREATE TABLE IF NOT EXISTS farkle_games (
