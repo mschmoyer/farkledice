@@ -25,6 +25,10 @@ CREATE TABLE IF NOT EXISTS farkle_players (
   createdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   remoteaddr VARCHAR(50) DEFAULT NULL,
   level INTEGER DEFAULT 1,
+  playerlevel INTEGER DEFAULT 1,
+  playertitle VARCHAR(100) DEFAULT NULL,
+  lobbyimage VARCHAR(100) DEFAULT NULL,
+  playerstring VARCHAR(255) DEFAULT NULL,
   xp INTEGER DEFAULT 0,
   wins INTEGER DEFAULT 0,
   losses INTEGER DEFAULT 0,
@@ -59,6 +63,7 @@ CREATE TABLE IF NOT EXISTS farkle_games (
   last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   currentround INTEGER DEFAULT 1,
   currentplayer INTEGER DEFAULT 0,
+  currentturn INTEGER DEFAULT 0,
   randomPlayers INTEGER DEFAULT 2
 );
 
@@ -92,7 +97,7 @@ CREATE TABLE IF NOT EXISTS farkle_achievements (
 );
 
 -- Create player achievements junction table
-CREATE TABLE IF NOT EXISTS farkle_player_achievements (
+CREATE TABLE IF NOT EXISTS farkle_achievements_players (
   id SERIAL PRIMARY KEY,
   playerid INTEGER NOT NULL,
   achievementid INTEGER NOT NULL,
