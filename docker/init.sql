@@ -46,7 +46,13 @@ CREATE TABLE IF NOT EXISTS farkle_players (
   title VARCHAR(100) DEFAULT NULL,
   avgscorepoints INTEGER DEFAULT 0,
   roundsplayed INTEGER DEFAULT 0,
-  xp_to_level INTEGER DEFAULT 100
+  xp_to_level INTEGER DEFAULT 100,
+  facebookid VARCHAR(100) DEFAULT NULL,
+  rolls INTEGER DEFAULT 0,
+  highest10round INTEGER DEFAULT 0,
+  resetpasscode VARCHAR(64) DEFAULT NULL,
+  active BOOLEAN DEFAULT true,
+  stylepoints INTEGER DEFAULT 0
 );
 
 -- Create players devices table for session management
@@ -87,7 +93,8 @@ CREATE TABLE IF NOT EXISTS farkle_games (
   titleredeemed INTEGER DEFAULT 0,
   gameexpire TIMESTAMP DEFAULT NULL,
   playerstring VARCHAR(255) DEFAULT NULL,
-  gamefinish TIMESTAMP DEFAULT NULL
+  gamefinish TIMESTAMP DEFAULT NULL,
+  winningreason VARCHAR(255) DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_whostarted ON farkle_games(whostarted);
@@ -107,7 +114,12 @@ CREATE TABLE IF NOT EXISTS farkle_games_players (
   diceonhand VARCHAR(50) DEFAULT NULL,
   quit BOOLEAN DEFAULT false,
   playerturn INTEGER DEFAULT 1,
-  lastplayed TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  lastplayed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  winacknowledged BOOLEAN DEFAULT false,
+  lastroundscore INTEGER DEFAULT 0,
+  lastxpgain INTEGER DEFAULT 0,
+  inactivepasses INTEGER DEFAULT 0,
+  playerscore INTEGER DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_gameid ON farkle_games_players(gameid);
@@ -118,7 +130,10 @@ CREATE TABLE IF NOT EXISTS farkle_achievements (
   achievementid SERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   description VARCHAR(255) DEFAULT NULL,
-  xp_reward INTEGER DEFAULT 0
+  xp_reward INTEGER DEFAULT 0,
+  worth INTEGER DEFAULT 0,
+  title VARCHAR(100) DEFAULT NULL,
+  imagefile VARCHAR(255) DEFAULT NULL
 );
 
 -- Create player achievements junction table
@@ -139,6 +154,8 @@ CREATE TABLE IF NOT EXISTS farkle_friends (
   friendid INTEGER NOT NULL,
   status friend_status DEFAULT 'pending',
   created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  sourceid INTEGER DEFAULT NULL,
+  removed BOOLEAN DEFAULT false,
   UNIQUE (playerid, friendid)
 );
 
