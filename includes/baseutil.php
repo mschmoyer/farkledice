@@ -88,9 +88,10 @@
 	chdir( $dir . "/$gFolder" );
 	
 	BaseUtil_Debug( "After - Current Folder = " .getcwd() . ", basename(dir)=".basename($dir).",dir=$dir", 31 );
-	
-	require("../backbone/libs/Smarty.class.php");
-	$smarty = new Smarty();
+
+	// Load Smarty via Composer autoloader
+	require_once($dir . '/vendor/autoload.php');
+	$smarty = new Smarty\Smarty();
 
 	$smarty->template_dir = $dir . "/templates/$curfolder";
 	BaseUtil_Debug( "Template_dir = " . (is_array($smarty->template_dir) ? print_r($smarty->template_dir, true) : $smarty->template_dir), 31 );
