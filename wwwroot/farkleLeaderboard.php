@@ -249,8 +249,9 @@ function Leaderboard_RefreshData( $force = false )
 	// PostgreSQL: No need for @rank user variable - use ROW_NUMBER() instead
 	$sql = "select t1.*, ROW_NUMBER() OVER () AS lbrank from
 		(select 4 as lbindex, playerid, COALESCE(fullname, username) as username, playerlevel,
-		0 as first_int, 0 as second_int, TO_CHAR(highest10Round,'FM999999990') as first_string, null as second_string
+		highest10Round as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players
+		where highest10Round IS NOT NULL
 		order by farkle_players.highest10Round desc $limitClause) t1";
 	$insert_sql = "insert into farkle_lbdata ($sql)";
 	$result = db_command($insert_sql);	
