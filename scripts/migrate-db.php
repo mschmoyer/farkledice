@@ -22,26 +22,66 @@ if (php_sapi_name() !== 'cli') {
 // Change to project root directory (script is in scripts/ subdirectory)
 chdir(dirname(__DIR__));
 
-// Include database utilities
-require_once('includes/dbutil.php');
-
 echo "========================================\n";
 echo "Farkle Database Migration Script\n";
 echo "========================================\n\n";
 
-// Check which environment we're running in
-$database_url = getenv('DATABASE_URL');
-if ($database_url !== false && !empty($database_url)) {
-	$url_parts = parse_url($database_url);
-	$dbname = isset($url_parts['path']) ? ltrim($url_parts['path'], '/') : 'unknown';
-	echo "Environment: Heroku (DATABASE_URL detected)\n";
-	echo "Database: {$dbname}\n\n";
-} else {
-	echo "Environment: Local (using config file)\n";
-	$config = new FarkleConfig();
-	$dbname = $config->data['dbname'] ?? 'farkle_db';
-	echo "Database: {$dbname}\n\n";
+// Database connection - standalone (no web dependencies)
+function get_db_connection() {
+	// Check for Heroku DATABASE_URL first
+	$database_url = getenv('DATABASE_URL');
+
+	if ($database_url !== false && !empty($database_url)) {
+		// Parse Heroku DATABASE_URL
+		$url = parse_url($database_url);
+		$host = $url['host'];
+		$port = isset($url['port']) ? $url['port'] : 5432;
+		$dbname = ltrim($url['path'], '/');
+		$username = $url['user'];
+		$password = $url['pass'];
+
+		echo "Environment: Heroku (DATABASE_URL detected)\n";
+		echo "Database: {$dbname}\n\n";
+	} else {
+		// Use local environment variables or config file
+		if (getenv('DB_HOST')) {
+			$host = getenv('DB_HOST');
+			$port = getenv('DB_PORT') ?: 5432;
+			$dbname = getenv('DB_NAME');
+			$username = getenv('DB_USER');
+			$password = getenv('DB_PASS');
+			echo "Environment: Local (environment variables)\n";
+		} else {
+			// Read from config file
+			$config_file = '../configs/siteconfig.ini';
+			if (!file_exists($config_file)) {
+				die("ERROR: Config file not found and no DATABASE_URL set\n");
+			}
+			$config = parse_ini_file($config_file);
+			$host = $config['dbhost'];
+			$port = $config['dbport'] ?? 5432;
+			$dbname = $config['dbname'];
+			$username = $config['dbuser'];
+			$password = $config['dbpass'];
+			echo "Environment: Local (config file)\n";
+		}
+		echo "Database: {$dbname}\n\n";
+	}
+
+	// Create PDO connection
+	try {
+		$dsn = "pgsql:host=$host;port=$port;dbname=$dbname";
+		$pdo = new PDO($dsn, $username, $password, [
+			PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+			PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+		]);
+		return $pdo;
+	} catch (PDOException $e) {
+		die("ERROR: Database connection failed: " . $e->getMessage() . "\n");
+	}
 }
+
+$dbh = get_db_connection();
 
 // Read the SQL file
 $sql_file = 'docker/init.sql';
@@ -57,14 +97,7 @@ if ($sql_content === false) {
 
 echo "SQL file loaded successfully (" . strlen($sql_content) . " bytes)\n\n";
 
-// Get database connection
-echo "Connecting to database...\n";
-try {
-	$dbh = db_connect();
-	echo "Connected successfully\n\n";
-} catch (Exception $e) {
-	die("ERROR: Failed to connect to database: " . $e->getMessage() . "\n");
-}
+echo "Database connection ready\n\n";
 
 // Split SQL into individual statements
 // We need to be careful with multi-line statements and comments
