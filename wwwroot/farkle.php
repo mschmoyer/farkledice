@@ -54,43 +54,49 @@
 	}
 	
 	// Pass these to the template where javascript can pick them up
+	// Set defaults for when user is not logged in
+	$smarty->assign('lobbyinfo', '' );
+	$smarty->assign('friendinfo', '' );
+	$smarty->assign('lbinfo', '' );
+	$smarty->assign('pinfo', '' );
+
 	if( $loginSucceeded && isset($_SESSION['username']) && isset($_SESSION['playerid']) )
 	{
 		BaseUtil_Debug( "farkle.php: Player is logged in. Loading data...", 14 );
-	
+
 		require_once('farklePageFuncs.php');
-		require_once('farkleLeaderboard.php'); 
-		require_once('farkleFriends.php'); 
-	
+		require_once('farkleLeaderboard.php');
+		require_once('farkleFriends.php');
+
 		$smarty->assign('username', $_SESSION['username'] );
 		$smarty->assign('playerid', $_SESSION['playerid'] );
 		$smarty->assign('adminlevel', ( !empty($_SESSION['adminlevel']) ? $_SESSION['adminlevel'] : 0 ) );
 
 		BaseUtil_Debug( "farkle.php: Pre-populating data.", 14 );
 		//* Here we pre-populate some data so we don't have to do 4 ajax calls later *//
-		
+
 		// Load initial lobby info
 		$lobbyInfo = json_encode( GetLobbyInfo( ) );
-		BaseUtil_Debug( __FUNCTION__ . " Sending lobby info to JS: " . $lobbyInfo , 7 );		
-		$smarty->assign('lobbyInfo', $lobbyInfo );
+		BaseUtil_Debug( __FUNCTION__ . " Sending lobby info to JS: " . $lobbyInfo , 7 );
+		$smarty->assign('lobbyinfo', $lobbyInfo );
 
 		if( isset($_SESSION['playerid']) )
 		{
 			// Friends list
-			$friendInfo = json_encode( GetGameFriends( $_SESSION['playerid'], true ) ); 
+			$friendInfo = json_encode( GetGameFriends( $_SESSION['playerid'], true ) );
 			BaseUtil_Debug( __FUNCTION__ . " Sending friend info to JS: " . $friendInfo , 7 );
-			$smarty->assign('friendInfo', $friendInfo );
-			
+			$smarty->assign('friendinfo', $friendInfo );
+
 			// Leaderboard
-			$lbInfo = json_encode( GetLeaderBoard( $_SESSION['playerid'] ) ); 
+			$lbInfo = json_encode( GetLeaderBoard( $_SESSION['playerid'] ) );
 			BaseUtil_Debug( __FUNCTION__ . " Sending leaderboard info to JS: " . $lbInfo , 7 );
-			$smarty->assign('lbInfo', $lbInfo );
-			
+			$smarty->assign('lbinfo', $lbInfo );
+
 			// Player info
-			$pInfo = json_encode( GetStats( $_SESSION['playerid'], 0 ) ); 
+			$pInfo = json_encode( GetStats( $_SESSION['playerid'], 0 ) );
 			BaseUtil_Debug( __FUNCTION__ . " Sending playerinfo info to JS: " . $pInfo , 7 );
-			$smarty->assign('pInfo', $pInfo );
-			
+			$smarty->assign('pinfo', $pInfo );
+
 			$smarty->assign('double_xp', IsDoubleXP() );
 		}
 	}

@@ -149,10 +149,6 @@
 	
 <!-- Javascript -->
 
-{literal}
-<div id="fb-root"></div>
-<script type="text/javascript" src="/js/facebook.js?vers=1.1"></script>
-{/literal}
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
 <script type="text/javascript" src="/js/util.js?vers=1.1"></script>

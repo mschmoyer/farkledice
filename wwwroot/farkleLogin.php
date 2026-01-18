@@ -2,16 +2,8 @@
 
 require_once('../includes/baseutil.php');
 require_once('dbutil.php');
-require_once("facebook.php");
 require_once('farkleAchievements.php');
 require_once('farkleUtil.php');
-
-// Init facebook stuff
-$config = array();
-$config['appId'] = '271148502945493';
-$config['secret'] = 'e01b2a50370f310e0ac3c1e35fdc6d63';
-$config['fileUpload'] = false; // optional
-$facebook = new Facebook($config);
 
 function Farkle_SessSet()
 {
@@ -106,14 +98,15 @@ function UserLoginSafe( $sessionid, $remember=1 )
 	BaseUtil_Debug( __FUNCTION__ . " entered.", 7 );
 	
 	// Attempt to find the selected session id 
-	$sql = "select IFNULL(fullname,username) as username, a.playerid as playerid, adminlevel, b.agentString 
+	$sql = "select COALESCE(fullname,username) as username, a.playerid as playerid, adminlevel, b.agentString
 		from farkle_players a, farkle_players_devices b
 		where a.playerid=b.playerid and b.sessionid='$sessionid'";			
 	$pInfo = db_select_query( $sql, SQL_SINGLE_ROW );
 	
 	if( $pInfo )
 	{
-		BaseUtil_Debug( __FUNCTION__ . ": Success. User {$pInfo['username']} logged in. Agent={$pInfo['agentString']}", 7 );
+		$agentString = isset($pInfo['agentString']) ? $pInfo['agentString'] : 'unknown';
+		BaseUtil_Debug( __FUNCTION__ . ": Success. User {$pInfo['username']} logged in. Agent={$agentString}", 7 );
 		if( isset($_COOKIE['farklesession']) ) $_SESSION['farklesession'] = $_COOKIE['farklesession'];
 		LoginSuccess( $pInfo, $remember );
 		return $pInfo;
@@ -180,9 +173,9 @@ function LoginGenerateSession( $playerid, $remember=1, $device='web' )
 	if( $remember )
 	{
 		// New device
-		$sql = "insert into farkle_players_devices (playerid, sessionid, lastused, agentstring, device) values 
+		$sql = "insert into farkle_players_devices (playerid, sessionid, lastused, agentstring, device) values
 				($playerid, '$sessionid', NOW(), '$agentString', '$device')
-				ON DUPLICATE KEY update sessionid='$sessionid', agentstring='$agentString', lastused=NOW()";
+				ON CONFLICT (playerid, device) DO UPDATE SET sessionid='$sessionid', agentstring='$agentString', lastused=NOW()";
 		$rc = db_command($sql);
 		
 		// Remember the sessionid for a month
@@ -199,8 +192,8 @@ function UserLogin( $user, $pass, $remember=1 )
 {
 	BaseUtil_Debug( __FUNCTION__ . " entered.", 7 );
 		
-	$sql = "select IFNULL(fullname,username) as username, playerid, adminlevel, sessionid
-		from farkle_players 
+	$sql = "select COALESCE(fullname,username) as username, playerid, adminlevel, sessionid
+		from farkle_players
 		where MD5(username)='$user' and password=CONCAT('$pass',MD5(salt))";	
 		
 	$pInfo = db_select_query( $sql, SQL_SINGLE_ROW );
@@ -212,109 +205,6 @@ function UserLogin( $user, $pass, $remember=1 )
 	}
 	
 	return Array('Error' => 'Username or password incorrect.');
-}
-
-function UserFacebookLogin( $facebookId, $username, $email, $fullname, $playerid, $recursing=0 )
-{
-	$doInsert = 0;
-	BaseUtil_Debug( "UserFacebookLogin: entered.", 7 );
-	
-	if( !is_numeric($facebookId) || empty($facebookId) ) {
-		BaseUtil_Debug( "No facebookId set. FBid = $facebookId. Cannot login with facebook.", 7, $color="red" );
-		return Array('Error'=>'Error 100: logging in with Facebook.');
-	}
-	
-	$sql = "select username, playerid, adminlevel from farkle_players where facebookid=$facebookId";
-	$userinfo = db_select_query( $sql, SQL_SINGLE_ROW );
-	if( $userinfo )
-	{		
-		if( !(isset($_SESSION['playerid']) && $_SESSION['playerid'] == $userinfo['playerid']) )
-		{
-			LoginGenerateSession( $userinfo['playerid'] );
-			LoginSuccess( $userinfo, 1 );
-			
-			// update username if it is different. 
-			if( strcmp($username, $userinfo['username']) != 0 )
-			{
-				$modUsername = preg_replace('/[^\w]/', '', $username);			
-				$sql = "update farkle_players set fullname='$modUsername', lastplayed=NOW() where playerid=" . $userinfo['playerid'];
-				$rc = db_command($sql);
-			}
-			
-			Ach_AwardAchievement( $userinfo['playerid'], ACH_FACEBOOK );
-		}
-
-		return $userinfo;
-	}
-	else
-	{
-		if( !empty($email) )
-		{
-			$sql = "select username, playerid from farkle_players where email='$email'";
-			$userinfo = db_select_query( $sql, SQL_SINGLE_ROW );
-			if( $userinfo )
-			{	
-				// Hijacking an old regular farkle account. 
-				$sql = "update farkle_players set facebookid='$facebookId', fullname='$fullname' where email='$email'";
-				if( db_command($sql) )
-				{
-					BaseUtil_Error( __FUNCTION__ . " - Facebook user $fullname ($facebookId) was associated with farkle account with email $email." );
-					//return UserFacebookLogin( $facebookId, $username, $email, $fullname, $playerid, 1 );
-					LoginGenerateSession( $userinfo['playerid'] );
-					LoginSuccess( $userinfo, 1 );
-				}
-			}
-			else	
-			{
-				$doInsert = 1;
-			}
-		}
-		else
-		{
-			if( !empty( $playerid ) )
-			{
-				// Hijacking an old regular farkle account. 
-				$sql = "update farkle_players set facebookid='$facebookId', fullname='$fullname' where playerid=$playerid";
-				if( db_command($sql) )
-				{
-					BaseUtil_Error( __FUNCTION__ . " - Facebook user $fullname ($facebookid) was associated with farkle account with playerid $playerid." );
-					//return UserFacebookLogin( $facebookId, $username, $email, $fullname, $playerid, 1 );
-					LoginGenerateSession( $userinfo['playerid'] );
-					LoginSuccess( $userinfo, 1 );
-				}
-			}
-			else
-			{
-				$doInsert = 1;
-			}
-		}
-	}
-	if( $doInsert )
-	{
-		BaseUtil_Debug( "Inserting new account from facebook.", 7 );
-				
-		// Create a new user. 
-		// Allow new user
-		$remoteIp = $_SERVER['REMOTE_ADDR'];
-		
-		$username = str_replace("'", "", $username); // Remove single ticks from name
-		/*$aValid = array('-', '_', '''');
-		if(!ctype_alnum(str_replace($aValid, '', $user))) 
-		{
-			return 0;
-		} */
-		
-		$sql = "insert into farkle_players (username, email, lastplayed, createdate, remoteaddr, facebookid ) 
-			values ('$username', '$email', NOW(), NOW(), '$remoteIp', '$facebookId' )";	
-		
-		if( db_command($sql) )
-		{
-			return UserFacebookLogin( $facebookId, $username, $email, $fullname, $playerid,  1 );
-		}
-	}
-	
-	BaseUtil_Error( __FUNCTION__ . " - Error logging in with FB. fbid=$facebookId, username=$username, email=$email, fullname=$fullname, pid=$playerid" );
-	return Array('Error'=>'Error 101: logging in with Facebook.');
 }
 
 function UserRegister( $user, $pass, $email, $remember = 0, $registeringGuest = 0 )
@@ -451,10 +341,10 @@ function AddDeviceToken( $device, $deviceToken, $sessionid, $playerid )
 	BaseUtil_Debug( __FUNCTION__ . ": attempting to add $device token for $playerid. deviceToken=$deviceToken, session=$sessionid", 7 ); 
 	
 	$agentString = ( !empty($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : "unrecognized" );
-	$sql = "insert into farkle_players_devices (playerid, sessionid, device, token, lastused, agentstring) 
+	$sql = "insert into farkle_players_devices (playerid, sessionid, device, token, lastused, agentstring)
 			values ('$playerid', '$sessionid', '$device', '$deviceToken', NOW(), '$agentString')
-			ON DUPLICATE KEY update token='$deviceToken', lastused=NOW(), agentString='$agentString'"; 
-	
+			ON CONFLICT (playerid, device) DO UPDATE SET token='$deviceToken', lastused=NOW(), agentstring='$agentString'";
+
 	if( db_command($sql) )
 	{
 		$sql = "select playerid, sessionid, device, token from farkle_players_devices where playerid=1 and device='$device'";

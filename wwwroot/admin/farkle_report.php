@@ -7,10 +7,10 @@
 	
 	BaseUtil_SessSet( );
 	
-	$sql = "select 
-				playerid, 
-				IFNULL(fullname,username) as name, 
-				DATE_FORMAT(lastplayed, '%b %D @ %l:00 %p') as lastplayedgame, 
+	$sql = "select
+				playerid,
+				COALESCE(fullname,username) as name,
+				TO_CHAR(lastplayed, 'Mon DD @ HH12:00 AM') as lastplayedgame, 
 				(select count(*) from farkle_games_players b where b.playerid=a.playerid) as games,
 				(select count(*) from farkle_games c where c.whostarted=a.playerid) as games_started
 			from 

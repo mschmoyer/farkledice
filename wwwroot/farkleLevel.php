@@ -40,9 +40,9 @@ function farkleLevel_Test( $playerid )
 	// This tests CalcNextLevelXP()
 	db_assert("select 1 from farkle_players where playerid=$playerid and playerlevel=2 and xp=1 and xp_to_level > 40");
 	
-	// Test 3: The player acks seeing this level 
+	// Test 3: The player acks seeing this level
 	AckLevel( $playerid );
-	db_assert("select 1 from farkle_players where level_acked=1");
+	db_assert("select 1 from farkle_players where level_acked=true");
 	
 	// Test 4: Check CalcNextLevelXP() for accuracy
 	val_assert( CalcNextLevelXP(3), 46 ); // Answer should be 46 
@@ -58,16 +58,20 @@ function IsDoubleXP()
 	{
 		$sql = "select paramvalue from siteinfo where paramid=".SITEINFO_DOUBLE_XP;
 		$double_xp = db_select_query( $sql, SQL_SINGLE_VALUE );
-		setcookie( "double_xp", $double_xp, 60*60*3 ); // Expire in 3 hours
-		$_SESSION['double_xp'] = $double_xp; 
-		
+
+		// Only set cookie if headers haven't been sent
+		if( !headers_sent() ) {
+			setcookie( "double_xp", $double_xp, 60*60*3 ); // Expire in 3 hours
+		}
+		$_SESSION['double_xp'] = $double_xp;
+
 		BaseUtil_Debug( __FUNCTION__ . ": Is it double XP Day? (Using DB value) $double_xp", 7 );
-		return $double_xp; 
-	} 
+		return $double_xp;
+	}
 	else
 	{
 		BaseUtil_Debug( __FUNCTION__ . ": Is it double XP Day? (Using cookie value) {$_COOKIE['double_xp']}", 7 );
-		return $_COOKIE['double_xp']; 
+		return $_COOKIE['double_xp'];
 	}
 }
 
@@ -134,9 +138,9 @@ function CheckForLevel( $playerid )
 		if( $newLevel >= 100 )
 			$cardcolor = "prestige8.png";
 		
-		// Update the player's XP, etc. 
-		$sql = "update farkle_players set playerlevel=playerlevel+$levelsGained, 
-				xp_to_level=$xp_to_level, xp=$newXP, level_acked=0
+		// Update the player's XP, etc.
+		$sql = "update farkle_players set playerlevel=playerlevel+$levelsGained,
+				xp_to_level=$xp_to_level, xp=$newXP, level_acked=false
 				where playerid=$playerid";
 		$result = db_command($sql);
 		
@@ -151,9 +155,9 @@ function CheckForLevel( $playerid )
 function GetNewLevel( $playerid )
 {
 	BaseUtil_Debug( __FUNCTION__ . ": entered.", 14 );
-	
+
 	// Get any un-awarded levels
-	$sql = "select playerid, playerlevel from farkle_players where playerid=$playerid and level_acked=0";
+	$sql = "select playerid, playerlevel from farkle_players where playerid=$playerid and level_acked=false";
 	$levelData = db_select_query( $sql, SQL_SINGLE_ROW );
 	if( isset($levelData['playerlevel']) ) 
 	{
@@ -176,7 +180,7 @@ function AckLevel( $playerid )
 	if( !empty($playerid) )
 	{
 		// Set this as awarded so we don't show it again
-		$sql = "update farkle_players set level_acked=1 where playerid=$playerid";
+		$sql = "update farkle_players set level_acked=true where playerid=$playerid";
 		$result = db_command($sql);		
 		return 1; 
 	}

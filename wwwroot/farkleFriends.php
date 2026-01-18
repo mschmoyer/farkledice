@@ -64,7 +64,7 @@ function AddFriend( $playerid, $identstring, $ident )
 	
 		if( $removed == 1 )
 		{
-			$sql = "update farkle_friends set removed=0 where sourceid=$playerid and friendid=$friendid";
+			$sql = "update farkle_friends set removed=false where sourceid=$playerid and friendid=$friendid";
 			$rc = db_command($sql);
 		}
 		else if( $removed == 0 )
@@ -80,8 +80,8 @@ function AddFriend( $playerid, $identstring, $ident )
 				$sql = "insert into farkle_friends (sourceid, friendid) values ($playerid, $friendid)";
 				if( !db_command($sql) )
 				{
-					$err = mysql_errno();
-					error_log( "Error creating friend - $err" ); 
+					// Error already logged by db_command
+					error_log( "Error creating friend" );
 				}
 			}
 		}
@@ -102,11 +102,11 @@ function RemoveFriend( $playerid, $friendid )
 
 	if( $friendExists )
 	{
-		$sql = "update farkle_friends set removed=1 where sourceid=$playerid and friendid=$friendid";
+		$sql = "update farkle_friends set removed=true where sourceid=$playerid and friendid=$friendid";
 	}
 	else
 	{
-		$sql = "insert into farkle_friends (sourceid, friendid, removed) values ($playerid, $friendid, 1 )";
+		$sql = "insert into farkle_friends (sourceid, friendid, removed) values ($playerid, $friendid, true )";
 	}
 	db_command($sql);
 	
@@ -131,46 +131,11 @@ function GetGameFriends( $playerid, $force = false )
 	//if( !isset($_SESSION['farkle']['friends']) || empty($_SESSION['farkle']['friends']) || $force )
 	//{
 		BaseUtil_Debug( __FUNCTION__ . " No friend data cached. Adding friend data.", 7 );
-		global $facebook;
-		$user = $facebook->getUser();
-		
-		$fbWhere = "";
-		// Update the facebook friends. 
-		if ($user) {
-			try {
-				$params = array(
-				'method' => 'fql.query',
-				'query' => "select uid, name, username FROM user WHERE uid IN (select uid2 from friend where uid1=me()) and is_app_user = 1",
-			);
-			$result = $facebook->api($params);
-			if ($result) {
-				$ids='';
-				foreach( $result as $r )
-					$ids .= "'" . $r['uid'] . "',";
-					
-				if( strlen($ids) > 0 ) $ids = substr($ids, 0, -1);
-				
-				BaseUtil_Debug( __FUNCTION__ . " Adding facebook friends with ids $ids to query.", 7 );
-				
-				$fbWhere = " UNION
-				select IFNULL(fullname,username) as username, playerid, playertitle, cardcolor, facebookid, lastplayed
-				from farkle_players a
-				where facebookid in ($ids) and not exists (select removed from farkle_friends where sourceid=$playerid and friendid=a.playerid and removed=1)";
-			}
-		  } catch (FacebookApiException $e) {
-			//login()
-		  }
-		}else{
-		// login()
-		}
 
-		$fbAnd = ( !empty($fbWhere) ? " and a.facebookid is null " : "" );
-		
-		$sql = "select IFNULL(fullname,username) as username, a.playerid, a.playertitle, a.cardcolor, null as facebookid, a.lastplayed
+		$sql = "select COALESCE(fullname,username) as username, a.playerid, a.playertitle, a.cardcolor, a.lastplayed
 				from farkle_players a, farkle_friends b
-				where a.playerid=b.friendid and b.sourceid=$playerid and 
-				a.active=1 $fbAnd and b.removed=0
-				$fbWhere
+				where a.playerid=b.friendid and b.sourceid=$playerid and
+				a.active=true and b.removed=false
 				order by lastplayed desc";
 		
 		$players = db_select_query( $sql, SQL_MULTI_ROW );
@@ -196,14 +161,14 @@ function GetGameFriends( $playerid, $force = false )
 /*
 function GetFriends( $playerid )
 {
-	
-	$sql = "select IFNULL(a.fullname, a.username) as username, a.playerid, a.playertitle, a.cardbg, a.facebookid,
-		(select count(*) from farkle_games c, farkle_games_players d 
+
+	$sql = "select COALESCE(a.fullname, a.username) as username, a.playerid, a.playertitle, a.cardbg,
+		(select count(*) from farkle_games c, farkle_games_players d
 			where c.gameid=d.gameid and d.playerid=b.friendid and c.winningplayer=$playerid) as winsagainst,
-		(select count(*) from farkle_games e, farkle_games_players f, farkle_games_players g 
+		(select count(*) from farkle_games e, farkle_games_players f, farkle_games_players g
 			where e.gameid=f.gameid and f.playerid=b.friendid and e.gameid=g.gameid and g.playerid=$playerid and e.winningplayer=b.friendid) as lossesagainst
 		from farkle_players a, farkle_friends b
-		where a.playerid=b.friendid and b.sourceid=$playerid and a.active=1
+		where a.playerid=b.friendid and b.sourceid=$playerid and a.active=true
 		order by (lossesagainst+winsagainst) desc";
 
 	$players = db_select_query( $sql, SQL_MULTI_ROW );

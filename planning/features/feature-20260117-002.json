@@ -1,0 +1,193 @@
+{
+  "id": "feature-20260117-002",
+  "title": "Remove Facebook and Google AdSense Integration",
+  "description": "Complete removal of Facebook SDK, login integration, social features, and Google AdSense/Analytics from the Farkle Ten codebase. This is part of the modernization effort to simplify the codebase and remove deprecated third-party dependencies.",
+  "created_at": "2026-01-17T19:00:00Z",
+  "status": "completed",
+  "completed_at": "2026-01-17T22:45:00Z",
+  "verification_results": {
+    "requirements_total": 11,
+    "requirements_satisfied": 11,
+    "tasks_completed": 14,
+    "verified_at": "2026-01-17T22:45:00Z"
+  },
+
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "detail": "All Facebook SDK files removed (PHP and JavaScript)",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-002",
+      "detail": "All Facebook login/authentication code removed from backend",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-003",
+      "detail": "All Facebook login UI removed from frontend templates",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-004",
+      "detail": "All Facebook social features removed (friend invites, score publishing)",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-005",
+      "detail": "All Facebook metadata tags removed from templates",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-006",
+      "detail": "Database schema has no facebookid column",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-007",
+      "detail": "All Google AdSense integration removed",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-008",
+      "detail": "All Google Analytics tracking removed",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-009",
+      "detail": "Facebook configuration removed from config files",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-010",
+      "detail": "Facebook image assets removed",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-011",
+      "detail": "Codebase verified clean (no Facebook/AdSense references remain)",
+      "status": "satisfied"
+    }
+  ],
+
+  "tasks": [
+    {
+      "id": "task-001",
+      "type": "implementation",
+      "requirement_ids": ["REQ-001"],
+      "description": "Delete Facebook SDK files (includes/base_facebook.php, includes/facebook.php, js/facebook.js)",
+      "status": "completed",
+      "completed_at": "2026-01-17T19:15:00Z"
+    },
+    {
+      "id": "task-002",
+      "type": "implementation",
+      "requirement_ids": ["REQ-002"],
+      "description": "Remove Facebook login code from wwwroot/farkleLogin.php (UserFacebookLogin function, require statements, initialization)",
+      "status": "completed",
+      "completed_at": "2026-01-17T19:30:00Z"
+    },
+    {
+      "id": "task-003",
+      "type": "implementation",
+      "requirement_ids": ["REQ-002"],
+      "description": "Remove Facebook login handler from wwwroot/farkle_fetch.php (action=fblogin)",
+      "status": "completed",
+      "completed_at": "2026-01-17T19:45:00Z"
+    },
+    {
+      "id": "task-004",
+      "type": "implementation",
+      "requirement_ids": ["REQ-002"],
+      "description": "Remove Facebook references from wwwroot/farkleGameFuncs.php, farkleFriends.php, farklePageFuncs.php, farkleTournament.php",
+      "status": "completed",
+      "completed_at": "2026-01-17T20:00:00Z"
+    },
+    {
+      "id": "task-005",
+      "type": "implementation",
+      "requirement_ids": ["REQ-003"],
+      "description": "Remove Facebook login UI from templates/farkle_div_login.tpl (Facebook button, onClick handlers)",
+      "status": "completed",
+      "completed_at": "2026-01-17T20:15:00Z"
+    },
+    {
+      "id": "task-006",
+      "type": "implementation",
+      "requirement_ids": ["REQ-003"],
+      "description": "Remove Facebook UI elements from templates/farkle_div_lobby.tpl and farkle_div_addfriend.tpl",
+      "status": "completed",
+      "completed_at": "2026-01-17T20:30:00Z"
+    },
+    {
+      "id": "task-007",
+      "type": "implementation",
+      "requirement_ids": ["REQ-004"],
+      "description": "Remove Facebook functions from js/farkleLogin.js, farklePage.js, farkleGame.js, farkleFriends.js",
+      "status": "completed",
+      "completed_at": "2026-01-17T20:45:00Z"
+    },
+    {
+      "id": "task-008",
+      "type": "implementation",
+      "requirement_ids": ["REQ-005", "REQ-008"],
+      "description": "Remove Facebook Open Graph tags and Google Analytics from templates/header.tpl",
+      "status": "completed",
+      "completed_at": "2026-01-17T21:00:00Z"
+    },
+    {
+      "id": "task-009",
+      "type": "implementation",
+      "requirement_ids": ["REQ-006"],
+      "description": "Remove facebookid column from docker/init.sql schema",
+      "status": "completed",
+      "completed_at": "2026-01-17T21:15:00Z"
+    },
+    {
+      "id": "task-010",
+      "type": "implementation",
+      "requirement_ids": ["REQ-007"],
+      "description": "Delete Google AdSense file (wwwroot/google_adsense_script.html)",
+      "status": "completed",
+      "completed_at": "2026-01-17T21:30:00Z"
+    },
+    {
+      "id": "task-011",
+      "type": "implementation",
+      "requirement_ids": ["REQ-009"],
+      "description": "Remove Facebook config from docker/siteconfig.ini (fb_app_id, fb_app_secret)",
+      "status": "completed",
+      "completed_at": "2026-01-17T21:45:00Z"
+    },
+    {
+      "id": "task-012",
+      "type": "implementation",
+      "requirement_ids": ["REQ-010"],
+      "description": "Delete Facebook image assets (images/fbloginbutton.png, images/fb-icon.png)",
+      "status": "completed",
+      "completed_at": "2026-01-17T22:00:00Z"
+    },
+    {
+      "id": "task-013-fix",
+      "type": "fix",
+      "requirement_ids": ["REQ-011"],
+      "description": "Fix: Remove remaining Facebook references from templates (farkle.tpl, farkle_div_game.tpl, farkle_app_support.tpl) and clear Smarty cache",
+      "status": "completed",
+      "completed_at": "2026-01-17T22:30:00Z",
+      "issue_details": {
+        "source": "orchestrator_verification",
+        "error_message": "Found Facebook references in: farkle.tpl (facebook.js script), farkle_div_game.tpl (facebook_button.png), farkle_app_support.tpl (community page links), vendor autoload (deleted files), compiled templates cache",
+        "context": "Final verification grep found remaining references"
+      }
+    },
+    {
+      "id": "task-FINAL",
+      "type": "verification",
+      "requirement_ids": ["REQ-011"],
+      "description": "[ORCHESTRATOR] Final verification - grep for all Facebook/AdSense references and verify none remain",
+      "status": "completed",
+      "completed_at": "2026-01-17T22:45:00Z",
+      "note": "This task is completed by the Orchestrator, NOT a coder agent"
+    }
+  ]
+}

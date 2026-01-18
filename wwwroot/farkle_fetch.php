@@ -5,14 +5,19 @@
 
 	require_once('../includes/baseutil.php');
 	require_once('dbutil.php');
-	require_once('farkleLogin.php'); 
-	
+	require_once('farkleLogin.php');
+	require_once('farkleBackgroundTasks.php');
+
 	BaseUtil_Debug( "Entered farkle_fetch.php", 7 );
 	//include_once("analyticstracking.php");
-	
+
 	Farkle_SessSet( );
-	
-	$g_json = 1; 
+
+	$g_json = 1;
+
+	// Run background maintenance tasks (throttled to prevent overload)
+	// This replaces the need for cron jobs
+	BackgroundMaintenance(); 
 	
 	// Allow post or request. TBD: take GET away. 
 	if( isset( $_POST['action'] ) )
@@ -35,7 +40,6 @@
 		// These functions can be executed while not logged in
 		if( $p['action'] == 'register' ) 				$rc = UserRegister( $p['user'], $p['pass'], $p['email'] );
 		else if( $p['action'] == 'login' )				$rc = UserLogin( $p['user'], $p['pass'], $p['remember'] );
-		else if( $p['action'] == 'fblogin' )			$rc = UserFacebookLogin( $p['facebookid'], $p['username'], $p['email'], $p['fullname'], $p['playerid'], 0 );
 		else if( $p['action'] == 'forgotpass' )			$rc = ResendPassword( $p['email'] );
 		else if( $p['action'] == 'resetpass' )			$rc = ResetPassword( $p['code'], $p['pass'] );
 		else

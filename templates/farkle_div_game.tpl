@@ -26,11 +26,8 @@
 	<table id="tabGameButtons" class="diceFrameWidth gamePlayersDiv">
 	<tr>
 		<td align="left">
-			<input id="btnRollDice" type="button" class="mobileButton" buttoncolor="green"  value="Roll" 
+			<input id="btnRollDice" type="button" class="mobileButton" buttoncolor="green"  value="Roll"
 				{if !$mobilemode && !$tabletmode}onMouseDown{else}ontouchstart{/if}="RollDice()" style="width:110px; margin: 0px;">
-			
-			<img id="btnPostGame" src="/images/facebook_button.png" onClick="FarklePublishGame()" 
-				style="width:110px; display: none; margin: 0px; font-size: 16px; cursor: pointer;">
 		</td>
 		<td width="85px" align="center">
 			<span id="lblRoundScore" class="shadowed roundScore">0</span>
