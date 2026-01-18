@@ -64,7 +64,15 @@ CREATE TABLE IF NOT EXISTS farkle_games (
   currentround INTEGER DEFAULT 1,
   currentplayer INTEGER DEFAULT 0,
   currentturn INTEGER DEFAULT 0,
-  randomPlayers INTEGER DEFAULT 2
+  randomPlayers INTEGER DEFAULT 2,
+  maxturns INTEGER DEFAULT 2,
+  gamestart TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  mintostart INTEGER DEFAULT 0,
+  lastturn TIMESTAMP DEFAULT NULL,
+  playerarray TEXT DEFAULT NULL,
+  titleredeemed INTEGER DEFAULT 0,
+  gameexpire TIMESTAMP DEFAULT NULL,
+  playerstring VARCHAR(255) DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_whostarted ON farkle_games(whostarted);
@@ -82,7 +90,9 @@ CREATE TABLE IF NOT EXISTS farkle_games_players (
   playerorder INTEGER DEFAULT 0,
   lastroll VARCHAR(50) DEFAULT NULL,
   diceonhand VARCHAR(50) DEFAULT NULL,
-  quit BOOLEAN DEFAULT false
+  quit BOOLEAN DEFAULT false,
+  playerturn INTEGER DEFAULT 1,
+  lastplayed TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_gameid ON farkle_games_players(gameid);
