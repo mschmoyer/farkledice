@@ -51,6 +51,8 @@ CREATE TABLE IF NOT EXISTS farkle_players (
   rolls INTEGER DEFAULT 0,
   highest10round INTEGER DEFAULT 0,
   resetpasscode VARCHAR(64) DEFAULT NULL,
+  reinvite_token VARCHAR(64) DEFAULT NULL,
+  reinvite_expires TIMESTAMP DEFAULT NULL,
   active BOOLEAN DEFAULT true,
   stylepoints INTEGER DEFAULT 0
 );

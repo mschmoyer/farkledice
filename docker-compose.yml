@@ -4,6 +4,7 @@ services:
     container_name: farkle_web
     ports:
       - "8080:80"
+      - "8443:443"
     volumes:
       - .:/var/www/html
       - ./docker/backbone:/var/www/backbone

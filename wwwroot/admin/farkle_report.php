@@ -2,11 +2,12 @@
 
 	require_once('../../includes/baseutil.php');
 	require_once('dbutil.php');
+	require_once('farkleLogin.php');
 	//require_once('../farkleGameFuncs.php');
 	//require_once('../farklePageFuncs.php');
-	
-	BaseUtil_SessSet( );
-	
+
+	Farkle_SessSet();
+
 	$sql = "select
 				playerid,
 				COALESCE(fullname,username) as name,

@@ -10,7 +10,7 @@ Farkle Ten is an online multiplayer dice game written in PHP and JavaScript. The
 - Social features: friend system, leaderboards, achievements, and tournaments
 - Mobile and tablet support with responsive design
 
-Live site: www.farkledice.com
+Live site: https://www.farkledice.com
 
 ## Local Development with Docker
 
@@ -23,6 +23,28 @@ docker-compose up -d
 Access at http://localhost:8080 (see DOCKER.md for full instructions)
 
 Test credentials: `testuser` / `test123`
+
+### Local Database Access
+
+Credentials are stored in `.env.local`. When running psql commands against the local Docker database, use:
+
+```bash
+# Quick reference (from .env.local):
+# Container: farkle_db
+# Database: farkle_db
+# User: farkle_user
+# Password: farkle_pass
+
+# Run SQL queries locally:
+docker exec farkle_db psql -U farkle_user -d farkle_db -c "YOUR SQL HERE"
+
+# Interactive psql session:
+docker exec -it farkle_db psql -U farkle_user -d farkle_db
+
+# Examples:
+docker exec farkle_db psql -U farkle_user -d farkle_db -c "SELECT username, adminlevel FROM farkle_players;"
+docker exec farkle_db psql -U farkle_user -d farkle_db -c "UPDATE farkle_players SET adminlevel = 1 WHERE username = 'mschmoyer';"
+```
 
 ## Heroku Production Environment
 
@@ -134,6 +156,12 @@ Templates are in `templates/` directory:
 - `farkle.tpl` - Main game page
 - `farkle_div_*.tpl` - Individual UI sections (game board, lobby, login, etc.)
 - `header.tpl` / `footer.tpl` - Common page elements
+
+**Subdirectory Template Paths:**
+- The `template_dir` is set dynamically in `baseutil.php` based on the current folder
+- For files in `wwwroot/admin/`, the template_dir becomes `templates/admin/`
+- Admin pages should use `$smarty->display('admin_players.tpl')` NOT `$smarty->display('admin/admin_players.tpl')`
+- The subfolder is already part of the template_dir path, so template names should not include it
 
 ### Directory Structure
 

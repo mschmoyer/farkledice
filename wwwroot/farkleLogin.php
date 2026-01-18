@@ -194,7 +194,7 @@ function UserLogin( $user, $pass, $remember=1 )
 		
 	$sql = "select COALESCE(fullname,username) as username, playerid, adminlevel, sessionid
 		from farkle_players
-		where MD5(username)='$user' and password=CONCAT('$pass',MD5(salt))";	
+		where (MD5(username)='$user' OR MD5(LOWER(email))='$user') and password=CONCAT('$pass',MD5(salt))";	
 		
 	$pInfo = db_select_query( $sql, SQL_SINGLE_ROW );
 	if( $pInfo )

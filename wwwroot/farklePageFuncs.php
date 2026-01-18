@@ -192,7 +192,7 @@ function GetGames( $playerid, $completed, $limit = 20, $skipSolo = 0 )
 	
 	$sql = "select * from (
 		select a.gameid, b.currentturn, b.maxturns, b.winningplayer, a.playerturn, a.playerround, b.gamemode,
-		TO_CHAR(b.gamefinish,'Mon DD') as gamefinish, b.playerstring,
+		TO_CHAR(b.gamefinish,'Mon-DD-YYYY HH:MI AM') as gamefinish, b.playerstring,
 		((a.playerturn=b.currentturn and b.gamemode=1) or (a.playerround<11 and b.gamemode=2)) as yourturn,
 		(select count(*) from farkle_games_players where gameid=b.gameid and playerround>=11 and b.gamemode=2) as finishedplayers
 		from farkle_games_players a, farkle_games b

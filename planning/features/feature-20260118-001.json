@@ -1,0 +1,151 @@
+{
+  "id": "feature-20260118-001",
+  "title": "Admin Player Management with Re-Invite System",
+  "description": "Create an admin page that lists all players with search capability, clickable player cards leading to a player admin detail page. The detail page includes a 'Copy New Invite Link' button that generates a special re-invite URL. When recipients click this link, they can reset their password and regain access to old accounts.",
+  "created_at": "2026-01-18T12:00:00Z",
+  "status": "completed",
+  "completed_at": "2026-01-18T14:00:00Z",
+
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "detail": "Admin players page lists all players with search field at the top",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-002",
+      "detail": "Player list shows clickable player cards displaying username, level, and last active time",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-003",
+      "detail": "Player list sorted by last active (most recent first) by default",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-004",
+      "detail": "Admin pages require adminlevel > 0 to access",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-005",
+      "detail": "Player admin detail page shows comprehensive player info (all DB fields, games played, achievements, level, XP, wins/losses, etc.)",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-006",
+      "detail": "Detail page has 'Copy New Invite Link' button",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-007",
+      "detail": "Button generates new GUID and copies re-invite URL to clipboard",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-008",
+      "detail": "Re-invite link route (farkledice.com/reinvite.php?token=[guid]) loads password reset page",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-009",
+      "detail": "Reset page shows username and password input field",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-010",
+      "detail": "Password reset updates the user's password in database",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-011",
+      "detail": "Re-invite links expire after 7 days",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-012",
+      "detail": "After successful password reset, user is auto-logged in",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-013",
+      "detail": "Create reusable PlayerCard component/template for consistent display across pages",
+      "status": "satisfied"
+    }
+  ],
+
+  "tasks": [
+    {
+      "id": "task-001",
+      "type": "implementation",
+      "requirement_ids": ["REQ-011"],
+      "description": "Add reinvite_token (VARCHAR 64) and reinvite_expires (TIMESTAMP) columns to farkle_players table in database schema",
+      "status": "completed",
+      "completed_at": "2026-01-18T12:15:00Z"
+    },
+    {
+      "id": "task-002",
+      "type": "implementation",
+      "requirement_ids": ["REQ-013"],
+      "description": "Create reusable PlayerCard Smarty template component (templates/farkle_playercard.tpl) showing username, level, last active",
+      "status": "completed",
+      "completed_at": "2026-01-18T12:20:00Z"
+    },
+    {
+      "id": "task-003",
+      "type": "implementation",
+      "requirement_ids": ["REQ-001", "REQ-002", "REQ-003", "REQ-004"],
+      "description": "Create admin players list page (wwwroot/admin/adminPlayers.php) with search, pagination, and player cards sorted by last active",
+      "status": "completed",
+      "completed_at": "2026-01-18T12:30:00Z"
+    },
+    {
+      "id": "task-004",
+      "type": "implementation",
+      "requirement_ids": ["REQ-004", "REQ-005", "REQ-006"],
+      "description": "Create admin player detail page (wwwroot/admin/adminPlayerDetail.php) showing all player info and 'Copy New Invite Link' button",
+      "status": "completed",
+      "completed_at": "2026-01-18T12:45:00Z"
+    },
+    {
+      "id": "task-005",
+      "type": "implementation",
+      "requirement_ids": ["REQ-007", "REQ-011"],
+      "description": "Create AJAX endpoint to generate new reinvite token, store with 7-day expiry, return URL for clipboard copy",
+      "status": "completed",
+      "completed_at": "2026-01-18T13:00:00Z"
+    },
+    {
+      "id": "task-006",
+      "type": "implementation",
+      "requirement_ids": ["REQ-008", "REQ-009"],
+      "description": "Create re-invite password reset page (wwwroot/reinvite.php) that validates token and shows password form",
+      "status": "completed",
+      "completed_at": "2026-01-18T13:15:00Z"
+    },
+    {
+      "id": "task-007",
+      "type": "implementation",
+      "requirement_ids": ["REQ-010", "REQ-012"],
+      "description": "Implement password update logic with auto-login after successful reset",
+      "status": "completed",
+      "completed_at": "2026-01-18T13:30:00Z"
+    },
+    {
+      "id": "task-FINAL",
+      "type": "verification",
+      "requirement_ids": [],
+      "description": "[ORCHESTRATOR] Final verification - verify all requirements are satisfied",
+      "status": "completed",
+      "completed_at": "2026-01-18T14:00:00Z",
+      "note": "All 13 requirements satisfied. All 7 implementation tasks completed."
+    }
+  ],
+
+  "verification_results": {
+    "requirements_total": 13,
+    "requirements_satisfied": 13,
+    "tasks_completed": 8,
+    "verified_at": "2026-01-18T14:00:00Z"
+  }
+}

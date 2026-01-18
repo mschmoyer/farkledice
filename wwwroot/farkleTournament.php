@@ -63,7 +63,7 @@ function CreateTournament( $playercap, $tformat, $launchHours, $name, $lobbyImag
 		$randIcon = "tournament" . rand(1,3) . ".png";
 		
 		$sql = "insert into farkle_achievements values ($maxAchId, 'Win $name',
-			CONCAT('Hosted ', TO_CHAR( NOW()+INTERVAL '$launchHours' HOUR, 'Mon DD, YYYY') ), 35, '$randIcon')";
+			CONCAT('Hosted ', TO_CHAR( NOW() + ($launchHours || ' hours')::INTERVAL, 'Mon DD, YYYY') ), 35, '$randIcon')";
 		$rc = db_command($sql);
 		
 		BaseUtil_Debug( "CreateTournament: Will award achievement #$maxAchId for winning this tournament.", 1 );
@@ -75,7 +75,7 @@ function CreateTournament( $playercap, $tformat, $launchHours, $name, $lobbyImag
 	$sql = "insert into farkle_tournaments
 		( playercap, launchdate, tformat, tname, pointstowin, mintostart, startcondition, lobbyimage, roundhours $achSelect )
 		values
-		( $playercap, NOW() + INTERVAL '$launchHours' HOUR, $tformat, '$name', 10000, 0, $startCondition, '$lobbyImage', $roundHours $achValue )";
+		( $playercap, NOW() + ($launchHours || ' hours')::INTERVAL, $tformat, '$name', 10000, 0, $startCondition, '$lobbyImage', $roundHours $achValue )";
 	$rc = db_command($sql);
 	$newTournamentId = db_insert_id();
 	
@@ -245,11 +245,11 @@ function EndLastTournamentRound( $tid, $lastRound )
 
 function CheckTournaments( )
 {
-	// Check to see if any tournaments are due for a round end. Run in the Cron job. 
-	$sql = "select tournamentid, roundnum, roundstartdate, NOW() + INTERVAL roundhours HOUR, roundhours, 
-		(NOW()-(roundstartdate + INTERVAL roundhours HOUR)) as timedelta,
-		 (select min(winningplayer) 
-			from farkle_games b, farkle_tournaments_games c 
+	// Check to see if any tournaments are due for a round end. Run in the Cron job.
+	$sql = "select tournamentid, roundnum, roundstartdate, NOW() + (roundhours || ' HOURS')::INTERVAL, roundhours,
+		(NOW()-(roundstartdate + (roundhours || ' HOURS')::INTERVAL)) as timedelta,
+		 (select min(winningplayer)
+			from farkle_games b, farkle_tournaments_games c
 			where b.gameid=c.gameid and c.tournamentid=a.tournamentid) as lowestWinnerId
 		from farkle_tournaments a
 		where winningplayer=0 and roundnum > 0";
@@ -473,7 +473,7 @@ function GetTournamentStatus( $tid, $playerid )
 			a.winningplayer, a.roundnum, a.tname, a.tformat, a.roundhours, a.pointstowin, a.mintostart,
 			a.playercap, a.startcondition, gamemode,
 			j.imagefile as imagefile, j.title, j.description, j.worth,
-			TO_CHAR( (a.roundstartdate + interval a.roundhours HOUR), 'Mon DD @ HH12:00 AM') as nextrounddate,
+			TO_CHAR( (a.roundstartdate + (a.roundhours || ' hours')::INTERVAL), 'Mon DD @ HH12:00 AM') as nextrounddate,
 			(select count(*) from farkle_tournaments_players b where b.tournamentid=a.tournamentid) as numplayers,
 			COALESCE((select 1 from farkle_tournaments_players c where c.tournamentid=a.tournamentid and playerid=$playerid),0) as participant
 		FROM farkle_tournaments a, farkle_achievements j where a.achievementid=j.achievementid and tournamentid=$tid";
