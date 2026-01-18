@@ -1,13 +1,31 @@
 <?php
 /*
 	baseutil.php
-	
+
 	Date		Editor		Change
 	----------	----------	----------------------------
-	5-May-2011	MAS			Initial version. 
-	25-Nov-2012	mas			No longer reporting errors to the screen when a page fetch is asking for JSON. 
+	5-May-2011	MAS			Initial version.
+	25-Nov-2012	mas			No longer reporting errors to the screen when a page fetch is asking for JSON.
 
 */
+
+	// Redirect apex domain to www subdomain (for custom domain setup)
+	if (isset($_SERVER['HTTP_HOST'])) {
+		$host = $_SERVER['HTTP_HOST'];
+
+		// Check if we're on the apex domain (without www)
+		if ($host === 'farkledice.com') {
+			// Build the redirect URL
+			$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+			$uri = $_SERVER['REQUEST_URI'] ?? '/';
+
+			// Redirect to www version (301 permanent redirect)
+			header('HTTP/1.1 301 Moved Permanently');
+			header('Location: ' . $protocol . '://www.farkledice.com' . $uri);
+			exit();
+		}
+	}
+
 	$g_debug = 0;
 	$g_flushcache = 0;
 	$gMobileMode = 0;

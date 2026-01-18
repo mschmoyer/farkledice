@@ -20,8 +20,97 @@ if( isset($_GET['action']) )
 {
 	if( $_GET['action'] == 'updateleaderboards' )
 	{
-		Leaderboard_RefreshData( true );
-		Leaderboard_RefreshDaily();
+		// Manual leaderboard refresh - show output
+		header('Content-Type: text/html; charset=utf-8');
+		echo "<!DOCTYPE html><html><head><title>Leaderboard Sync</title>";
+		echo "<style>body{font-family:monospace;padding:20px;background:#1a1a1a;color:#0f0;}";
+		echo ".success{color:#0f0;} .info{color:#4af;} .error{color:#f44;} .header{color:#ff0;font-size:1.2em;}</style>";
+		echo "</head><body>";
+		echo "<div class='header'>========================================<br>";
+		echo "Farkle Leaderboard Manual Sync<br>";
+		echo "========================================</div><br>";
+
+		echo "<div class='info'>Started: " . date('Y-m-d H:i:s') . "</div><br>";
+
+		// Check database connection and siteinfo table
+		echo "<div class='info'>Checking database connection...</div>";
+		try {
+			$check = db_select_query("SELECT COUNT(*) FROM siteinfo", SQL_SINGLE_VALUE);
+			echo "<div class='success'>✓ Database connected, siteinfo has {$check} entries</div><br>";
+		} catch (Exception $e) {
+			echo "<div class='error'>✗ Database connection ERROR: " . htmlspecialchars($e->getMessage()) . "</div><br>";
+			echo "</body></html>";
+			exit(1);
+		}
+
+		echo "<div class='info'>Step 1: Refreshing main leaderboard data...</div>";
+		echo "<div style='margin-left:20px;'>";
+		echo "- Wins/Losses rankings<br>";
+		echo "- Highest 10-round scores<br>";
+		echo "- Achievement points<br>";
+		echo "</div>";
+
+		try {
+			$result1 = Leaderboard_RefreshData( true );
+			if ($result1) {
+				echo "<div class='success'>✓ Main leaderboard refresh complete</div><br>";
+			} else {
+				echo "<div class='error'>✗ Main leaderboard refresh skipped (throttle check)</div><br>";
+			}
+		} catch (Exception $e) {
+			echo "<div class='error'>✗ Main leaderboard refresh ERROR: " . htmlspecialchars($e->getMessage()) . "</div><br>";
+			error_log("Leaderboard refresh error: " . $e->getMessage());
+		}
+
+		echo "<div class='info'>Step 2: Refreshing daily leaderboard stats...</div>";
+		echo "<div style='margin-left:20px;'>";
+		echo "- Yesterday's highest scores<br>";
+		echo "- Yesterday's most farkles<br>";
+		echo "- Yesterday's most wins<br>";
+		echo "</div>";
+
+		try {
+			Leaderboard_RefreshDaily();
+			echo "<div class='success'>✓ Daily leaderboard refresh complete</div><br>";
+		} catch (Exception $e) {
+			echo "<div class='error'>✗ Daily leaderboard refresh ERROR: " . htmlspecialchars($e->getMessage()) . "</div><br>";
+			error_log("Daily leaderboard refresh error: " . $e->getMessage());
+		}
+
+		echo "<div class='info'>Step 3: Verifying data...</div>";
+
+		// Check how many entries were created
+		$sql = "SELECT lbindex, COUNT(*) as count FROM farkle_lbdata GROUP BY lbindex ORDER BY lbindex";
+		$counts = db_select_query($sql, SQL_MULTI_ROW);
+
+		if ($counts && count($counts) > 0) {
+			echo "<div style='margin-left:20px;'>Leaderboard entries by category:<br>";
+			$category_names = [
+				0 => 'Yesterday\'s High Scores',
+				1 => 'Yesterday\'s Farklers',
+				2 => 'Yesterday\'s Winners',
+				3 => 'Wins/Losses',
+				4 => 'Highest 10-Round',
+				5 => 'Achievement Points'
+			];
+
+			$total = 0;
+			foreach ($counts as $row) {
+				$category = $category_names[$row['lbindex']] ?? "Unknown ({$row['lbindex']})";
+				echo "<div class='info'>&nbsp;&nbsp;{$category}: {$row['count']} entries</div>";
+				$total += $row['count'];
+			}
+			echo "<br><div class='success'>Total entries: {$total}</div>";
+		} else {
+			echo "<div class='error'>⚠ WARNING: No leaderboard data found!</div>";
+		}
+
+		echo "<br><div class='header'>========================================<br>";
+		echo "Leaderboard Sync Complete!<br>";
+		echo "========================================</div>";
+		echo "<div class='info'>Finished: " . date('Y-m-d H:i:s') . "</div>";
+		echo "</body></html>";
+		exit(0);
 	}
 }
 
