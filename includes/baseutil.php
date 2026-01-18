@@ -62,6 +62,15 @@
 			// Note: Database session handler is initialized in dbutil.php
 			// This ensures sessions are stored in the database for Heroku compatibility
 			session_name( $sessName );
+
+			// Only use secure cookies when actually on HTTPS
+			$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+			           || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+			ini_set('session.cookie_secure', $isHttps ? '1' : '0');
+			ini_set('session.cookie_httponly', '1');
+			ini_set('session.cookie_samesite', 'Lax');
+			ini_set('session.cookie_path', '/');  // Ensure cookie works across all paths including /admin/
+
 			if (!session_id()) {
 				session_start();
 			}

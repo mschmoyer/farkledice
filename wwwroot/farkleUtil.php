@@ -23,7 +23,7 @@ if( isset($_GET['test']) )
 		require_once('farkleGameFuncs.php'); 
 		require_once('farkleGameFuncs.php'); 
 		
-		$sql = "Select gameid, gamewith, maxturns from farkle_games where gamestart > NOW()-interval'20'hour LIMIT 2000 OFFSET 1";
+		$sql = "Select gameid, gamewith, maxturns from farkle_games where gamestart > NOW() - interval '20 hours' LIMIT 2000 OFFSET 1";
 		$allGames = db_select_query( $sql, SQL_MULTI_ROW );
 		foreach( $allGames as $g )
 		{

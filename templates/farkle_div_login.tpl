@@ -11,7 +11,7 @@
 		<div id="farkleLoginDiv" style="display: none;">
 			
 				{*Already have a player account?<br/>*}
-				{if !$mobileMode}Username: {/if}<input type="text" class="mobileText" placeholder="username" id="txtUsername" rows="20"><br/>
+				{if !$mobileMode}Username or Email: {/if}<input type="text" class="mobileText" placeholder="username or email" id="txtUsername" rows="20"><br/>
 				{if !$mobileMode}Password: {/if}<input type="password" class="mobileText" placeholder="password" id="txtPassword"><br/>
 				<input type="button" class="mobileButton" buttoncolor="green" value="Login" onClick="Login()">
 

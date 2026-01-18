@@ -66,9 +66,10 @@ if (empty($token)) {
                 // password = CONCAT(MD5(plain_password), MD5(salt))
                 $hashedPassword = md5($newPassword);
 
-                // Update password and clear the reinvite token
+                // Update password, salt, and clear the reinvite token
                 $sql = "UPDATE farkle_players
                         SET password = CONCAT('{$hashedPassword}', MD5('{$salt}')),
+                            salt = '{$salt}',
                             reinvite_token = NULL,
                             reinvite_expires = NULL
                         WHERE playerid = {$playerid}";

@@ -61,16 +61,16 @@
 					onMouseOver="this.style.cursor='hand';" id="btnLobbyTournaments" style="display: none;">
 			</tr></td>*}
 						
-			<tr><td><input type="button" class="mobileButton lobbybutton" value="New Game" 		onClick="ShowNewGame()" 		id="btnLobbyNewGame"></td></tr>
-			<tr><td><input type="button" class="mobileButton lobbybutton" buttoncolor="blue" 	value="Tournament" 				id="btnLobbyTournament"></td></tr>
-			{*<tr><td><input type="button" class="mobileButton lobbybutton" value="Register" 	onClick="ShowRegister()" 		id="btnLobbyRegister" ></td></tr>*}
-			<tr><td><input type="button" class="mobileButton lobbybutton" value="My Profile" 	onClick="ShowMyPlayerInfo()" 	id="btnLobbyMyProfile"></td></tr>
-			<tr><td><input type="button" class="mobileButton lobbybutton" value="Friends" 		onClick="ShowFriends()" 		id="btnLobbyFriends"></td></tr>
-			<tr><td><input type="button" class="mobileButton lobbybutton" value="Leaderboard" 	onClick="ShowLeaderBoard()" 	id="btnLobbyLeaderboard"></td></tr>
-			<tr><td><input type="button" class="mobileButton lobbybutton" value="Instructions" 	onClick="ShowInstructions()" 	id="btnLobbyInstructions"></td></tr>
-			<tr><td><input type="button" class="mobileButton lobbybutton" value="Logout" 		onClick="Logout()" 				id="btnLobbyLogout" ></td></tr>
-			{if isset($adminlevel) && $adminlevel > 0 && 1==0}
-				<tr><td><input type="button" class="mobileButton lobbybutton" value="Admin" 	onClick="ShowAdmin()" 			id="btnLobbyAdmin" ></td></tr>
+			<tr><td><input type="button" class="mobileButton lobbyButton" value="New Game" 		onClick="ShowNewGame()" 		id="btnLobbyNewGame"></td></tr>
+			<tr><td><input type="button" class="mobileButton lobbyButton" buttoncolor="blue" 	value="Tournament" 				id="btnLobbyTournament"></td></tr>
+			{*<tr><td><input type="button" class="mobileButton lobbyButton" value="Register" 	onClick="ShowRegister()" 		id="btnLobbyRegister" ></td></tr>*}
+			<tr><td><input type="button" class="mobileButton lobbyButton" value="My Profile" 	onClick="ShowMyPlayerInfo()" 	id="btnLobbyMyProfile"></td></tr>
+			<tr><td><input type="button" class="mobileButton lobbyButton" value="Friends" 		onClick="ShowFriends()" 		id="btnLobbyFriends"></td></tr>
+			<tr><td><input type="button" class="mobileButton lobbyButton" value="Leaderboard" 	onClick="ShowLeaderBoard()" 	id="btnLobbyLeaderboard"></td></tr>
+			<tr><td><input type="button" class="mobileButton lobbyButton" value="Instructions" 	onClick="ShowInstructions()" 	id="btnLobbyInstructions"></td></tr>
+			<tr><td><input type="button" class="mobileButton lobbyButton" value="Logout" 		onClick="Logout()" 				id="btnLobbyLogout" ></td></tr>
+			{if isset($adminlevel) && $adminlevel > 0}
+				<tr><td><input type="button" class="mobileButton lobbyButton" value="Admin" 	onClick="ShowAdmin()" 			id="btnLobbyAdmin" ></td></tr>
 			{/if}
 			
 			

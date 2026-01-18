@@ -24,7 +24,7 @@ function BackgroundMaintenance()
 	// Task 1: Refresh leaderboard data (every 5 minutes)
 	BackgroundTask_RefreshLeaderboards();
 
-	// Task 2: Update daily leaderboard stats (every hour)
+	// Task 2: Update daily leaderboard stats (every 5 minutes)
 	BackgroundTask_RefreshDailyLeaderboards();
 
 	// Task 3: Cleanup stale games (every 30 minutes)
@@ -48,8 +48,8 @@ function BackgroundTask_RefreshLeaderboards()
 }
 
 /**
- * Refresh daily leaderboard stats (yesterday's top scores, wins, farkles)
- * Throttled to run at most once per hour
+ * Refresh daily leaderboard stats (today's top scores, wins, farkles)
+ * Throttled to run at most once every 5 minutes
  */
 function BackgroundTask_RefreshDailyLeaderboards()
 {
@@ -61,8 +61,8 @@ function BackgroundTask_RefreshDailyLeaderboards()
 		BaseUtil_Debug("BackgroundMaintenance: Refreshing daily leaderboards", 1);
 		Leaderboard_RefreshDaily();
 
-		// Set next run to 1 hour from now
-		$sql = "UPDATE siteinfo SET paramvalue=EXTRACT(EPOCH FROM (NOW() + interval '1' hour))
+		// Set next run to 5 minutes from now
+		$sql = "UPDATE siteinfo SET paramvalue=EXTRACT(EPOCH FROM (NOW() + interval '5' minute))
 				WHERE paramid=2 AND paramname='last_daily_leaderboard_refresh'";
 		db_command($sql);
 	}

@@ -30,7 +30,7 @@
 {include file="footer.tpl"}
 
 {* The Game Card object *}
-<div id="defaultGameCard" class="gameCard mobilebutton" style="display: none;">
+<div id="defaultGameCard" class="gameCard mobileButton" style="display: none;">
 
 
 	<table width="100%" height="100%" cellpadding="0" cellspacing="1"> 
@@ -161,7 +161,7 @@
 
 <script type="text/javascript" src="/js/farkleLogin.js?vers=1.1"></script>
 <script type="text/javascript" src="/js/farkleGame.js?vers=1.2"></script>
-<script type="text/javascript" src="/js/farklePage.js?vers=1.5"></script>
+<script type="text/javascript" src="/js/farklePage.js?vers=1.6"></script>
 <script type="text/javascript" src="/js/farkleLobby.js?vers=1.1"></script>
 <script type="text/javascript" src="/js/farkleFriends.js?vers=1.0"></script>
 

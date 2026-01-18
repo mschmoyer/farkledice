@@ -27,6 +27,7 @@ configs/siteconfig.ini
 # Sensitive configuration
 *.ini
 !docker/siteconfig.ini
+.env*
 
 # Dependencies
 vendor/
