@@ -1,5 +1,14 @@
 -- Initialize Farkle Database
 
+-- Create sessions table for database-backed session storage
+CREATE TABLE IF NOT EXISTS farkle_sessions (
+  session_id VARCHAR(128) PRIMARY KEY,
+  session_data TEXT,
+  last_access TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_last_access ON farkle_sessions(last_access);
+
 -- Create players table
 CREATE TABLE IF NOT EXISTS farkle_players (
   playerid SERIAL PRIMARY KEY,

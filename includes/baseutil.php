@@ -38,15 +38,22 @@
 	
 	function BaseUtil_SessSet( $sessName = "FarkleOnline" )
 	{
-		global $g_debug; 
+		global $g_debug;
 		if(!isset($_SESSION))
-		{ 
+		{
+			// Note: Database session handler is initialized in dbutil.php
+			// This ensures sessions are stored in the database for Heroku compatibility
 			session_name( $sessName );
 			if (!session_id()) {
 				session_start();
 			}
+
+			// Set testserver flag after session is started
+			if (!isset($_SESSION['testserver'])) {
+				$_SESSION['testserver'] = 0;
+			}
 		}
-		if( $g_debug >= 14 ) 
+		if( $g_debug >= 14 )
 		{
 			//echo "Dumping Session: ";
 			//var_dump($_SESSION);
@@ -86,10 +93,32 @@
 	$smarty = new Smarty();
 
 	$smarty->template_dir = $dir . "/templates/$curfolder";
-	BaseUtil_Debug( "Template_dir = " . (is_array($smarty->template_dir) ? print_r($smarty->template_dir, true) : $smarty->template_dir), 31 );	
-	$smarty->compile_dir = 	$dir.'/backbone/templates_c/';
+	BaseUtil_Debug( "Template_dir = " . (is_array($smarty->template_dir) ? print_r($smarty->template_dir, true) : $smarty->template_dir), 31 );
+
+	// Detect if running on Heroku (ephemeral filesystem)
+	$is_heroku = (getenv('DATABASE_URL') !== false || getenv('DYNO') !== false);
+
+	if ($is_heroku) {
+		// Use /tmp on Heroku (ephemeral but writable)
+		$compile_dir = '/tmp/smarty/templates_c';
+		$cache_dir = '/tmp/smarty/cache';
+
+		// Create directories if they don't exist
+		if (!file_exists($compile_dir)) {
+			mkdir($compile_dir, 0777, true);
+		}
+		if (!file_exists($cache_dir)) {
+			mkdir($cache_dir, 0777, true);
+		}
+	} else {
+		// Use existing directories locally
+		$compile_dir = $dir.'/backbone/templates_c/';
+		$cache_dir = $dir.'/backbone/cache/';
+	}
+
+	$smarty->compile_dir = $compile_dir;
 	BaseUtil_Debug( "compile_dir = ".$smarty->compile_dir, 31 );
-	$smarty->cache_dir = 	$dir.'/backbone/cache/';
+	$smarty->cache_dir = $cache_dir;
 	BaseUtil_Debug( "cache_dir = ".$smarty->cache_dir, 31 );
 	$smarty->config_dir = 	$dir.'/backbone/configs/';
 	BaseUtil_Debug( "config_dir = " . (is_array($smarty->config_dir) ? print_r($smarty->config_dir, true) : $smarty->config_dir), 31 );
@@ -140,13 +169,15 @@
 	/*BaseUtil_Debug( "Server name = " . $_SERVER['SERVER_NAME'], 1 );
 	if( strcmp($_SERVER['SERVER_NAME'], "www.farkledice.com") == 0 )
 	{
-		$smarty->assign('testserver', 1 ); 
-		$_SESSION['testserver'] = 1; 
+		$smarty->assign('testserver', 1 );
+		$_SESSION['testserver'] = 1;
 	}
 	else
 	{*/
-	$smarty->assign('testserver', 0 ); 
-	$_SESSION['testserver'] = 0; 
+	$smarty->assign('testserver', 0 );
+	// Commented out: This was causing session to start before custom handler could be registered
+	// $_SESSION['testserver'] will be set in BaseUtil_SessSet() after session starts properly
+	// $_SESSION['testserver'] = 0; 
 	
 	
 	// set the cache_lifetime for index.tpl to 1 hour

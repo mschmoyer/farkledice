@@ -180,11 +180,11 @@
         "Add finishdate to GROUP BY clause or wrap in aggregate function",
         "Use MAX(finishdate) if we want the most recent finish date per lobby image"
       ],
-      "status": "pending",
+      "status": "completed",
       "created_at": "2026-01-17T23:30:00Z",
-      "started_at": null,
-      "completed_at": null,
-      "resolution": null
+      "started_at": "2026-01-17T23:50:00Z",
+      "completed_at": "2026-01-17T23:52:00Z",
+      "resolution": "Fixed 1 GROUP BY issue in farkleTournament.php. In the GetActiveTournaments() function (line 569), wrapped finishdate in MAX() aggregate function to comply with PostgreSQL GROUP BY requirements. Changed 'EXTRACT(DAY FROM (now() - finishdate))' to 'EXTRACT(DAY FROM (now() - MAX(finishdate)))'. This ensures all non-aggregated columns in the SELECT clause are either in the GROUP BY clause or wrapped in aggregate functions, which is required by PostgreSQL's strict GROUP BY rules."
     },
     {
       "id": "bugfix-20260117-009",
@@ -203,11 +203,11 @@
         "Replace with EXTRACT(EPOCH FROM timestamp) for Unix timestamp",
         "PostgreSQL: EXTRACT(EPOCH FROM NOW()) returns Unix timestamp as decimal"
       ],
-      "status": "pending",
+      "status": "completed",
       "created_at": "2026-01-17T23:30:00Z",
-      "started_at": null,
-      "completed_at": null,
-      "resolution": null
+      "started_at": "2026-01-18T00:10:00Z",
+      "completed_at": "2026-01-18T00:12:00Z",
+      "resolution": "Fixed 2 UNIX_TIMESTAMP() occurrences in farkleLeaderboard.php. Replaced MySQL-specific UNIX_TIMESTAMP() with PostgreSQL-compatible EXTRACT(EPOCH FROM). Line 118: UNIX_TIMESTAMP(NOW()) -> EXTRACT(EPOCH FROM NOW()) in SELECT query checking if leaderboard refresh is needed. Line 129: UNIX_TIMESTAMP(NOW() + interval '5' minute) -> EXTRACT(EPOCH FROM (NOW() + interval '5' minute)) in UPDATE query setting next refresh time. Both queries now use PostgreSQL's EXTRACT(EPOCH FROM) which returns Unix timestamp as a decimal number of seconds since 1970-01-01 00:00:00 UTC."
     },
     {
       "id": "bugfix-20260117-010",
@@ -226,11 +226,11 @@
         "Replace with LIMIT 25",
         "Check for any other remaining LIMIT comma syntax"
       ],
-      "status": "pending",
+      "status": "completed",
       "created_at": "2026-01-17T23:30:00Z",
-      "started_at": null,
-      "completed_at": null,
-      "resolution": null
+      "started_at": "2026-01-18T00:15:00Z",
+      "completed_at": "2026-01-18T00:18:00Z",
+      "resolution": "Fixed 4 LIMIT syntax issues in farkleLeaderboard.php. Converted all MySQL-style comma syntax to PostgreSQL OFFSET syntax. Line 41: LIMIT 0, $maxRows -> LIMIT $maxRows (variable assignment). Line 138: LIMIT 0,$maxRows -> LIMIT $maxRows (commented code, fixed for consistency). Line 208: LIMIT 0,$maxDataRows -> LIMIT $maxDataRows (highest game scores query). Line 238: LIMIT 0,$maxDataRows -> LIMIT $maxDataRows (top winners query). All leaderboard queries now use PostgreSQL-compliant LIMIT syntax without the offset (since offset was 0 in all cases)."
     },
     {
       "id": "bugfix-20260117-011",
@@ -249,11 +249,149 @@
         "Move ORDER BY into the subquery or use different approach",
         "In PostgreSQL, ORDER BY in outer query cannot reference columns from inner SELECT that aren't in outer SELECT"
       ],
-      "status": "pending",
+      "status": "completed",
       "created_at": "2026-01-17T23:30:00Z",
-      "started_at": null,
-      "completed_at": null,
-      "resolution": null
+      "started_at": "2026-01-18T00:00:00Z",
+      "completed_at": "2026-01-18T00:05:00Z",
+      "resolution": "Fixed column alias scoping issue in farklePageFuncs.php GetGames() function. Replaced all references to 'finishedplayers' alias in the ORDER BY clause (lines 183-185) with the actual subquery: (select count(*) from farkle_games_players where gameid=b.gameid and playerround>=11 and b.gamemode=2). This avoids PostgreSQL's restriction on referencing column aliases from subquery SELECT clauses in ORDER BY when they're not exposed in the outer query. The ORDER BY now directly uses the subquery expression instead of the alias, ensuring PostgreSQL can properly resolve the column references."
+    },
+    {
+      "id": "bugfix-20260117-012",
+      "severity": "CRITICAL",
+      "category": "deprecated_function",
+      "summary": "Deprecated mysql_insert_id() blocking game creation",
+      "error_details": {
+        "message": "mysql_insert_id() deprecated function not available in PDO",
+        "file": "farkleGameFuncs.php, farkleTournament.php",
+        "line": "185, 415, 80",
+        "count": 3,
+        "context": "Game creation fails silently because mysql_insert_id() doesn't exist"
+      },
+      "steps_to_fix": [
+        "Replace mysql_insert_id() with db_insert_id() helper function",
+        "Remove mysql_error() and mysql_errno() calls",
+        "Use PDO-compatible error handling"
+      ],
+      "status": "completed",
+      "created_at": "2026-01-18T00:20:00Z",
+      "started_at": "2026-01-18T00:20:00Z",
+      "completed_at": "2026-01-18T00:25:00Z",
+      "resolution": "Fixed 3 mysql_insert_id() occurrences and removed deprecated mysql_error()/mysql_errno() calls. Files modified: farkleGameFuncs.php (2 fixes at lines 185 and 415), farkleTournament.php (1 fix at line 80), farkleFriends.php (removed mysql_errno() at line 83). All calls now use db_insert_id() which is PDO-compatible and uses PostgreSQL's lastval() function to get the last inserted ID. This fixes the game creation issue where games would fail to start because the newGameId was always 0."
+    },
+    {
+      "id": "bugfix-20260118-013",
+      "severity": "CRITICAL",
+      "category": "javascript_error",
+      "summary": "Google Analytics _gaq undefined causing game creation to fail",
+      "error_details": {
+        "message": "ReferenceError: _gaq is not defined at StartGameEx",
+        "file": "wwwroot/js/farklePage.js, wwwroot/js/farkleGame.js",
+        "line": "397, 784",
+        "count": 2,
+        "context": "JavaScript crashes when clicking Start Game before AJAX request is sent"
+      },
+      "steps_to_fix": [
+        "Comment out _gaq.push() calls that reference undefined Google Analytics",
+        "Add typeof check to prevent crashes"
+      ],
+      "status": "completed",
+      "created_at": "2026-01-18T00:30:00Z",
+      "started_at": "2026-01-18T00:30:00Z",
+      "completed_at": "2026-01-18T00:32:00Z",
+      "resolution": "Fixed 2 _gaq.push() calls causing JavaScript crashes. Files modified: farklePage.js (line 397 - commented out Google Analytics tracking in StartGameEx function), farkleGame.js (line 784 - commented out tracking in SendReminder function). The _gaq object is not defined because Google Analytics is not loaded, causing JavaScript to crash and preventing AJAX requests from being sent. Now the game creation request can proceed successfully."
+    },
+    {
+      "id": "bugfix-20260118-014",
+      "severity": "CRITICAL",
+      "category": "php8_error",
+      "summary": "PHP 8 count() type error with integer parameter",
+      "error_details": {
+        "message": "Fatal error: count(): Argument #1 ($value) must be of type Countable|array, int given in farkleGameFuncs.php:251",
+        "file": "wwwroot/farkleGameFuncs.php",
+        "line": "251, 257",
+        "count": 2,
+        "context": "GetFarkleGameName() receives integer for $thePlayers but calls count() on it"
+      },
+      "steps_to_fix": [
+        "Add is_array() check before calling count()",
+        "Handle both array and integer cases for $thePlayers parameter"
+      ],
+      "status": "completed",
+      "created_at": "2026-01-18T00:35:00Z",
+      "started_at": "2026-01-18T00:35:00Z",
+      "completed_at": "2026-01-18T00:37:00Z",
+      "resolution": "Fixed count() type error in GetFarkleGameName() function in farkleGameFuncs.php. Added check at line 251: $playerCount = is_array($thePlayers) ? count($thePlayers) : $thePlayers; This handles both cases where $thePlayers can be either an array of player IDs (for friend games) or an integer (for random games with player count). Updated lines 252 and 258 to use $playerCount variable instead of calling count() directly. This fixes the Fatal Error that was preventing random games from being created."
+    },
+    {
+      "id": "bugfix-20260118-015",
+      "severity": "CRITICAL",
+      "category": "sql_error",
+      "summary": "MySQL IF() function not supported in PostgreSQL - dice queries",
+      "error_details": {
+        "message": "ERROR: function if(boolean, integer, integer) does not exist. MySQL's IF(condition, true_val, false_val) not available in PostgreSQL",
+        "file": "farkleGameFuncs.php",
+        "line": "715-720",
+        "count": 30,
+        "context": "Dice queries using IF(d1<>0, d1, (select max(d1save)...)) to restore saved dice values"
+      },
+      "steps_to_fix": [
+        "Find all queries using IF() function",
+        "Replace with PostgreSQL CASE WHEN syntax",
+        "IF(condition, true_val, false_val) becomes CASE WHEN condition THEN true_val ELSE false_val END"
+      ],
+      "status": "completed",
+      "created_at": "2026-01-18T00:25:00Z",
+      "started_at": "2026-01-18T00:25:00Z",
+      "completed_at": "2026-01-17T18:12:00Z",
+      "resolution": "ALREADY FIXED in previous session. Verified that farkleGameFuncs.php GetDiceOnTheTable() function (lines 715-720) already uses CASE WHEN syntax instead of IF(). All 6 dice queries (d1-d6) use: CASE WHEN d<>0 THEN d ELSE (select max(dsave)...) END. The IF() errors in logs are historical from before the fix was applied. Code is now PostgreSQL-compliant."
+    },
+    {
+      "id": "bugfix-20260118-016",
+      "severity": "HIGH",
+      "category": "sql_error",
+      "summary": "Type casting error: text <= numeric comparison",
+      "error_details": {
+        "message": "ERROR: operator does not exist: text <= numeric. PostgreSQL requires explicit type casting for text-to-numeric comparisons",
+        "file": "farkleLeaderboard.php",
+        "line": "120",
+        "count": 5,
+        "context": "Query: select (paramvalue <= EXTRACT(EPOCH FROM NOW())) from siteinfo where paramid=1. paramvalue is TEXT but comparing to numeric EPOCH"
+      },
+      "steps_to_fix": [
+        "Find query comparing paramvalue to EXTRACT(EPOCH FROM NOW())",
+        "Cast paramvalue to numeric: paramvalue::numeric or CAST(paramvalue AS numeric)",
+        "Or cast EPOCH to text, but numeric comparison is preferred"
+      ],
+      "status": "completed",
+      "created_at": "2026-01-18T00:25:00Z",
+      "started_at": "2026-01-18T00:40:00Z",
+      "completed_at": "2026-01-18T00:42:00Z",
+      "resolution": "Fixed type casting issue in farkleLeaderboard.php Leaderboard_RefreshData() function at line 120. Added explicit type cast to convert TEXT paramvalue to numeric before comparing to EPOCH timestamp. Changed 'paramvalue <= EXTRACT(EPOCH FROM NOW())' to 'paramvalue::numeric <= EXTRACT(EPOCH FROM NOW())'. This ensures PostgreSQL can properly compare the Unix timestamp values stored as text in the siteinfo table with the numeric EPOCH value returned by EXTRACT()."
+    },
+    {
+      "id": "bugfix-20260118-017",
+      "severity": "CRITICAL",
+      "category": "deprecated_function",
+      "summary": "mysql_query() undefined function causing Fatal error",
+      "error_details": {
+        "message": "Fatal error: Call to undefined function mysql_query() in farkleLeaderboard.php:149",
+        "file": "wwwroot/farkleLeaderboard.php",
+        "line": "149, 162, 174, 201, 213, 227",
+        "count": 6,
+        "context": "Leaderboard refresh queries using MySQL user variables @rank for row numbering"
+      },
+      "steps_to_fix": [
+        "Remove all mysql_query() calls",
+        "Replace MySQL user variables (@rank:=@rank+1) with PostgreSQL ROW_NUMBER() window function",
+        "Replace MySQL FORMAT() with PostgreSQL TO_CHAR()",
+        "Replace MySQL DAY() function with PostgreSQL EXTRACT(DAY FROM)",
+        "Fix GROUP BY to include all non-aggregated columns"
+      ],
+      "status": "completed",
+      "created_at": "2026-01-18T00:45:00Z",
+      "started_at": "2026-01-18T00:45:00Z",
+      "completed_at": "2026-01-18T00:50:00Z",
+      "resolution": "Fixed 6 mysql_query() calls and related MySQL compatibility issues in farkleLeaderboard.php. Replaced all 'SELECT 0 INTO @rank' statements and '@rank:=@rank+1' with PostgreSQL ROW_NUMBER() OVER () window function. Additional fixes: (1) Replaced FORMAT(x,2) with TO_CHAR(x,'FM999999990.00') at lines 152, 165 (2) Replaced DAY() function with EXTRACT(DAY FROM) at lines 206, 218, 232 (3) Fixed division by zero using NULLIF() at line 152 (4) Fixed GROUP BY clause at line 177 to include all non-aggregated columns (playerid, username, fullname, playerlevel). All leaderboard ranking queries now use PostgreSQL-compliant syntax."
     }
   ]
 }

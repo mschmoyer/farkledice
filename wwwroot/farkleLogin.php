@@ -105,7 +105,8 @@ function UserLoginSafe( $sessionid, $remember=1 )
 	
 	if( $pInfo )
 	{
-		BaseUtil_Debug( __FUNCTION__ . ": Success. User {$pInfo['username']} logged in. Agent={$pInfo['agentString']}", 7 );
+		$agentString = isset($pInfo['agentString']) ? $pInfo['agentString'] : 'unknown';
+		BaseUtil_Debug( __FUNCTION__ . ": Success. User {$pInfo['username']} logged in. Agent={$agentString}", 7 );
 		if( isset($_COOKIE['farklesession']) ) $_SESSION['farklesession'] = $_COOKIE['farklesession'];
 		LoginSuccess( $pInfo, $remember );
 		return $pInfo;

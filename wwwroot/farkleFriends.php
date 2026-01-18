@@ -80,8 +80,8 @@ function AddFriend( $playerid, $identstring, $ident )
 				$sql = "insert into farkle_friends (sourceid, friendid) values ($playerid, $friendid)";
 				if( !db_command($sql) )
 				{
-					$err = mysql_errno();
-					error_log( "Error creating friend - $err" ); 
+					// Error already logged by db_command
+					error_log( "Error creating friend" );
 				}
 			}
 		}

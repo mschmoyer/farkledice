@@ -180,9 +180,9 @@ function GetGames( $playerid, $completed, $limit = 20, $skipSolo = 0 )
 		// We want completed and unfinished games. We want to put completed games on top.
 		$winPlayerClause = " (winningplayer=0 or (winningplayer>0 and a.winacknowledged=false)) and a.playerturn < 999 ";
 		$orderByClause = " b.winningplayer desc,
-						(finishedplayers=b.maxturns-1 AND playerround>1 AND playerround < 11) desc,
-						(finishedplayers=b.maxturns-1 AND playerround=1) desc,
-						(a.playerround>1 and a.playerround < 11 and finishedplayers < b.maxturns) desc,
+						((select count(*) from farkle_games_players where gameid=b.gameid and playerround>=11 and b.gamemode=2)=b.maxturns-1 AND a.playerround>1 AND a.playerround < 11) desc,
+						((select count(*) from farkle_games_players where gameid=b.gameid and playerround>=11 and b.gamemode=2)=b.maxturns-1 AND a.playerround=1) desc,
+						(a.playerround>1 and a.playerround < 11 and (select count(*) from farkle_games_players where gameid=b.gameid and playerround>=11 and b.gamemode=2) < b.maxturns) desc,
 						(a.playerround<11) desc,
 						b.gamestart asc ";
 	}

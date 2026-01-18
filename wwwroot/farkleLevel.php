@@ -58,16 +58,20 @@ function IsDoubleXP()
 	{
 		$sql = "select paramvalue from siteinfo where paramid=".SITEINFO_DOUBLE_XP;
 		$double_xp = db_select_query( $sql, SQL_SINGLE_VALUE );
-		setcookie( "double_xp", $double_xp, 60*60*3 ); // Expire in 3 hours
-		$_SESSION['double_xp'] = $double_xp; 
-		
+
+		// Only set cookie if headers haven't been sent
+		if( !headers_sent() ) {
+			setcookie( "double_xp", $double_xp, 60*60*3 ); // Expire in 3 hours
+		}
+		$_SESSION['double_xp'] = $double_xp;
+
 		BaseUtil_Debug( __FUNCTION__ . ": Is it double XP Day? (Using DB value) $double_xp", 7 );
-		return $double_xp; 
-	} 
+		return $double_xp;
+	}
 	else
 	{
 		BaseUtil_Debug( __FUNCTION__ . ": Is it double XP Day? (Using cookie value) {$_COOKIE['double_xp']}", 7 );
-		return $_COOKIE['double_xp']; 
+		return $_COOKIE['double_xp'];
 	}
 }
 

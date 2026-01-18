@@ -34,3 +34,9 @@ node_modules/
 
 # Planning (keep structure, ignore feature files in progress if desired)
 # planning/features/*.json
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+tests/screenshots/*.png

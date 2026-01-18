@@ -402,9 +402,9 @@ function PopulatePlayerData( thePlayerData )
 function FarkleGamePlayerTag( p, scoreStr ) {
 	//&radic;
 	newTag = DisplayPlayerTag( 'divGamePlayers', p, scoreStr );
-	newTag.css('margin', '0 0 7px 0')
-		.find('.playerAchScore')
-		.append( "<br/><span class='playerCardRound'>"+( p.playerround==11 ? 'Done' : (p.playerround==1?'-':"<span style='color:white'>Rnd</span> "+p.playerround) )+"</span>" );
+	newTag.css('margin', '0 0 7px 0');
+		//.find('.playerAchScore')
+		//.append( "<br/><span class='playerCardRound'>"+( p.playerround==11 ? 'Done' : (p.playerround==1?'-':"<span style='color:white'>Rnd</span> "+p.playerround) )+"</span>" );
 }
 
 
@@ -781,7 +781,7 @@ function PlayAgain( )
 	{
 		if ( confirm("Send email to alert " + gGamePlayerData[gCurrentPlayerTurnIndex].username + " it's their turn?") )
 		{
-			_gaq.push( ['_trackEvent', 'Ajax', 'SentReminder', 'Playerid', playerid ]);
+			//if(typeof _gaq !== 'undefined') _gaq.push( ['_trackEvent', 'Ajax', 'SentReminder', 'Playerid', playerid ]);
 			FarkleAjaxCall(	function ReminderHook()	{
 				if( ajaxrequest.responseText ) {
 					var rc = farkleParseJSON( ajaxrequest.responseText );					

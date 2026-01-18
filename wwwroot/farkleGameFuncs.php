@@ -102,12 +102,12 @@ function FarkleNewGame( $thePlayers, $mBreakIn = 500, $pointsToWin = 5000,
 			}
 		}
 		BaseUtil_Debug( __FUNCTION__ . ": Creating a new Friends game", 14 );		
-		$newGameId = CreateGameWithPlayers( $whostarted, $players, $gameDays, $gameWith, $gameMode );
+		$newGameId = CreateGameWithPlayers( $players, $whostarted, $gameDays, $gameWith, $gameMode );
 	}
 	else if( $gameWith == GAME_WITH_SOLO )
-	{	
-		BaseUtil_Debug( __FUNCTION__ . ": Creating a new Solo game", 14 );		
-		$newGameId = CreateGameWithPlayers( $whostarted, $players, $gameDays, $gameWith, $gameMode );
+	{
+		BaseUtil_Debug( __FUNCTION__ . ": Creating a new Solo game", 14 );
+		$newGameId = CreateGameWithPlayers( $players, $whostarted, $gameDays, $gameWith, $gameMode );
 	}
 	else if( $gameWith == GAME_WITH_RANDOM )
 	{
@@ -136,7 +136,7 @@ function FarkleNewGame( $thePlayers, $mBreakIn = 500, $pointsToWin = 5000,
 	Returns: 	
 		GameID of the newly created game. 
 */
-function CreateGameWithPlayers( $whostarted=0, $players, $expireDays = 2, $gameWith = GAME_WITH_FRIENDS, $gameMode = GAME_MODE_10ROUND )
+function CreateGameWithPlayers( $players, $whostarted=0, $expireDays = 2, $gameWith = GAME_WITH_FRIENDS, $gameMode = GAME_MODE_10ROUND )
 {
 	if( count($players)==0 || empty($expireDays) || empty($gameWith) || empty($gameMode) )
 	{
@@ -181,15 +181,14 @@ function CreateGameWithPlayers( $whostarted=0, $players, $expireDays = 2, $gameW
 			NOW() + interval '$expireDays' day, '$playerNames', $gameWith )";
 	$result = db_command($sql);
 
-	// Get the gameid of the game we just created				
-	$newGameId = mysql_insert_id();
+	// Get the gameid of the game we just created
+	$newGameId = db_insert_id();
 	
 	if( empty($newGameId ) )
 	{
-		// Something bad happened. Do no more. 
+		// Something bad happened. Do no more.
 		BaseUtil_Error( __FUNCTION__ . ": Failed to create new game." );
-		if( mysql_error() )
-			BaseUtil_Error( __FUNCTION__ . ": SQL Error [" . mysql_errno() . "]: " . mysql_error() );
+		// Error already logged by db_command
 	}
 	else
 	{
@@ -249,14 +248,15 @@ function GetGamePlayerids( $gameid )
 */
 function GetFarkleGameName( $gameid, $gameWith, $thePlayers, $maxTurns=2 )
 {
-	BaseUtil_Debug( __FUNCTION__ . ": Entered. Gameid=$gameid, gameWith=$gameWith, actualPlayers=".count($thePlayers).", maxTurns=$maxTurns", 14 ); 
-	$gameName = ""; 
-	
+	$playerCount = is_array($thePlayers) ? count($thePlayers) : $thePlayers;
+	BaseUtil_Debug( __FUNCTION__ . ": Entered. Gameid=$gameid, gameWith=$gameWith, actualPlayers=$playerCount, maxTurns=$maxTurns", 14 );
+	$gameName = "";
+
 	// Bail if we got no gameid
-	if( !isset($gameid) || empty($gameid ) || empty($thePlayers) ) 
+	if( !isset($gameid) || empty($gameid ) || empty($thePlayers) )
 	{
-		BaseUtil_Error( __FUNCTION__ . ": Missing parameter. Gameid=$gameid, gameWith=$gameWith, playerCount=".count($thePlayers).", maxTurns=$maxTurns. Setting name to Farkle Game." );
-		return "Farkle Game"; 
+		BaseUtil_Error( __FUNCTION__ . ": Missing parameter. Gameid=$gameid, gameWith=$gameWith, playerCount=$playerCount, maxTurns=$maxTurns. Setting name to Farkle Game." );
+		return "Farkle Game";
 	}
 	
 	// Solo games are simply called Solo Game
@@ -352,15 +352,15 @@ function FarkleJoinRandomGame( $gameMode=GAME_MODE_10ROUND, $theRandomPlayers=2 
 	}
 	
 	$potSize = GetRandomGamePotSize(); 
-	if( $potSize > 3 ) // Must be at least a small pot of different players to play against before joining 
+	if( $potSize > 3 ) // Must be at least a small pot of different players to play against before joining
 	{
-		//$newGameId = JoinAlreadyStartedRandomGame( $gameMode, $randomPlayers, $avoidPlayerid );
-		$newGameId = JoinAlreadyStartedRandomGame( $gameMode, $randomPlayers );
+		//$newGameId = JoinAlreadyStartedRandomGame( $randomPlayers, $gameMode, $avoidPlayerid );
+		$newGameId = JoinAlreadyStartedRandomGame( $randomPlayers, $gameMode );
 	}
-	
-	if( empty($newGameId) ) 
+
+	if( empty($newGameId) )
 	{
-		$newGameId = CreateNewRandomGame( $gameMode, $randomPlayers ); 
+		$newGameId = CreateNewRandomGame( $randomPlayers, $gameMode ); 
 	}
 	
 	if( empty($newGameId) )
@@ -387,13 +387,13 @@ function CreateNewRandomGameWithPlayers( $gameMode, $randomPlayers, $avoidPlayer
 		LIMIT 20";
 	$randomPlayerid = db_select_query( $sql, SQL_SINGLE_VALUE );	
 	
-	if( !empty($randomPlayerid) ) 
-		CreateGameWithPlayers( $_SESSION['playerid'], Array( $_SESSION['playerid'], $randomPlayerid ) );
-		
+	if( !empty($randomPlayerid) )
+		CreateGameWithPlayers( Array( $_SESSION['playerid'], $randomPlayerid ), $_SESSION['playerid'] );
+
 	return $randomPlayerid; 
 }
 
-function CreateNewRandomGame( $gameMode=GAME_MODE_10ROUND, $randomPlayers ) 
+function CreateNewRandomGame( $randomPlayers, $gameMode=GAME_MODE_10ROUND ) 
 {
 	$gameDays = 2; // Random games go for 48 hours. 
 	$newGameId = 0; 
@@ -413,7 +413,7 @@ function CreateNewRandomGame( $gameMode=GAME_MODE_10ROUND, $randomPlayers )
 	if( db_command($sql) )
 	{
 		// Get the gameid of the game we just created
-		$newGameId = mysql_insert_id();
+		$newGameId = db_insert_id();
 		
 		// Insert this player into the 1 position. 
 		$sql = "insert into farkle_games_players 
@@ -440,7 +440,7 @@ function GetRandomGamePotSize()
 	return $potSize; 
 }
 
-function JoinAlreadyStartedRandomGame( $gameMode=GAME_MODE_10ROUND, $randomPlayers, $avoidPlayerid = 0 ) 
+function JoinAlreadyStartedRandomGame( $randomPlayers, $gameMode=GAME_MODE_10ROUND, $avoidPlayerid = 0 ) 
 {
 	$foundGameId = 0; 
 	if( empty($gameMode) ) $gameMode=GAME_MODE_10ROUND;
@@ -711,13 +711,13 @@ function GetDiceOnTheTable( $playerid, $gameid, $roundnum, $setnum )
 	$handNum = db_select_query( $sql, SQL_SINGLE_VALUE );		
 	if( empty($handNum) ) return Array( $diceOnTable ); 
 	
-	$sql = "select 
-		IF(d1<>0, d1, (select max(d1save) from farkle_sets where gameid=$gameid and playerid=$playerid and roundnum=$roundnum and handnum=$handNum and d1save between 1 and 6)) d1, 
-		IF(d2<>0, d2, (select max(d2save) from farkle_sets where gameid=$gameid and playerid=$playerid and roundnum=$roundnum and handnum=$handNum and d2save between 1 and 6)) d2,  
-		IF(d3<>0, d3, (select max(d3save) from farkle_sets where gameid=$gameid and playerid=$playerid and roundnum=$roundnum and handnum=$handNum and d3save between 1 and 6)) d3,  
-		IF(d4<>0, d4, (select max(d4save) from farkle_sets where gameid=$gameid and playerid=$playerid and roundnum=$roundnum and handnum=$handNum and d4save between 1 and 6)) d4,
-		IF(d5<>0, d5, (select max(d5save) from farkle_sets where gameid=$gameid and playerid=$playerid and roundnum=$roundnum and handnum=$handNum and d5save between 1 and 6)) d5,  
-		IF(d6<>0, d6, (select max(d6save) from farkle_sets where gameid=$gameid and playerid=$playerid and roundnum=$roundnum and handnum=$handNum and d6save between 1 and 6)) d6
+	$sql = "select
+		CASE WHEN d1<>0 THEN d1 ELSE (select max(d1save) from farkle_sets where gameid=$gameid and playerid=$playerid and roundnum=$roundnum and handnum=$handNum and d1save between 1 and 6) END d1,
+		CASE WHEN d2<>0 THEN d2 ELSE (select max(d2save) from farkle_sets where gameid=$gameid and playerid=$playerid and roundnum=$roundnum and handnum=$handNum and d2save between 1 and 6) END d2,
+		CASE WHEN d3<>0 THEN d3 ELSE (select max(d3save) from farkle_sets where gameid=$gameid and playerid=$playerid and roundnum=$roundnum and handnum=$handNum and d3save between 1 and 6) END d3,
+		CASE WHEN d4<>0 THEN d4 ELSE (select max(d4save) from farkle_sets where gameid=$gameid and playerid=$playerid and roundnum=$roundnum and handnum=$handNum and d4save between 1 and 6) END d4,
+		CASE WHEN d5<>0 THEN d5 ELSE (select max(d5save) from farkle_sets where gameid=$gameid and playerid=$playerid and roundnum=$roundnum and handnum=$handNum and d5save between 1 and 6) END d5,
+		CASE WHEN d6<>0 THEN d6 ELSE (select max(d6save) from farkle_sets where gameid=$gameid and playerid=$playerid and roundnum=$roundnum and handnum=$handNum and d6save between 1 and 6) END d6
 	from farkle_sets
 	where gameid=$gameid and playerid=$playerid and roundnum=$roundnum and setnum=$setnum";
 	$diceOnTable = db_select_query( $sql, SQL_SINGLE_ROW );

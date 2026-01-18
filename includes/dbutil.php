@@ -30,14 +30,29 @@ function db_connect()
 		return $g_dbh;
 	}
 
-	$config = new FarkleConfig();
+	// Check for Heroku DATABASE_URL first
+	$database_url = getenv('DATABASE_URL');
 
-	// Support environment variables (Heroku) or config file (local)
-	$dbname = $config->data['dbname'] ?? getenv('DB_NAME') ?? 'farkle_db';
-	$username = $config->data['dbuser'] ?? getenv('DB_USER') ?? 'farkle_user';
-	$password = $config->data['dbpass'] ?? getenv('DB_PASS') ?? 'farkle_pass';
-	$host = $config->data['dbhost'] ?? getenv('DB_HOST') ?? 'db';
-	$port = $config->data['dbport'] ?? getenv('DB_PORT') ?? '5432';
+	if ($database_url !== false && !empty($database_url)) {
+		// Parse DATABASE_URL format: postgres://user:pass@host:port/dbname
+		$url_parts = parse_url($database_url);
+
+		$host = $url_parts['host'] ?? 'localhost';
+		$port = $url_parts['port'] ?? '5432';
+		$username = $url_parts['user'] ?? '';
+		$password = $url_parts['pass'] ?? '';
+		// Database name is in path with leading slash, so strip it
+		$dbname = isset($url_parts['path']) ? ltrim($url_parts['path'], '/') : '';
+	} else {
+		// Fall back to config file or individual environment variables
+		$config = new FarkleConfig();
+
+		$dbname = $config->data['dbname'] ?? getenv('DB_NAME') ?? 'farkle_db';
+		$username = $config->data['dbuser'] ?? getenv('DB_USER') ?? 'farkle_user';
+		$password = $config->data['dbpass'] ?? getenv('DB_PASS') ?? 'farkle_pass';
+		$host = $config->data['dbhost'] ?? getenv('DB_HOST') ?? 'db';
+		$port = $config->data['dbport'] ?? getenv('DB_PORT') ?? '5432';
+	}
 
 	try {
 		$dsn = "pgsql:host=$host;port=$port;dbname=$dbname";
@@ -150,4 +165,15 @@ function db_escape_string($str)
 }
 
 $link = db_connect();
+
+// Initialize database-backed session handler for Heroku compatibility
+// This must be done BEFORE session_start() is called anywhere
+if (!session_id()) {
+	require_once('session-handler.php');
+	init_database_session_handler($link);
+	// Debug: Log that handler was initialized
+	error_log("Database session handler initialized");
+} else {
+	error_log("Session already started, cannot register handler. Session ID: " . session_id());
+}
 ?>

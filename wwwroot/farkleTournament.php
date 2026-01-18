@@ -72,12 +72,12 @@ function CreateTournament( $playercap, $tformat, $launchHours, $name, $lobbyImag
 		$achValue = ", $maxAchId";
 	}
 		
-	$sql = "insert into farkle_tournaments 
-		( playercap, launchdate, tformat, tname, pointstowin, mintostart, startcondition, lobbyimage, roundhours $achSelect ) 
-		values 
+	$sql = "insert into farkle_tournaments
+		( playercap, launchdate, tformat, tname, pointstowin, mintostart, startcondition, lobbyimage, roundhours $achSelect )
+		values
 		( $playercap, NOW() + INTERVAL '$launchHours' HOUR, $tformat, '$name', 10000, 0, $startCondition, '$lobbyImage', $roundHours $achValue )";
 	$rc = db_command($sql);
-	$newTournamentId = mysql_insert_id();
+	$newTournamentId = db_insert_id();
 	
 	return $newTournamentId;
 }
@@ -372,7 +372,7 @@ function GenerateTournamentRound( $tid )
 			// Create the new game. 
 			//error_log( "GenerateTournamentRound: New tournament game: {$gamePlayers[0]} vs. {$gamePlayers[1]}" );
 			
-			$newGameId = CreateGameWithPlayers( $roundPlayers[$i]['playerid'], $gamePlayers, $roundDays, 
+			$newGameId = CreateGameWithPlayers( $gamePlayers, $roundPlayers[$i]['playerid'], $roundDays,
 				GAME_WITH_FRIENDS, GAME_MODE_10ROUND );
 				
 			if( $newGameId > 0 )
@@ -565,8 +565,8 @@ function EmailTournamentPlayers( $tid, $v_subj, $v_msg, $all=1 )
 
 function GetActiveTournaments()
 {
-	// Get the lowest unfinished tournament. 
-	$sql = "select min(tournamentid) as tournamentid, lobbyImage, EXTRACT(DAY FROM (now() - finishdate)) as DaysSinceFinished
+	// Get the lowest unfinished tournament.
+	$sql = "select min(tournamentid) as tournamentid, lobbyImage, EXTRACT(DAY FROM (now() - MAX(finishdate))) as DaysSinceFinished
 	from farkle_tournaments
 	where winningplayer = 0 or finishdate > NOW() - interval '3' day
 	group by lobbyimage";

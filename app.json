@@ -6,10 +6,6 @@
     {
       "plan": "heroku-postgresql:mini",
       "as": "DATABASE"
-    },
-    {
-      "plan": "heroku-redis:mini",
-      "as": "REDIS"
     }
   ],
   "env": {

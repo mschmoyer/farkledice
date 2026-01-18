@@ -393,9 +393,9 @@ function StartGameEx( playerArray ) {
 	} else {
 		farkleAlert( '<br><div align="center">Starting game...</div>', 'lightgreen', 1 );
 	}
-	
-	_gaq.push( ['_trackEvent', 'Ajax', 'StartGame', 'Playerid', playerid ]);
-	
+
+	//if(typeof _gaq !== 'undefined') _gaq.push( ['_trackEvent', 'Ajax', 'StartGame', 'Playerid', playerid ]);
+
 	// Add the player to the game array. 
 	var gamePlayers = playerArray.concat( parseInt(playerid) );
 	
@@ -566,8 +566,8 @@ function DisplayPlayerTag( appendDivId, pData, score ) //thePlayerId, name, colo
 	}
 	
 	n.attr('id','playerCard'+pData.playerid ).attr('playerid', pData.playerid);
-	
-	if( pData.cardcolor.match(/.png/gi) )
+
+	if( pData.cardcolor && pData.cardcolor.match(/.png/gi) )
 	{
 		var imgUrl = "url(/images/playericons/" + pData.cardcolor + ")";
 		if( n.css('background-image').indexOf(pData.cardcolor) === -1 )
