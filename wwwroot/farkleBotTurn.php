@@ -267,13 +267,9 @@ function Bot_Step_ChoosingKeepers($state, $gameData, $botPlayer) {
 
 	// Check for farkle
 	if ($decision['farkled']) {
-		// Use AI chat message if available, otherwise generate algorithmic message
-		if (!empty($decision['chat_message'])) {
-			$message = $decision['chat_message'];
-		} else {
-			$context = Bot_BuildMessageContext($state['gameid'], $state['playerid'], $gameData);
-			$message = Bot_SelectMessage(4, $botPlayer, $context); // Category 4: Farkle
-		}
+		// NOTE: Fallback to hardcoded messages disabled - AI should always provide chat_message
+		// If AI fails to provide a message, use empty string instead of falling back
+		$message = $decision['chat_message'] ?? '';
 
 		// Transition to farkled state
 		$updates = [
@@ -295,19 +291,9 @@ function Bot_Step_ChoosingKeepers($state, $gameData, $botPlayer) {
 	$newTurnScore = $decision['new_turn_score'];
 	$newDiceRemaining = $decision['new_dice_remaining'];
 
-	// Use AI chat message if available, otherwise generate algorithmic message
-	if (!empty($decision['chat_message'])) {
-		$message = $decision['chat_message'];
-	} else {
-		// Build message context with keeper info
-		$context = Bot_BuildMessageContext($state['gameid'], $state['playerid'], $gameData);
-		$context['bot_last_keep_score'] = $keeperChoice['points'];
-		$context['dice_description'] = $keeperChoice['description'];
-		$context['num_dice_left'] = $newDiceRemaining;
-
-		// Generate keeper selection message (Category 1)
-		$message = Bot_SelectMessage(1, $botPlayer, $context);
-	}
+	// NOTE: Fallback to hardcoded messages disabled - AI should always provide chat_message
+	// If AI fails to provide a message, use empty string instead of falling back
+	$message = $decision['chat_message'] ?? '';
 
 	// Update state
 	$updates = [
@@ -375,19 +361,9 @@ function Bot_Step_DecidingRoll($state, $gameData, $botPlayer) {
 	$context['farkle_prob'] = round(Bot_CalculateFarkleProbability($state['dice_remaining']) * 100, 1);
 
 	if ($shouldRoll) {
-		// Use AI chat message if available, otherwise generate algorithmic message
-		if (!empty($decision['chat_message'])) {
-			$message = $decision['chat_message'];
-		} else {
-			// Check for hot dice (all dice used)
-			if ($state['dice_remaining'] == 6) {
-				// Hot dice! Generate hot dice message (Category 5)
-				$message = Bot_SelectMessage(5, $botPlayer, $context);
-			} else {
-				// Regular roll again decision (Category 2)
-				$message = Bot_SelectMessage(2, $botPlayer, $context);
-			}
-		}
+		// NOTE: Fallback to hardcoded messages disabled - AI should always provide chat_message
+		// If AI fails to provide a message, use empty string instead of falling back
+		$message = $decision['chat_message'] ?? '';
 
 		// Transition back to rolling
 		$updates = [
@@ -403,13 +379,9 @@ function Bot_Step_DecidingRoll($state, $gameData, $botPlayer) {
 			'state' => $newState
 		];
 	} else {
-		// Use AI chat message if available, otherwise generate algorithmic message
-		if (!empty($decision['chat_message'])) {
-			$message = $decision['chat_message'];
-		} else {
-			// Banking decision (Category 3)
-			$message = Bot_SelectMessage(3, $botPlayer, $context);
-		}
+		// NOTE: Fallback to hardcoded messages disabled - AI should always provide chat_message
+		// If AI fails to provide a message, use empty string instead of falling back
+		$message = $decision['chat_message'] ?? '';
 
 		// Transition to banking
 		$updates = [
@@ -868,10 +840,12 @@ function Bot_GetGameData($gameId) {
 	}
 
 	// Get all players and scores
-	$sql = "SELECT playerid, playerturn, playerround, playerscore
-	        FROM farkle_games_players
-	        WHERE gameid = :gameid
-	        ORDER BY playerturn";
+	$sql = "SELECT gp.playerid, gp.playerturn, gp.playerround, gp.playerscore,
+	               gp.lastroundscore, p.username
+	        FROM farkle_games_players gp
+	        JOIN farkle_players p ON gp.playerid = p.playerid
+	        WHERE gp.gameid = :gameid
+	        ORDER BY gp.playerturn";
 
 	$stmt = $dbh->prepare($sql);
 	$stmt->execute([':gameid' => $gameId]);

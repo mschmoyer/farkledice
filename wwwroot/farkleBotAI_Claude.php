@@ -13,7 +13,7 @@
 // API Configuration Constants
 define('CLAUDE_API_ENDPOINT', 'https://api.anthropic.com/v1/messages');
 define('CLAUDE_API_VERSION', '2023-06-01');
-define('CLAUDE_MODEL', 'claude-3-5-haiku-20241022');
+define('CLAUDE_MODEL', 'claude-haiku-4-5-20251001');
 define('CLAUDE_MAX_TOKENS', 1024);
 define('CLAUDE_TIMEOUT_SECONDS', 5);
 define('CLAUDE_LOG_FILE', __DIR__ . '/../logs/claude.log');

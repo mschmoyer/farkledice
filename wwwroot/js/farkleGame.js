@@ -52,6 +52,7 @@ var GAME_STATE_WATCHING = 4;
 // Bot-related globals
 var gBotTurnTimer = null;
 var gBotIsPlaying = false;
+var gBotProcessingTurn = false;  // True when bot is actively taking their turn
 var gBotPlayerIds = [];  // Array of bot player IDs in current game
 var BOT_STEP_DELAY_MS = 1200;  // Delay between bot steps for animation 
 
@@ -216,14 +217,22 @@ function FarkleGameActiveMode() {
 	$('#btnPass').show();
 
 	if( gGamePlayerData[g_myPlayerIndex].playerround <= LAST_ROUND ) {
-	
+
 		gGameAjaxStatus = 0;
 		gRoundScore = parseInt(gGamePlayerData[g_myPlayerIndex].roundscore);
 		FarkleGameUpdateState( GAME_STATE_ROLLING );
-		
-		$('#btnRollDice').removeAttr('disabled').show();
-		$('#btnPass').removeAttr('disabled').show();
-		$('#btnPostGame').hide();	
+
+		// Only enable buttons if bot is not currently processing their turn
+		if( !gBotProcessingTurn ) {
+			$('#btnRollDice').removeAttr('disabled').show();
+			$('#btnPass').removeAttr('disabled').show();
+			// Restore visual state in case buttons were disabled during bot play
+			btnRollDiceObj.style.opacity = '1';
+			btnPassObj.style.opacity = '1';
+			btnRollDiceObj.style.cursor = 'pointer';
+			btnPassObj.style.cursor = 'pointer';
+		}
+		$('#btnPostGame').hide();
 
 		FarkleGameDisplayDice();
 		FarkleGameUpdateRoundScore();
@@ -543,15 +552,21 @@ function Bot_StartTurn( botPlayer ) {
 	ConsoleDebug( "Bot_StartTurn: Starting turn for " + botPlayer.username );
 
 	gBotIsPlaying = true;
-	console.log('Bot_StartTurn: Set gBotIsPlaying = true');
+	gBotProcessingTurn = true;
+	console.log('Bot_StartTurn: Set gBotIsPlaying = true, gBotProcessingTurn = true');
 
 	// Clear dice from player's previous turn
 	FarkleDiceReset();
 	console.log('Bot_StartTurn: Cleared dice state');
 
 	// Disable player buttons during bot turn
-	$('#btnRollDice').attr('disabled', 'disabled');
-	$('#btnPass').attr('disabled', 'disabled');
+	btnRollDiceObj.setAttribute('disabled', '');
+	btnPassObj.setAttribute('disabled', '');
+	// Add visual styling to show they're disabled
+	btnRollDiceObj.style.opacity = '0.5';
+	btnPassObj.style.opacity = '0.5';
+	btnRollDiceObj.style.cursor = 'not-allowed';
+	btnPassObj.style.cursor = 'not-allowed';
 
 	// Show bot thinking message
 	var thinkingMsg = botPlayer.username + " " + (botPlayer.playertitle || '') + " is thinking...";
@@ -589,10 +604,17 @@ function Bot_ExecuteNextStep( botPlayerId, currentStatus ) {
 	var ajaxTimeout = setTimeout(function() {
 		console.error("Bot_ExecuteNextStep: AJAX timeout - resetting bot state");
 		ConsoleError("Bot_ExecuteNextStep: AJAX call timed out after 15 seconds");
+		// Remove thinking indicator from bot's name
+		Bot_HideThinking( botPlayerId );
 		gBotIsPlaying = false;
+		gBotProcessingTurn = false;
 		// Re-enable player buttons
-		$('#btnRollDice').removeAttr('disabled');
-		$('#btnPass').removeAttr('disabled');
+		btnRollDiceObj.removeAttribute('disabled');
+		btnPassObj.removeAttribute('disabled');
+		btnRollDiceObj.style.opacity = '1';
+		btnPassObj.style.opacity = '1';
+		btnRollDiceObj.style.cursor = 'pointer';
+		btnPassObj.style.cursor = 'pointer';
 		farkleGetUpdate();
 	}, 15000);
 
@@ -614,10 +636,17 @@ function Bot_ExecuteNextStep( botPlayerId, currentStatus ) {
 			} else {
 				console.error( "Bot_ExecuteNextStep: Failed to execute step: " + (stepResult ? stepResult.Error : "Unknown error") );
 				ConsoleError( "Bot_ExecuteNextStep: Failed to execute step: " + (stepResult ? stepResult.Error : "Unknown error") );
+				// Remove thinking indicator from bot's name
+				Bot_HideThinking( botPlayerId );
 				gBotIsPlaying = false;
+				gBotProcessingTurn = false;
 				// Re-enable player buttons
-				$('#btnRollDice').removeAttr('disabled');
-				$('#btnPass').removeAttr('disabled');
+				btnRollDiceObj.removeAttribute('disabled');
+				btnPassObj.removeAttribute('disabled');
+				btnRollDiceObj.style.opacity = '1';
+				btnPassObj.style.opacity = '1';
+				btnRollDiceObj.style.cursor = 'pointer';
+				btnPassObj.style.cursor = 'pointer';
 				// Refresh game state
 				farkleGetUpdate();
 			}
@@ -647,9 +676,9 @@ function Bot_ProcessStepResult( botPlayerId, stepResult ) {
 			if( stepResult.dice && stepResult.dice.length > 0 ) {
 				Bot_AnimateDiceRoll( stepResult.dice );
 			}
-			// Show thinking message while waiting for next decision
+			// Show thinking in bot's player name
 			setTimeout( function() {
-				divTurnActionObj.innerHTML = '<span style="color: #96D3F2;">Thinking...</span>';
+				Bot_ShowThinking( botPlayerId );
 			}, BOT_STEP_DELAY_MS / 2 );
 			// Continue to next step after animation delay
 			setTimeout( function() {
@@ -687,9 +716,9 @@ function Bot_ProcessStepResult( botPlayerId, stepResult ) {
 				}
 			}
 
-			// Show thinking message while waiting for next decision
+			// Show thinking in bot's player name
 			setTimeout( function() {
-				divTurnActionObj.innerHTML = '<span style="color: #96D3F2;">Thinking...</span>';
+				Bot_ShowThinking( botPlayerId );
 			}, BOT_STEP_DELAY_MS / 2 );
 
 			// Continue to next step
@@ -719,6 +748,9 @@ function Bot_ProcessStepResult( botPlayerId, stepResult ) {
 			break;
 
 		case 'completed':
+			// Remove thinking indicator from bot's name
+			Bot_HideThinking( botPlayerId );
+
 			// Bot completed their turn - check if they banked or farkled
 			if( stepResult.banked ) {
 				// Bot banked their score
@@ -732,23 +764,62 @@ function Bot_ProcessStepResult( botPlayerId, stepResult ) {
 			// End bot turn and refresh game after a delay
 			setTimeout( function() {
 				gBotIsPlaying = false;
+				gBotProcessingTurn = false;
 				// Clear dice state before refreshing
 				FarkleDiceReset();
 				// Re-enable player buttons (will be updated by game state)
-				$('#btnRollDice').removeAttr('disabled');
-				$('#btnPass').removeAttr('disabled');
+				btnRollDiceObj.removeAttribute('disabled');
+				btnPassObj.removeAttribute('disabled');
+				btnRollDiceObj.style.opacity = '1';
+				btnPassObj.style.opacity = '1';
+				btnRollDiceObj.style.cursor = 'pointer';
+				btnPassObj.style.cursor = 'pointer';
 				farkleGetUpdate();
 			}, SCORE_VIEW_DELAY_MS );
 			break;
 
 		default:
 			ConsoleError( "Bot_ProcessStepResult: Unknown step type: " + step );
+			// Remove thinking indicator from bot's name
+			Bot_HideThinking( botPlayerId );
 			gBotIsPlaying = false;
+			gBotProcessingTurn = false;
 			// Re-enable player buttons in case of error
-			$('#btnRollDice').removeAttr('disabled');
-			$('#btnPass').removeAttr('disabled');
+			btnRollDiceObj.removeAttribute('disabled');
+			btnPassObj.removeAttribute('disabled');
+			btnRollDiceObj.style.opacity = '1';
+			btnPassObj.style.opacity = '1';
+			btnRollDiceObj.style.cursor = 'pointer';
+			btnPassObj.style.cursor = 'pointer';
 			farkleGetUpdate();
 			break;
+	}
+}
+
+/**
+ * Show "(thinking...)" in bot player's name
+ */
+function Bot_ShowThinking( botPlayerId ) {
+	var playerCard = $('#playerCard' + botPlayerId);
+	if( playerCard.length > 0 ) {
+		var playerNameDiv = playerCard.find('.playerName');
+		var currentHtml = playerNameDiv.html();
+		// Only add if not already there
+		if( currentHtml && !currentHtml.includes('(thinking...)') ) {
+			playerNameDiv.html( currentHtml + ' <span class="bot-thinking" style="color: #96D3F2;">(thinking...)</span>' );
+		}
+	}
+}
+
+/**
+ * Remove "(thinking...)" from bot player's name
+ */
+function Bot_HideThinking( botPlayerId ) {
+	var playerCard = $('#playerCard' + botPlayerId);
+	if( playerCard.length > 0 ) {
+		var playerNameDiv = playerCard.find('.playerName');
+		// Remove the thinking span
+		playerNameDiv.find('.bot-thinking').remove();
 	}
 }
 
