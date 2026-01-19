@@ -198,27 +198,29 @@ function LobbyBackFromIdle()
  * Show bot game selection modal
  */
 function showBotGameModal() {
-	var html = '<div id="botGameModalOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center;" onclick="closeBotGameModal()">';
-	html += '  <div class="bot-select-modal" onclick="event.stopPropagation()">';
+	console.log('showBotGameModal: Function called');
+
+	var html = '<div id="botGameModalOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center;" onclick="closeBotGameModal()" ontouchstart="">';
+	html += '  <div class="bot-select-modal" onclick="event.stopPropagation()" ontouchstart="">';
 	html += '    <h2>Play Against a Bot</h2>';
 	html += '    <p style="text-align: center; color: #666; margin-bottom: 20px;">Choose your opponent\'s difficulty:</p>';
 
 	// Easy bots
-	html += '    <div class="bot-option" onclick="startBotGame(\'easy\')">';
+	html += '    <div class="bot-option" onclick="startBotGame(\'easy\')" ontouchstart="">';
 	html += '      <h3>🟢 Easy</h3>';
 	html += '      <p>Friendly and makes mistakes - great for learning!</p>';
 	html += '      <small>Bots: Byte, Chip, Beep</small>';
 	html += '    </div>';
 
 	// Medium bots
-	html += '    <div class="bot-option" onclick="startBotGame(\'medium\')">';
+	html += '    <div class="bot-option" onclick="startBotGame(\'medium\')" ontouchstart="">';
 	html += '      <h3>🟡 Medium</h3>';
 	html += '      <p>Solid tactical play with strategic thinking</p>';
 	html += '      <small>Bots: Cyber, Logic, Binary</small>';
 	html += '    </div>';
 
 	// Hard bots
-	html += '    <div class="bot-option" onclick="startBotGame(\'hard\')">';
+	html += '    <div class="bot-option" onclick="startBotGame(\'hard\')" ontouchstart="">';
 	html += '      <h3>🔴 Hard</h3>';
 	html += '      <p>Advanced AI with optimal decision-making</p>';
 	html += '      <small>Bots: Neural, Quantum, Apex</small>';

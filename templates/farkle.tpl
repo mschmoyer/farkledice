@@ -162,7 +162,7 @@
 <script type="text/javascript" src="/js/farkleLogin.js?vers=1.1"></script>
 <script type="text/javascript" src="/js/farkleGame.js?vers=1.2"></script>
 <script type="text/javascript" src="/js/farklePage.js?vers=1.6"></script>
-<script type="text/javascript" src="/js/farkleLobby.js?vers=1.1"></script>
+<script type="text/javascript" src="/js/farkleLobby.js?vers=1.2"></script>
 <script type="text/javascript" src="/js/farkleFriends.js?vers=1.0"></script>
 
 <script type="text/javascript" src="/js/farkleGameLogic.js?vers=1.1"></script>
