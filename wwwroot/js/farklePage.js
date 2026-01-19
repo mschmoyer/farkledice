@@ -573,7 +573,13 @@ function DisplayPlayerTag( appendDivId, pData, score ) //thePlayerId, name, colo
 	
 	n.attr('id','playerCard'+pData.playerid ).attr('playerid', pData.playerid);
 
-	if( pData.cardcolor && pData.cardcolor.match(/.png/gi) )
+	// Use bot background for all bot players
+	if( pData.is_bot )
+	{
+		var imgUrl = "url(/images/playericons/bot-background.png)";
+		n.css('background-image', imgUrl );
+	}
+	else if( pData.cardcolor && pData.cardcolor.match(/.png/gi) )
 	{
 		var imgUrl = "url(/images/playericons/" + pData.cardcolor + ")";
 		if( n.css('background-image').indexOf(pData.cardcolor) === -1 )
