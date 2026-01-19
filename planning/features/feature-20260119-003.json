@@ -1,0 +1,146 @@
+{
+  "id": "feature-20260119-003",
+  "title": "Challenge Mode - Phase 3: Dice Effect Engine",
+  "description": "Implement the special dice effect system that modifies gameplay during Challenge Mode. Effects include face changers (modify dice values), farkle triggers (activate on farkle), score modifiers (multiply points), and money modifiers. Must integrate with existing farkleDiceScoring.php without breaking standard gameplay.",
+  "created_at": "2026-01-19T18:00:00Z",
+  "status": "in_progress",
+  "completed_at": null,
+
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "detail": "farkleChallengeScoring.php exists with effect processing pipeline",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-002",
+      "detail": "Face changer effects modify dice values before scoring (Lucky, Heavy, Fives)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-003",
+      "detail": "Farkle trigger effects activate when player farkles (Phoenix, BadLuck, Payday, Gambler, Daredevil, Cushion, Parachute)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-004",
+      "detail": "Score modifier effects multiply points (Double, Jackpot, Triple, Hot, Thrice)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-005",
+      "detail": "Money modifier effects adjust earnings (Midas: +$1 per die saved)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-006",
+      "detail": "Effects only apply during challenge mode games, not standard games",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-007",
+      "detail": "Player's dice inventory is loaded and effects applied based on equipped dice",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-008",
+      "detail": "Multiple dice effects can stack appropriately (e.g., two Double Dice = 4x)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-009",
+      "detail": "Integration with farkleGameFuncs.php - FarkleRoll and FarklePass call effect hooks",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-010",
+      "detail": "Effect results returned to frontend for display (bonus points, money earned, etc.)",
+      "status": "pending"
+    }
+  ],
+
+  "tasks": [
+    {
+      "id": "task-001",
+      "type": "implementation",
+      "requirement_ids": ["REQ-001"],
+      "description": "Create wwwroot/farkleChallengeScoring.php with effect pipeline and helper functions",
+      "status": "completed",
+      "completed_at": "2026-01-19T18:30:00Z"
+    },
+    {
+      "id": "task-002",
+      "type": "implementation",
+      "requirement_ids": ["REQ-002"],
+      "description": "Implement face changer effects (Lucky, Heavy, Fives) - modify dice values before scoring",
+      "status": "completed",
+      "completed_at": "2026-01-19T18:30:00Z"
+    },
+    {
+      "id": "task-003",
+      "type": "implementation",
+      "requirement_ids": ["REQ-003"],
+      "description": "Implement farkle trigger effects (Phoenix, BadLuck, Payday, Gambler, Daredevil, Cushion, Parachute)",
+      "status": "completed",
+      "completed_at": "2026-01-19T18:30:00Z"
+    },
+    {
+      "id": "task-004",
+      "type": "implementation",
+      "requirement_ids": ["REQ-004"],
+      "description": "Implement score modifier effects (Double, Jackpot, Triple, Hot, Thrice)",
+      "status": "completed",
+      "completed_at": "2026-01-19T18:30:00Z"
+    },
+    {
+      "id": "task-005",
+      "type": "implementation",
+      "requirement_ids": ["REQ-005"],
+      "description": "Implement money modifier effects (Midas: +$1 per die saved)",
+      "status": "completed",
+      "completed_at": "2026-01-19T18:30:00Z"
+    },
+    {
+      "id": "task-006",
+      "type": "implementation",
+      "requirement_ids": ["REQ-006", "REQ-007"],
+      "description": "Add challenge mode detection and player inventory loading to effect system",
+      "status": "completed",
+      "completed_at": "2026-01-19T18:45:00Z"
+    },
+    {
+      "id": "task-007",
+      "type": "implementation",
+      "requirement_ids": ["REQ-009"],
+      "description": "Integrate effect hooks into farkleGameFuncs.php (FarkleRoll, FarklePass)",
+      "status": "completed",
+      "completed_at": "2026-01-19T19:00:00Z"
+    },
+    {
+      "id": "task-008",
+      "type": "implementation",
+      "requirement_ids": ["REQ-008", "REQ-010"],
+      "description": "Add effect stacking logic and return effect results to frontend",
+      "status": "completed",
+      "completed_at": "2026-01-19T19:15:00Z",
+      "note": "Stacking implemented. Frontend display of effect notifications deferred to later phase."
+    },
+    {
+      "id": "task-009",
+      "type": "verification",
+      "requirement_ids": [],
+      "description": "Test all 16 dice effects individually and verify stacking behavior",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-FINAL",
+      "type": "verification",
+      "requirement_ids": [],
+      "description": "[ORCHESTRATOR] Final verification - verify all requirements are satisfied",
+      "status": "pending",
+      "completed_at": null,
+      "note": "This task is completed by the Orchestrator, NOT a coder agent"
+    }
+  ]
+}

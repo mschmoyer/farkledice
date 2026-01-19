@@ -15,7 +15,8 @@ require_once('farklePageFuncs.php');
 require_once('farkleTournament.php');
 require_once('smsified/smsified_funcs.php');
 require_once('iphone_funcs.php');
-require_once('farkleLevel.php'); 
+require_once('farkleLevel.php');
+require_once('farkleChallengeScoring.php');
 
 // Who a game will be against
 define( 'GAME_WITH_RANDOM', 		0);		// Game against a random opponent
@@ -804,11 +805,22 @@ function FarkleRoll( $playerid, $gameid, $theSavedDice, $theNewDice, $skipNextRo
 		}
 		
 		// If the dice don't match then don't update the set (bogus data) and return an error. This could
-		// also be network connection issues so we shouldn't display anything at the client. 
-		if( !$cheatDetected ) 
+		// also be network connection issues so we shouldn't display anything at the client.
+		if( !$cheatDetected )
 		{
-			$setScore = farkleScoreDice( $savedDice, $playerid );
-			
+			// Check if this is a challenge mode game
+			$challengeRun = Challenge_GetRunForGame($gameid);
+			$challengeRunId = $challengeRun ? $challengeRun['run_id'] : null;
+
+			// Use challenge scoring if in challenge mode, otherwise standard scoring
+			$scoreResult = Challenge_ScoreDice($savedDice, $playerid, $challengeRunId);
+			$setScore = $scoreResult['score'];
+
+			// If challenge mode and money was earned, update the run
+			if ($challengeRunId && $scoreResult['money'] > 0) {
+				Challenge_UpdateMoney($challengeRunId, $scoreResult['money']);
+			}
+
 			//$rc = Ach_CheckDice( $playerid, $savedDice );
 
 			$sql = "update farkle_sets set setscore=$setScore, handnum=$handNum, 
@@ -864,13 +876,20 @@ function FarkleRoll( $playerid, $gameid, $theSavedDice, $theNewDice, $skipNextRo
 		$result = db_command($sql);
 		
 		// We need to check the new roll to see if it's an instant farkle
-		$newDiceScore = farkleScoreDice( $dice, $playerid );
-		if( $newDiceScore <= 0 ) 
+		// Use challenge scoring if in challenge mode (reuse challengeRunId from earlier)
+		if (!isset($challengeRunId)) {
+			$challengeRun = Challenge_GetRunForGame($gameid);
+			$challengeRunId = $challengeRun ? $challengeRun['run_id'] : null;
+		}
+		$newScoreResult = Challenge_ScoreDice($dice, $playerid, $challengeRunId);
+		$newDiceScore = $newScoreResult['score'];
+
+		if( $newDiceScore <= 0 )
 		{
-			FarklePass( $playerid, $gameid, $savedDice, 1 ); 
+			FarklePass( $playerid, $gameid, $savedDice, 1 );
 			Ach_AwardAchievement( $playerid, ACH_FARKLE );
-			
-			// Award the big farkle for farkling on the first roll. 
+
+			// Award the big farkle for farkling on the first roll.
 			if( $numDiceSaved == 0 )
 				Ach_AwardAchievement( $playerid, ACH_FARKLE_HARD );
 		}
@@ -970,10 +989,48 @@ function FarklePass( $playerid, $gameid, $savedDice, $farkled = 0, $updateTime =
 	}
 	
 	// Player farkled -- give them achievement.
-	if( $roundScore == 0 ) 
+	if( $roundScore == 0 )
 	{
 		Ach_AwardAchievement( $playerid, ACH_FARKLE );
 		Ach_CheckFarkles( $playerid );
+
+		// Challenge Mode: Process farkle trigger effects
+		$challengeRun = Challenge_GetRunForGame($gameid);
+		if ($challengeRun) {
+			$runId = $challengeRun['run_id'];
+			$inventory = Challenge_GetPlayerDice($runId);
+
+			if (!empty($inventory)) {
+				// Get turn score from the sets (what we would have scored this turn)
+				$sql = "SELECT COALESCE(SUM(setscore), 0) as turnscore FROM farkle_sets
+				        WHERE gameid=$gameid AND playerid=$playerid AND roundnum=$currentRound";
+				$turnData = db_select_query($sql, SQL_SINGLE_ROW);
+				$turnScore = (int)$turnData['turnscore'];
+
+				// Get round score before this turn
+				$prevRoundScore = (int)$gameData['playerscore'];
+
+				// Process farkle triggers
+				$farkleResult = Challenge_ProcessFarkleTriggers($turnScore, $prevRoundScore, $numDiceSaved ?? 0, $inventory);
+
+				// Apply farkle trigger results
+				if ($farkleResult['score'] > 0) {
+					$roundScore = $farkleResult['score'];
+					$playerScore = (int)$gameData['playerscore'] + $roundScore;
+					BaseUtil_Debug(__FUNCTION__ . ": Challenge farkle trigger awarded {$farkleResult['score']} points", 7);
+				}
+
+				if ($farkleResult['money'] > 0) {
+					Challenge_UpdateMoney($runId, $farkleResult['money']);
+					BaseUtil_Debug(__FUNCTION__ . ": Challenge farkle trigger awarded \${$farkleResult['money']}", 7);
+				}
+
+				// Log effects for debugging
+				foreach ($farkleResult['effects'] as $effect) {
+					BaseUtil_Debug(__FUNCTION__ . ": Challenge effect: $effect", 7);
+				}
+			}
+		}
 	}
 	Ach_CheckRoundScore( $playerid, $roundScore ); // Check to see if they got an achievement for score
 	
