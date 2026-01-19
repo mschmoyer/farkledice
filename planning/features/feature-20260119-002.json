@@ -1,0 +1,121 @@
+{
+  "id": "feature-20260119-002",
+  "title": "Challenge Mode - Phase 2: Shop System",
+  "description": "Implement the dice shop system following existing Farkle patterns: backend shop actions in farkle_fetch.php, reusable shop functions, modal UI matching bot selection pattern, and AJAX-driven shop flow. Players can view 3 random unique dice, purchase with money, and select which inventory slot to replace.",
+  "created_at": "2026-01-19T14:15:46Z",
+  "status": "in_progress",
+  "completed_at": null,
+
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "detail": "farkle_fetch.php has shop actions (get_shop, purchase_dice) using existing action pattern",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-002",
+      "detail": "Shop backend functions in wwwroot/farkleShop.php return 3 random unique dice player doesn't own",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-003",
+      "detail": "Shop purchase validates player has enough money and dice is unique",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-004",
+      "detail": "Shop purchase updates player money, inventory, and returns updated state via JSON",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-005",
+      "detail": "Shop modal UI reuses bot-select-modal pattern with mobile-first design",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-006",
+      "detail": "Shop displays dice cards with name, image, effect, price, and affordable/expensive styling",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-007",
+      "detail": "Dice purchase flow shows slot selection modal matching existing modal patterns",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-008",
+      "detail": "Shop uses AjaxCallPost() to communicate with backend following existing AJAX patterns",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-009",
+      "detail": "Shop integrates into page navigation using HideAllWindows() pattern",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-010",
+      "detail": "Shop works on mobile devices with touch events and responsive sizing",
+      "status": "pending"
+    }
+  ],
+
+  "tasks": [
+    {
+      "id": "task-001",
+      "type": "implementation",
+      "requirement_ids": ["REQ-002", "REQ-003", "REQ-004"],
+      "description": "Create wwwroot/farkleShop.php with shop backend functions (GetShopDice, PurchaseDice, ValidatePurchase)",
+      "status": "completed",
+      "completed_at": "2026-01-19T14:30:00Z"
+    },
+    {
+      "id": "task-002",
+      "type": "implementation",
+      "requirement_ids": ["REQ-001", "REQ-008"],
+      "description": "Add shop actions to farkle_fetch.php following existing action pattern (get_shop, purchase_dice)",
+      "status": "completed",
+      "completed_at": "2026-01-19T16:00:00Z"
+    },
+    {
+      "id": "task-003",
+      "type": "implementation",
+      "requirement_ids": ["REQ-005", "REQ-006", "REQ-007"],
+      "description": "Create templates/farkle_div_shop.tpl with shop modal UI reusing bot-select-modal pattern",
+      "status": "completed",
+      "completed_at": "2026-01-19T17:00:00Z"
+    },
+    {
+      "id": "task-004",
+      "type": "implementation",
+      "requirement_ids": ["REQ-008", "REQ-009", "REQ-010"],
+      "description": "Create js/farkleShop.js with shop UI controller using AjaxCallPost and HideAllWindows patterns",
+      "status": "completed",
+      "completed_at": "2026-01-19T17:15:00Z"
+    },
+    {
+      "id": "task-005",
+      "type": "implementation",
+      "requirement_ids": ["REQ-009"],
+      "description": "Integrate shop into farkle.tpl and farklePage.js navigation flow",
+      "status": "completed",
+      "completed_at": "2026-01-19T17:30:00Z"
+    },
+    {
+      "id": "task-006",
+      "type": "verification",
+      "requirement_ids": ["REQ-010"],
+      "description": "Test shop flow in Docker: open shop, view dice, purchase, verify inventory update",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-FINAL",
+      "type": "verification",
+      "requirement_ids": [],
+      "description": "[ORCHESTRATOR] Final verification - verify all requirements are satisfied",
+      "status": "pending",
+      "completed_at": null,
+      "note": "This task is completed by the Orchestrator, NOT a coder agent"
+    }
+  ]
+}

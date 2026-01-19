@@ -30,6 +30,7 @@ var divTournamentObj;
 var divTouranmentListObj;
 var lblRegErrorObj;
 var divAdminObj;
+var divChallengeShopObj;
 
 var gPlayerInfoItem = 0;
 var gAchievementsLoaded = 0;
@@ -87,7 +88,8 @@ function pageInit( )
 	divTournamentObj = 		$('#divTournament');
 	//divTournamentListObj = 	$('#divTournamentList');
 	divAdminObj = 			$('#divAdmin');
-		
+	divChallengeShopObj = 	$('#divChallengeShop');
+
 	if( theResumeGameId ) ConsoleDebug( 'ResumeGameId = '+theResumeGameId ); 
 	
 	// Default game info
@@ -202,6 +204,13 @@ function HideAllWindows()
 		if( divAdminObj.is(":visible") ) gLastPage = divAdminObj;
 		divAdminObj.hide();
 	}
+
+	if( divChallengeShopObj )
+	{
+		if( divChallengeShopObj.is(":visible") ) gLastPage = divChallengeShopObj;
+		divChallengeShopObj.hide();
+	}
+	$('#slotSelectionOverlay').hide();
 }
 
 function PageGoBack()

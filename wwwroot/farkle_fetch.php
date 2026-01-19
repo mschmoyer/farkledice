@@ -56,7 +56,8 @@
 				require_once('farkleAchievements.php');
 				require_once('farkleTournament.php');
 				require_once('farkleLeaderboard.php');
-				require_once('farkleFriends.php'); 
+				require_once('farkleFriends.php');
+				require_once('farkleShop.php'); 
 			
 				if( !isset($p['newdice']) ) $p['newdice'] = null; // Protects against old clients without the javascript update. 
 			
@@ -220,6 +221,52 @@
 							// Return step result
 							$rc = $result;
 							$rc['Error'] = null;
+						}
+					}
+				}
+
+				// Challenge Mode Shop Commands
+				else if( $p['action'] == 'get_shop' )
+				{
+					$runId = intval($_POST['run_id'] ?? 0);
+
+					if ($runId <= 0) {
+						$rc = Array('Error' => 'Invalid challenge run ID.');
+					} else {
+						$shopDice = GetShopDice($runId, 3);
+
+						if ($shopDice === null) {
+							$rc = Array('Error' => 'Failed to load shop. Please try again.');
+						} else {
+							$rc = Array(
+								'dice' => $shopDice,
+								'Error' => null
+							);
+						}
+					}
+				}
+				else if( $p['action'] == 'purchase_dice' )
+				{
+					$runId = intval($_POST['run_id'] ?? 0);
+					$diceTypeId = intval($_POST['dice_type_id'] ?? 0);
+					$slotNumber = intval($_POST['slot_number'] ?? 0);
+
+					if ($runId <= 0 || $diceTypeId <= 0 || $slotNumber <= 0) {
+						$rc = Array('Error' => 'Invalid purchase parameters.');
+					} else {
+						$result = PurchaseDice($runId, $diceTypeId, $slotNumber);
+
+						if (isset($result['error'])) {
+							$rc = Array('Error' => $result['error']);
+						} else if (isset($result['success']) && $result['success']) {
+							$rc = Array(
+								'new_money' => $result['new_money'],
+								'inventory' => $result['inventory'],
+								'purchased_dice' => $result['purchased_dice'],
+								'Error' => null
+							);
+						} else {
+							$rc = Array('Error' => 'Purchase failed. Please try again.');
 						}
 					}
 				}

@@ -1,0 +1,162 @@
+{
+  "categories": [
+    {
+      "id": "farkle_lovers",
+      "name": "Farkle Lovers",
+      "color": "#cc0000",
+      "colorName": "red",
+      "reasoning": "Make farkles beneficial - earn points, money, or other rewards when you farkle"
+    },
+    {
+      "id": "farkle_protection",
+      "name": "Farkle Protection",
+      "color": "#1d8711",
+      "colorName": "green",
+      "reasoning": "Prevent farkles or reduce their impact - keep scores, get second chances"
+    },
+    {
+      "id": "face_changers",
+      "name": "Face Changers",
+      "color": "#4169E1",
+      "colorName": "blue",
+      "reasoning": "Modify dice face values - change what numbers appear on this die"
+    },
+    {
+      "id": "score_boosters",
+      "name": "Score Boosters",
+      "color": "#FFA500",
+      "colorName": "orange",
+      "reasoning": "Multiply points and money - boost your scoring potential"
+    }
+  ],
+  "dice": [
+    {
+      "name": "Phoenix Die",
+      "category": "farkle_lovers",
+      "shortWord": "PHOENIX",
+      "tier": "better",
+      "price": 6,
+      "effect": "When you farkle, score half of your current turn score instead of losing it all"
+    },
+    {
+      "name": "Back Luck Die",
+      "category": "farkle_lovers",
+      "shortWord": "BADLUCK",
+      "tier": "amazing",
+      "price": 7,
+      "effect": "If you Farkle and have 1 or less dice saved, score 1,000 points"
+    },
+    {
+      "name": "Farkle Payday Die",
+      "category": "farkle_lovers",
+      "shortWord": "FARK$",
+      "tier": "simple",
+      "price": 3,
+      "effect": "Earn $3 when you farkle"
+    },
+    {
+      "name": "Gambler's Die",
+      "category": "farkle_lovers",
+      "shortWord": "GAMBLE",
+      "tier": "amazing",
+      "price": 12,
+      "effect": "If you farkle, automatically bank your current round score (risky but can save big rounds)"
+    },
+    {
+      "name": "Daredevil Die",
+      "category": "farkle_lovers",
+      "shortWord": "DARE",
+      "tier": "better",
+      "price": 5,
+      "effect": "Each farkle this turn adds +200 to your next successful bank (stacks)"
+    },
+    {
+      "name": "Cushion Die",
+      "category": "farkle_protection",
+      "shortWord": "CUSHION",
+      "tier": "simple",
+      "price": 3,
+      "effect": "When you farkle, keep half of your current turn score"
+    },
+    {
+      "name": "Parachute Die",
+      "category": "farkle_protection",
+      "shortWord": "CHUTE",
+      "tier": "amazing",
+      "price": 12,
+      "effect": "When you farkle, automatically bank your current round score (loses turn score)"
+    },
+    {
+      "name": "Lucky Die",
+      "category": "face_changers",
+      "shortWord": "LUCKY",
+      "tier": "simple",
+      "price": 2,
+      "effect": "One face (6) is replaced with a 5, making this die more likely to score"
+    },
+    {
+      "name": "Heavy Die",
+      "category": "face_changers",
+      "shortWord": "HEAVY",
+      "tier": "simple",
+      "price": 2,
+      "effect": "2s are replaced with 1s - more scoring opportunities"
+    },
+    {
+      "name": "Fives Die",
+      "category": "face_changers",
+      "shortWord": "FIVES",
+      "tier": "better",
+      "price": 4,
+      "effect": "All faces are 5's"
+    },
+    {
+      "name": "Double Die",
+      "category": "score_boosters",
+      "shortWord": "DOUBLE",
+      "tier": "amazing",
+      "price": 10,
+      "effect": "2x your score (can stack)."
+    },
+    {
+      "name": "Midas Die",
+      "category": "score_boosters",
+      "shortWord": "MIDAS",
+      "tier": "better",
+      "price": 6,
+      "effect": "+1$ when you save a die."
+    },
+    {
+      "name": "Hot Die",
+      "category": "score_boosters",
+      "shortWord": "HOT",
+      "tier": "better",
+      "price": 5,
+      "effect": "Each time you score this die, then roll, gain +50 points"
+    },
+    {
+      "name": "Jackpot Die",
+      "category": "score_boosters",
+      "shortWord": "JACKPOT",
+      "tier": "amazing",
+      "price": 12,
+      "effect": "2x your score earned when scoring this die."
+    },
+    {
+      "name": "Triple Die",
+      "category": "score_boosters",
+      "shortWord": "TRIPLE",
+      "tier": "amazing",
+      "price": 15,
+      "effect": "Triples the points earned from this specific die (1 = 300, 5 = 150)"
+    },
+    {
+      "name": "Thrice Die",
+      "category": "score_boosters",
+      "shortWord": "THREE",
+      "tier": "simple",
+      "price": 5,
+      "effect": "3s can score alone (like 1s or 5s)"
+    }
+  ]
+}
