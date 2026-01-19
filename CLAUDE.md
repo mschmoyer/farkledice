@@ -149,8 +149,14 @@ git push heroku modernization/phase-1:main
 # View logs (real-time)
 heroku logs --tail -a farkledice
 
-# Access database
+# Access database interactively
 heroku pg:psql -a farkledice
+
+# Run single SQL command
+heroku pg:psql -a farkledice -c "SELECT COUNT(*) FROM farkle_players;"
+
+# Run SQL migration file
+heroku pg:psql -a farkledice --file scripts/your_migration.sql
 
 # Run migration script
 heroku run php scripts/migrate-db.php -a farkledice
@@ -161,8 +167,10 @@ heroku restart -a farkledice
 
 **Database:**
 - PostgreSQL Essential-0 (~$5/month)
+- **Database name for migrations:** `DATABASE` (use this when tools require a database name)
 - Sessions stored in database (`farkle_sessions` table)
 - DATABASE_URL env var auto-configured
+- Connection details available via: `heroku pg:credentials:url DATABASE -a farkledice`
 
 **Key Differences from Local:**
 - Smarty templates compile to `/tmp/smarty/` (ephemeral filesystem)
