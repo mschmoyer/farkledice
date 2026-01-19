@@ -85,6 +85,16 @@ function FarkleResetGame( theGameId )
 		gBotTurnTimer = null;
 	}
 
+	// Clear bot chat messages
+	var divBotChatMessages = document.getElementById('divBotChatMessages');
+	if( divBotChatMessages ) {
+		divBotChatMessages.innerHTML = '';
+	}
+	var divBotChat = document.getElementById('divBotChat');
+	if( divBotChat ) {
+		divBotChat.style.display = 'none';
+	}
+
 	$('#divGamePlayers').empty();
 	FarkleDiceReset();
 }
@@ -612,6 +622,30 @@ function Bot_ProcessStepResult( botPlayerId, stepResult ) {
 			          " for " + (stepResult.kept ? stepResult.kept.points : 0) + " points";
 			divTurnActionObj.innerHTML = '<span style="color: #96D3F2;">' + msg + '</span>';
 
+			// Mark the kept dice as saved (purple) visually
+			if( stepResult.kept && stepResult.kept.dice ) {
+				var keptDice = stepResult.kept.dice.slice(); // Copy the array
+
+				// Match kept dice values to dice positions and mark them as saved
+				for( var i = 0; i <= MAX_DICE && keptDice.length > 0; i++ ) {
+					// Find a die with a matching value that hasn't been saved yet
+					var dieValue = dice[i].value;
+					var keptIndex = keptDice.indexOf( dieValue );
+
+					if( keptIndex !== -1 && !dice[i].saved && !dice[i].scored ) {
+						// Mark this die as saved (purple)
+						dice[i].ImageObj.removeAttribute('rolled');
+						dice[i].ImageObj.setAttribute('saved', '');
+						dice[i].saved = 1;
+
+						// Remove this value from keptDice so we don't match it again
+						keptDice.splice( keptIndex, 1 );
+
+						console.log('Bot_ProcessStepResult: Marked dice[' + i + '] (value=' + dieValue + ') as saved');
+					}
+				}
+			}
+
 			// Continue to next step
 			setTimeout( function() {
 				Bot_PollAndExecuteStep( botPlayerId );
@@ -623,6 +657,16 @@ function Bot_ProcessStepResult( botPlayerId, stepResult ) {
 			divTurnActionObj.innerHTML = '<span style="color: #96D3F2;">Rolling again...</span>';
 
 			// Continue to next step
+			setTimeout( function() {
+				Bot_PollAndExecuteStep( botPlayerId );
+			}, BOT_STEP_DELAY_MS );
+			break;
+
+		case 'banking':
+			// Bot decided to bank their score
+			divTurnActionObj.innerHTML = '<span style="color: #96D3F2;">Banking score...</span>';
+
+			// Continue to next step (will execute Bot_Step_Banking and return 'completed')
 			setTimeout( function() {
 				Bot_PollAndExecuteStep( botPlayerId );
 			}, BOT_STEP_DELAY_MS );
@@ -662,10 +706,10 @@ function Bot_ProcessStepResult( botPlayerId, stepResult ) {
 function Bot_AnimateDiceRoll( diceArray ) {
 	ConsoleDebug( "Bot_AnimateDiceRoll: Showing dice: " + diceArray.join(',') );
 
-	// Show dice on the table
+	// Show dice on the table - use 0 for scored so dice appear white/normal when rolled
 	for( var i = 0; i < diceArray.length && i <= MAX_DICE; i++ ) {
 		if( diceArray[i] ) {
-			farkleUpdateDice( i, diceArray[i], 1 );  // 1 = clickable/active
+			farkleUpdateDice( i, diceArray[i], 0 );  // 0 = not scored (white dice)
 		}
 	}
 	// Clear remaining dice
@@ -680,11 +724,23 @@ function Bot_AnimateDiceRoll( diceArray ) {
 function Bot_DisplayMessage( message ) {
 	ConsoleDebug( "Bot_DisplayMessage: " + message );
 
-	// Show message in turn action area
-	divTurnActionObj.innerHTML = '<span style="color: #96D3F2;">' + message + '</span>';
+	// Show bot chat window if not already visible
+	var divBotChat = document.getElementById('divBotChat');
+	if( divBotChat ) {
+		divBotChat.style.display = 'block';
 
-	// Could also add to a message history div if we create one
-	// For now, just show in the main status area
+		// Add message to chat history
+		var divMessages = document.getElementById('divBotChatMessages');
+		if( divMessages ) {
+			var messageHtml = '<div style="margin-bottom: 6px;">' +
+			                  '<span style="color: #96D3F2;">' + message + '</span>' +
+			                  '</div>';
+			divMessages.innerHTML += messageHtml;
+
+			// Auto-scroll to bottom
+			divMessages.scrollTop = divMessages.scrollHeight;
+		}
+	}
 }
 
 function FarkleGamePlayerTag( p, scoreStr ) {

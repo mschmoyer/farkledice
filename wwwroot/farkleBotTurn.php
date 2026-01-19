@@ -505,6 +505,24 @@ function Bot_Step_Banking($state, $gameData, $botPlayer) {
 		return ['error' => 'Failed to bank score: ' . $e->getMessage()];
 	}
 
+	// Check if game is complete (all players finished 10 rounds)
+	// This must be done AFTER commit since GameIsCompleted does its own DB operations
+	if ($gameData['gamemode'] == GAME_MODE_10ROUND) {
+		require_once('farkleGameFuncs.php');
+
+		// Get number of players
+		$dbh = db_connect();
+		$sql = "SELECT COUNT(*) FROM farkle_games_players WHERE gameid = :gameid";
+		$stmt = $dbh->prepare($sql);
+		$stmt->execute([':gameid' => $state['gameid']]);
+		$numPlayers = $stmt->fetchColumn();
+
+		$gameFinished = GameIsCompleted($state['gameid'], $numPlayers);
+		if ($gameFinished) {
+			error_log("Bot_Step_Banking: Game {$state['gameid']} is now complete!");
+		}
+	}
+
 	return [
 		'step' => 'completed',
 		'final_score' => $finalScore,
@@ -606,6 +624,24 @@ function Bot_Step_Farkled($state, $gameData, $botPlayer) {
 		$dbh->rollBack();
 		error_log("Bot_Step_Farkled: ERROR - " . $e->getMessage());
 		return ['error' => 'Failed to record farkle: ' . $e->getMessage()];
+	}
+
+	// Check if game is complete (all players finished 10 rounds)
+	// This must be done AFTER commit since GameIsCompleted does its own DB operations
+	if ($gameData['gamemode'] == GAME_MODE_10ROUND) {
+		require_once('farkleGameFuncs.php');
+
+		// Get number of players
+		$dbh = db_connect();
+		$sql = "SELECT COUNT(*) FROM farkle_games_players WHERE gameid = :gameid";
+		$stmt = $dbh->prepare($sql);
+		$stmt->execute([':gameid' => $state['gameid']]);
+		$numPlayers = $stmt->fetchColumn();
+
+		$gameFinished = GameIsCompleted($state['gameid'], $numPlayers);
+		if ($gameFinished) {
+			error_log("Bot_Step_Farkled: Game {$state['gameid']} is now complete!");
+		}
 	}
 
 	return [
