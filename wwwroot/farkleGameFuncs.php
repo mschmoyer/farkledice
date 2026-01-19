@@ -655,7 +655,7 @@ function FarkleSendUpdate( $playerid, $gameid )
 		COALESCE((select COALESCE(sum(setscore),0) from farkle_sets where playerid=a.playerid and gameid=$gameid and roundnum=$currentRound),0) as roundscore,
 		a.playerturn, COALESCE(b.playertitle,'') as playertitle, b.titlelevel,
 		NOW() - a.lastplayed as lastplayedseconds,
-		b.is_bot, b.bot_algorithm
+		b.is_bot, b.bot_algorithm, b.personality_id
 		from farkle_games_players a, farkle_players b
 		where a.gameid=$gameid and a.playerid=b.playerid
 		ORDER BY (a.playerid=$playerid) desc, a.playerscore desc, b.lastplayed desc";

@@ -49,8 +49,8 @@
 
 	<!-- Bot chat messages -->
 	<div id="divBotChat" class="regularBox playerCardWidth" style="display: none; padding: 10px;">
-		<div style="color: #96D3F2; font-weight: bold; margin-bottom: 8px; font-size: 14px;">Bot Chat</div>
-		<div id="divBotChatMessages" style="font-size: 13px; line-height: 1.6; max-height: 150px; overflow-y: auto;"></div>
+		<div style="color: #96D3F2; font-weight: bold; margin-bottom: 8px; font-size: 13px; font-family: 'Courier New', Courier, monospace;">🤖 Bot Chat</div>
+		<div id="divBotChatMessages" style="font-family: 'Courier New', Courier, monospace; font-size: 12px; line-height: 1.5; max-height: 150px; overflow-y: auto; text-align: left; color: #96D3F2;"></div>
 	</div>
 	
 	<table class="diceFrameWidth">
@@ -88,6 +88,9 @@
 		<span id="lblGameExpires"></span><br/>
 		Game #<span id="dbgGameId"></span>
 	</p>
+
+	<!-- Bot type indicator -->
+	<div id="divBotTypeIndicator" style="display: none; font-size: 10px; color: #fff; margin-top: 5px; opacity: 0.7;"></div>
 </div>
 
 

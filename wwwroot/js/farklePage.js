@@ -219,6 +219,12 @@ function HideAllWindows()
 		if( divChallengeLobbyObj.is(":visible") ) gLastPage = divChallengeLobbyObj;
 		divChallengeLobbyObj.hide();
 	}
+
+	// Hide bot selection windows
+	$('#divBotGame').hide();
+	$('#divBotEasy').hide();
+	$('#divBotMedium').hide();
+	$('#divBotHard').hide();
 }
 
 function PageGoBack()
