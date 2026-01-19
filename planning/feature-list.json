@@ -34,6 +34,12 @@
       "created_at": "2026-01-18T19:00:00Z"
     },
     {
+      "id": "feature-20260118-003",
+      "title": "AI-Powered Bot Enhancement with Claude API",
+      "status": "in_progress",
+      "created_at": "2026-01-18T21:40:00Z"
+    },
+    {
       "id": "feature-20260119-001",
       "title": "Challenge Mode - Phase 1: Database Schema & Foundation",
       "status": "completed",

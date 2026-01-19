@@ -52,6 +52,7 @@ var GAME_STATE_WATCHING = 4;
 // Bot-related globals
 var gBotTurnTimer = null;
 var gBotIsPlaying = false;
+var gBotProcessingTurn = false;  // True when bot is actively taking their turn
 var gBotPlayerIds = [];  // Array of bot player IDs in current game
 var BOT_STEP_DELAY_MS = 1200;  // Delay between bot steps for animation 
 
@@ -216,14 +217,22 @@ function FarkleGameActiveMode() {
 	$('#btnPass').show();
 
 	if( gGamePlayerData[g_myPlayerIndex].playerround <= LAST_ROUND ) {
-	
+
 		gGameAjaxStatus = 0;
 		gRoundScore = parseInt(gGamePlayerData[g_myPlayerIndex].roundscore);
 		FarkleGameUpdateState( GAME_STATE_ROLLING );
-		
-		$('#btnRollDice').removeAttr('disabled').show();
-		$('#btnPass').removeAttr('disabled').show();
-		$('#btnPostGame').hide();	
+
+		// Only enable buttons if bot is not currently processing their turn
+		if( !gBotProcessingTurn ) {
+			$('#btnRollDice').removeAttr('disabled').show();
+			$('#btnPass').removeAttr('disabled').show();
+			// Restore visual state in case buttons were disabled during bot play
+			btnRollDiceObj.style.opacity = '1';
+			btnPassObj.style.opacity = '1';
+			btnRollDiceObj.style.cursor = 'pointer';
+			btnPassObj.style.cursor = 'pointer';
+		}
+		$('#btnPostGame').hide();
 
 		FarkleGameDisplayDice();
 		FarkleGameUpdateRoundScore();
@@ -416,7 +425,20 @@ function PopulatePlayerData( thePlayerData )
 			if( gGameData.winningplayer == 0 && g_myPlayerIndex > -1 &&
 				gGamePlayerData[g_myPlayerIndex].playerround < 11 && i != g_myPlayerIndex && p.playerround > 1 )
 			{
-				scoreStr = addCommas(p.rollingscore);
+				// For bot players, always show their full current score (not rollingscore)
+				// This allows immediate feedback when bots complete their turns
+				if( p.is_bot ) {
+					var finalScore = p.playerscore;
+					// If playerscore is missing, calculate from rollingscore + lastroundscore
+					if( !finalScore || finalScore === '' || finalScore === null || finalScore === undefined ) {
+						finalScore = parseInt(p.rollingscore || 0) + parseInt(p.lastroundscore || 0);
+						ConsoleDebug( "PopulatePlayerData: Bot score calculated: " + finalScore );
+					}
+					scoreStr = addCommas(finalScore);
+				} else {
+					// For human opponents, only show rollingscore (hide current round until player catches up)
+					scoreStr = addCommas(p.rollingscore);
+				}
 			}
 			// For completed games or players who have played at least one round
 			else if( p.playerround > 1 || gGameData.winningplayer > 0 ){
@@ -459,6 +481,9 @@ function PopulatePlayerData( thePlayerData )
 			}
 		}
 	}
+
+	// Update bot type indicator
+	UpdateBotTypeIndicator();
 
 	// Check if it's a bot's turn and start bot play if needed
 	Bot_CheckAndStartTurn();
@@ -527,11 +552,21 @@ function Bot_StartTurn( botPlayer ) {
 	ConsoleDebug( "Bot_StartTurn: Starting turn for " + botPlayer.username );
 
 	gBotIsPlaying = true;
-	console.log('Bot_StartTurn: Set gBotIsPlaying = true');
+	gBotProcessingTurn = true;
+	console.log('Bot_StartTurn: Set gBotIsPlaying = true, gBotProcessingTurn = true');
 
 	// Clear dice from player's previous turn
 	FarkleDiceReset();
 	console.log('Bot_StartTurn: Cleared dice state');
+
+	// Disable player buttons during bot turn
+	btnRollDiceObj.setAttribute('disabled', '');
+	btnPassObj.setAttribute('disabled', '');
+	// Add visual styling to show they're disabled
+	btnRollDiceObj.style.opacity = '0.5';
+	btnPassObj.style.opacity = '0.5';
+	btnRollDiceObj.style.cursor = 'not-allowed';
+	btnPassObj.style.cursor = 'not-allowed';
 
 	// Show bot thinking message
 	var thinkingMsg = botPlayer.username + " " + (botPlayer.playertitle || '') + " is thinking...";
@@ -565,8 +600,29 @@ function Bot_ExecuteNextStep( botPlayerId, currentStatus ) {
 	console.log( "Bot_ExecuteNextStep: Current status:", currentStatus );
 	ConsoleDebug( "Bot_ExecuteNextStep: Executing step for bot " + botPlayerId );
 
+	// Safety timeout: if AJAX doesn't complete within 15 seconds, reset bot state
+	var ajaxTimeout = setTimeout(function() {
+		console.error("Bot_ExecuteNextStep: AJAX timeout - resetting bot state");
+		ConsoleError("Bot_ExecuteNextStep: AJAX call timed out after 15 seconds");
+		// Remove thinking indicator from bot's name
+		Bot_HideThinking( botPlayerId );
+		gBotIsPlaying = false;
+		gBotProcessingTurn = false;
+		// Re-enable player buttons
+		btnRollDiceObj.removeAttribute('disabled');
+		btnPassObj.removeAttribute('disabled');
+		btnRollDiceObj.style.opacity = '1';
+		btnPassObj.style.opacity = '1';
+		btnRollDiceObj.style.cursor = 'pointer';
+		btnPassObj.style.cursor = 'pointer';
+		farkleGetUpdate();
+	}, 15000);
+
 	FarkleAjaxCall(
 		function() {
+			// Clear the timeout since we got a response
+			clearTimeout(ajaxTimeout);
+
 			console.log('Bot_ExecuteNextStep: Received response:', ajaxrequest.responseText);
 			var stepResult = FarkleParseAjaxResponse( ajaxrequest.responseText );
 			console.log('Bot_ExecuteNextStep: Parsed step result:', stepResult);
@@ -580,7 +636,17 @@ function Bot_ExecuteNextStep( botPlayerId, currentStatus ) {
 			} else {
 				console.error( "Bot_ExecuteNextStep: Failed to execute step: " + (stepResult ? stepResult.Error : "Unknown error") );
 				ConsoleError( "Bot_ExecuteNextStep: Failed to execute step: " + (stepResult ? stepResult.Error : "Unknown error") );
+				// Remove thinking indicator from bot's name
+				Bot_HideThinking( botPlayerId );
 				gBotIsPlaying = false;
+				gBotProcessingTurn = false;
+				// Re-enable player buttons
+				btnRollDiceObj.removeAttribute('disabled');
+				btnPassObj.removeAttribute('disabled');
+				btnRollDiceObj.style.opacity = '1';
+				btnPassObj.style.opacity = '1';
+				btnRollDiceObj.style.cursor = 'pointer';
+				btnPassObj.style.cursor = 'pointer';
 				// Refresh game state
 				farkleGetUpdate();
 			}
@@ -610,6 +676,10 @@ function Bot_ProcessStepResult( botPlayerId, stepResult ) {
 			if( stepResult.dice && stepResult.dice.length > 0 ) {
 				Bot_AnimateDiceRoll( stepResult.dice );
 			}
+			// Show thinking in bot's player name
+			setTimeout( function() {
+				Bot_ShowThinking( botPlayerId );
+			}, BOT_STEP_DELAY_MS / 2 );
 			// Continue to next step after animation delay
 			setTimeout( function() {
 				Bot_PollAndExecuteStep( botPlayerId );
@@ -646,6 +716,11 @@ function Bot_ProcessStepResult( botPlayerId, stepResult ) {
 				}
 			}
 
+			// Show thinking in bot's player name
+			setTimeout( function() {
+				Bot_ShowThinking( botPlayerId );
+			}, BOT_STEP_DELAY_MS / 2 );
+
 			// Continue to next step
 			setTimeout( function() {
 				Bot_PollAndExecuteStep( botPlayerId );
@@ -673,6 +748,9 @@ function Bot_ProcessStepResult( botPlayerId, stepResult ) {
 			break;
 
 		case 'completed':
+			// Remove thinking indicator from bot's name
+			Bot_HideThinking( botPlayerId );
+
 			// Bot completed their turn - check if they banked or farkled
 			if( stepResult.banked ) {
 				// Bot banked their score
@@ -686,18 +764,99 @@ function Bot_ProcessStepResult( botPlayerId, stepResult ) {
 			// End bot turn and refresh game after a delay
 			setTimeout( function() {
 				gBotIsPlaying = false;
+				gBotProcessingTurn = false;
 				// Clear dice state before refreshing
 				FarkleDiceReset();
+				// Re-enable player buttons (will be updated by game state)
+				btnRollDiceObj.removeAttribute('disabled');
+				btnPassObj.removeAttribute('disabled');
+				btnRollDiceObj.style.opacity = '1';
+				btnPassObj.style.opacity = '1';
+				btnRollDiceObj.style.cursor = 'pointer';
+				btnPassObj.style.cursor = 'pointer';
 				farkleGetUpdate();
 			}, SCORE_VIEW_DELAY_MS );
 			break;
 
 		default:
 			ConsoleError( "Bot_ProcessStepResult: Unknown step type: " + step );
+			// Remove thinking indicator from bot's name
+			Bot_HideThinking( botPlayerId );
 			gBotIsPlaying = false;
+			gBotProcessingTurn = false;
+			// Re-enable player buttons in case of error
+			btnRollDiceObj.removeAttribute('disabled');
+			btnPassObj.removeAttribute('disabled');
+			btnRollDiceObj.style.opacity = '1';
+			btnPassObj.style.opacity = '1';
+			btnRollDiceObj.style.cursor = 'pointer';
+			btnPassObj.style.cursor = 'pointer';
 			farkleGetUpdate();
 			break;
 	}
+}
+
+/**
+ * Show "(thinking...)" in bot player's name
+ */
+function Bot_ShowThinking( botPlayerId ) {
+	var playerCard = $('#playerCard' + botPlayerId);
+	if( playerCard.length > 0 ) {
+		var playerNameDiv = playerCard.find('.playerName');
+		var currentHtml = playerNameDiv.html();
+		// Only add if not already there
+		if( currentHtml && !currentHtml.includes('(thinking...)') ) {
+			playerNameDiv.html( currentHtml + ' <span class="bot-thinking" style="color: #96D3F2;">(thinking...)</span>' );
+		}
+	}
+}
+
+/**
+ * Remove "(thinking...)" from bot player's name
+ */
+function Bot_HideThinking( botPlayerId ) {
+	var playerCard = $('#playerCard' + botPlayerId);
+	if( playerCard.length > 0 ) {
+		var playerNameDiv = playerCard.find('.playerName');
+		// Remove the thinking span
+		playerNameDiv.find('.bot-thinking').remove();
+	}
+}
+
+/**
+ * Update the bot type indicator at bottom of game screen
+ */
+function UpdateBotTypeIndicator() {
+	// Find bot opponent (not the current player)
+	var botOpponent = null;
+
+	if (!gGamePlayerData || gGamePlayerData.length < 2) {
+		$('#divBotTypeIndicator').hide();
+		return;
+	}
+
+	for (var i = 0; i < gGamePlayerData.length; i++) {
+		var player = gGamePlayerData[i];
+		if (player.is_bot && player.playerid != playerid) {
+			botOpponent = player;
+			break;
+		}
+	}
+
+	if (!botOpponent) {
+		$('#divBotTypeIndicator').hide();
+		return;
+	}
+
+	// Check if bot has personality_id (AI-powered) or uses algorithm (scripted)
+	var indicatorText = '';
+	if (botOpponent.personality_id && botOpponent.personality_id > 0) {
+		indicatorText = 'You are playing an AI-powered bot';
+	} else {
+		indicatorText = 'You are playing a scripted bot';
+	}
+
+	$('#divBotTypeIndicator').text(indicatorText).show();
 }
 
 /**
@@ -732,10 +891,21 @@ function Bot_DisplayMessage( message ) {
 		// Add message to chat history
 		var divMessages = document.getElementById('divBotChatMessages');
 		if( divMessages ) {
-			var messageHtml = '<div style="margin-bottom: 6px;">' +
-			                  '<span style="color: #96D3F2;">' + message + '</span>' +
+			// Console-log style: simple left-aligned text with prefix
+			var messageHtml = '<div style="margin-bottom: 4px; opacity: 0;">' +
+			                  '> ' + message +
 			                  '</div>';
 			divMessages.innerHTML += messageHtml;
+
+			// Fade in animation
+			var allMessages = divMessages.querySelectorAll('div');
+			var lastMessage = allMessages[allMessages.length - 1];
+			if( lastMessage ) {
+				setTimeout(function() {
+					lastMessage.style.transition = 'opacity 0.3s ease-in';
+					lastMessage.style.opacity = '1';
+				}, 10);
+			}
 
 			// Auto-scroll to bottom
 			divMessages.scrollTop = divMessages.scrollHeight;

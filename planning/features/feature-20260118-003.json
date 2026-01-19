@@ -1,0 +1,206 @@
+{
+  "id": "feature-20260118-003",
+  "title": "AI-Powered Bot Enhancement with Claude API",
+  "description": "Replace algorithmic bot decision-making with Claude AI. Add personality database table with 12-15 unique bot personalities across 3 difficulty tiers. Bots use AI to make strategic decisions AND generate dynamic personality-driven chat messages. Includes Claude API integration with security measures, function calling for structured responses, and fallback to algorithmic bots on API failure.",
+  "created_at": "2026-01-18T21:40:00Z",
+  "status": "in_progress",
+  "completed_at": null,
+
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "detail": "Create farkle_bot_personalities table with personality traits, play styles, and conversation styles",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-002",
+      "detail": "Add personality_id column to farkle_players table to link bots to personalities",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-003",
+      "detail": "Seed database with 12-15 bot personalities across 3 difficulty tiers (Easy/Medium/Hard)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-004",
+      "detail": "Implement Claude API client using cURL with proper error handling and timeouts (5 seconds)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-005",
+      "detail": "API key must be stored securely in ANTHROPIC_API_KEY environment variable",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-006",
+      "detail": "Implement input sanitization to prevent prompt injection attacks",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-007",
+      "detail": "Use Claude function calling for structured bot responses (dice selection, action, chat message)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-008",
+      "detail": "Implement fallback to algorithmic bots when API fails or times out",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-009",
+      "detail": "Build system prompt generator that incorporates bot personality, play style, and conversation style",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-010",
+      "detail": "Build game context payload including scores, rounds, dice state, and farkle probability",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-011",
+      "detail": "AI must return: selected dice combination, action (roll/bank), reasoning, and chat message",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-012",
+      "detail": "Bot AI decisions must execute correctly within existing game flow",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-013",
+      "detail": "Each bot personality must have distinct play tendencies (risk tolerance, banking thresholds)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-014",
+      "detail": "Each bot must generate chat messages matching their personality (encouraging vs competitive vs chaotic, etc.)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-015",
+      "detail": "Bot selection UI must show personality type and allow player to choose specific bots",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-016",
+      "detail": "Modify bot turn logic to check for personality_id and use AI decision-making if present",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-017",
+      "detail": "AI-generated chat messages must display in the UI chat window during gameplay",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-018",
+      "detail": "API calls must complete within 5 seconds or fallback to algorithmic bot",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-019",
+      "detail": "All existing bot game functionality must continue working (dice visualization, turn alternation, game completion)",
+      "status": "pending"
+    }
+  ],
+
+  "tasks": [
+    {
+      "id": "task-001",
+      "type": "implementation",
+      "requirement_ids": ["REQ-001", "REQ-002"],
+      "description": "Create database migration: farkle_bot_personalities table and personality_id column in farkle_players",
+      "status": "completed",
+      "completed_at": "2026-01-18T21:45:00Z"
+    },
+    {
+      "id": "task-002",
+      "type": "implementation",
+      "requirement_ids": ["REQ-003"],
+      "description": "Create seed script for 12-15 bot personalities with distinct traits (5 easy, 5 medium, 5 hard)",
+      "status": "completed",
+      "completed_at": "2026-01-18T22:00:00Z"
+    },
+    {
+      "id": "task-003",
+      "type": "implementation",
+      "requirement_ids": ["REQ-004", "REQ-005"],
+      "description": "Implement Claude API client in farkleBotAI_Claude.php with cURL, error handling, and env var support",
+      "status": "completed",
+      "completed_at": "2026-01-19T04:07:47Z"
+    },
+    {
+      "id": "task-004",
+      "type": "implementation",
+      "requirement_ids": ["REQ-006"],
+      "description": "Create input sanitization functions to prevent prompt injection",
+      "status": "completed",
+      "completed_at": "2026-01-19T04:15:00Z"
+    },
+    {
+      "id": "task-005",
+      "type": "implementation",
+      "requirement_ids": ["REQ-007", "REQ-011"],
+      "description": "Define Claude function calling schema for bot decisions (make_farkle_decision tool)",
+      "status": "completed",
+      "completed_at": "2026-01-19T04:30:00Z"
+    },
+    {
+      "id": "task-006",
+      "type": "implementation",
+      "requirement_ids": ["REQ-009", "REQ-013"],
+      "description": "Build system prompt generator that includes personality traits and play style tendencies",
+      "status": "completed",
+      "completed_at": "2026-01-19T04:45:00Z"
+    },
+    {
+      "id": "task-007",
+      "type": "implementation",
+      "requirement_ids": ["REQ-010"],
+      "description": "Build game context payload builder with scores, rounds, dice state, and probabilities",
+      "status": "completed",
+      "completed_at": "2026-01-19T05:00:00Z"
+    },
+    {
+      "id": "task-008",
+      "type": "implementation",
+      "requirement_ids": ["REQ-008", "REQ-016", "REQ-018"],
+      "description": "Modify Bot_MakeDecision in farkleBotTurn.php to use AI when personality_id exists, with fallback",
+      "status": "completed",
+      "completed_at": "2026-01-19T05:15:00Z"
+    },
+    {
+      "id": "task-009",
+      "type": "implementation",
+      "requirement_ids": ["REQ-012", "REQ-017", "REQ-014"],
+      "description": "Integrate AI responses into bot turn flow and display AI-generated chat messages",
+      "status": "completed",
+      "completed_at": "2026-01-19T05:30:00Z"
+    },
+    {
+      "id": "task-010",
+      "type": "implementation",
+      "requirement_ids": ["REQ-015"],
+      "description": "Update bot selection UI to show personality types and allow specific bot selection",
+      "status": "completed",
+      "completed_at": "2026-01-19T05:45:00Z"
+    },
+    {
+      "id": "task-011",
+      "type": "implementation",
+      "requirement_ids": ["REQ-019"],
+      "description": "Test end-to-end AI bot gameplay: verify dice visualization, turn alternation, and game completion",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-FINAL",
+      "type": "verification",
+      "requirement_ids": [],
+      "description": "[ORCHESTRATOR] Final verification - verify all requirements are satisfied",
+      "status": "pending",
+      "completed_at": null,
+      "note": "This task is completed by the Orchestrator, NOT a coder agent"
+    }
+  ]
+}
