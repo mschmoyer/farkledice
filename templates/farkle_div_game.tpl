@@ -5,7 +5,37 @@
 <span id="scorePoints"></span>
 
 <div id="divGame" class="pageWidth" align="center" style="display: none;">
-	
+
+	<!-- Challenge Mode Header (hidden by default) -->
+	<div id="divChallengeHeader" class="regularBox diceFrameWidth" style="display: none; margin-bottom: 10px; padding: 8px;">
+		<table width="100%" style="color: white;">
+		<tr>
+			<td align="left" style="font-size: 14px;">
+				<span style="color: #f7ef00;">CHALLENGE</span>
+				#<span id="challengeHeaderBotNum">1</span>
+			</td>
+			<td align="center" style="font-size: 14px;">
+				<span id="challengeHeaderBotName" style="font-weight: bold;"></span>
+			</td>
+			<td align="right" style="font-size: 14px;">
+				<span id="challengeHeaderDifficulty"></span>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="3" align="center" style="padding-top: 5px; font-size: 13px;">
+				<span style="color: #aaa;">Target:</span> <span id="challengeHeaderTarget" style="color: #f7ef00; font-weight: bold;">???</span>
+				&nbsp;&nbsp;|&nbsp;&nbsp;
+				<span style="color: #aaa;">Bank:</span> <span style="color: #1d8711; font-weight: bold;">$<span id="challengeHeaderMoney">0</span></span>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="3" align="center" style="padding-top: 3px;">
+				<div id="divChallengeHeaderDice" style="font-size: 10px;"></div>
+			</td>
+		</tr>
+		</table>
+	</div>
+
 	<!-- Game board (dice & buttons) -->
 	<div id="divDice" class="diceFrame diceFrameWidth">
 		<canvas width="60" height="60" id="dice0Canvas" {if !$mobilemode && !$tabletmode}onMouseDown="SaveDice(0)"{else}ontouchstart="SaveDice(0)"{/if} class="dice" disabled></canvas>

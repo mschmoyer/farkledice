@@ -307,14 +307,59 @@ function ChallengeGameEnded(won, diceSaved) {
 					ShowChallengeLobby();
 				} else if (response.show_shop) {
 					// Player won - show shop
-					ShowChallengeShop(gChallengeRunId, response.money,
-						gChallengeStatus.active_run.current_bot_num,
-						gChallengeStatus.active_run.current_bot.bot_name,
-						gChallengeStatus.active_run.dice_inventory);
+					// Get the current bot number (the one just defeated) and dice inventory
+					var botNum = gGameData.challenge_bot_number || 1;
+					var botName = '';
+
+					// Find the bot name from the opponent data
+					for (var i = 0; i < gGamePlayerData.length; i++) {
+						if (gGamePlayerData[i].playerid != playerid && gGamePlayerData[i].is_bot) {
+							botName = gGamePlayerData[i].username;
+							break;
+						}
+					}
+
+					// Refresh challenge status to get updated inventory, then show shop
+					LoadChallengeStatusThenShop(response.money, botNum, botName);
 				}
 
 			} catch (e) {
 				ConsoleDebug('ChallengeGameEnded: Parse error - ' + e);
+				ShowChallengeLobby();
+			}
+		}
+	}, params);
+}
+
+/**
+ * Load challenge status then show shop with updated inventory
+ */
+function LoadChallengeStatusThenShop(money, botNum, botName) {
+	var params = 'action=get_challenge_status&playerid=' + playerid;
+
+	AjaxCallPost(gAjaxUrl, function() {
+		if (ajaxrequest.responseText) {
+			try {
+				var response = eval("(" + ajaxrequest.responseText + ")");
+
+				if (response.Error) {
+					ConsoleDebug('LoadChallengeStatusThenShop: Error - ' + response.Error);
+					ShowChallengeLobby();
+					return;
+				}
+
+				gChallengeStatus = response;
+
+				// Get inventory from updated status
+				var inventory = [];
+				if (gChallengeStatus.active_run && gChallengeStatus.active_run.dice_inventory) {
+					inventory = gChallengeStatus.active_run.dice_inventory;
+				}
+
+				ShowChallengeShop(gChallengeRunId, money, botNum, botName, inventory);
+
+			} catch (e) {
+				ConsoleDebug('LoadChallengeStatusThenShop: Parse error - ' + e);
 				ShowChallengeLobby();
 			}
 		}

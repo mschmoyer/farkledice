@@ -559,8 +559,9 @@ function FarkleSendUpdate( $playerid, $gameid )
 		a.pointstowin, a.gameid, a.gamemode, a.gamewith, b.playerround,
 		TO_CHAR(a.gameexpire, 'Mon DD @ HH12:00 AM') as gameexpire,
 		TO_CHAR(a.gamefinish, 'Mon DD @ HH12:00 AM') as gamefinish,
-		(select playerid from farkle_games_players where playerturn=currentturn and gameid=a.gameid) as currentplayer, 
-		lastturn, titleredeemed, b.winacknowledged
+		(select playerid from farkle_games_players where playerturn=currentturn and gameid=a.gameid) as currentplayer,
+		lastturn, titleredeemed, b.winacknowledged,
+		a.is_challenge_game, a.challenge_run_id, a.challenge_bot_number
 		from farkle_games a, farkle_games_players b
 		where a.gameid=$gameid and a.gameid=b.gameid and b.playerid=$playerid";
 		
@@ -571,7 +572,19 @@ function FarkleSendUpdate( $playerid, $gameid )
 		return Array( 'Error' => 'Error getting game information. Please contact admin@farkledice.com' ); 
 	}
 	$turnDataForReturning = $turnData;
-	
+
+	// Add challenge bot config if this is a challenge game
+	if (!empty($turnData['is_challenge_game']) && !empty($turnData['challenge_bot_number'])) {
+		require_once('farkleChallengeConfig.php');
+		$botConfig = Challenge_GetBotConfig($turnData['challenge_bot_number']);
+		if ($botConfig) {
+			$turnDataForReturning['challenge_bot_name'] = $botConfig['name'];
+			$turnDataForReturning['challenge_bot_title'] = $botConfig['title'];
+			$turnDataForReturning['challenge_bot_difficulty'] = $botConfig['difficulty'];
+			$turnDataForReturning['challenge_point_target'] = $botConfig['point_target'];
+		}
+	}
+
 	// Get the current round (player's turn in 10-round or the game's turn in standard) 
 	$currentRound = $turnData['gamemode'] == GAME_MODE_STANDARD ? $turnData['currentround'] : $turnData['playerround'];
 	BaseUtil_Debug( __FUNCTION__ . ": 1CurrentRound = $currentRound, GameMode=" . $turnData['gamemode'], 1 );
@@ -985,9 +998,42 @@ function FarklePass( $playerid, $gameid, $savedDice, $farkled = 0, $updateTime =
 	if( !db_command($sql) )
 	{
 		BaseUtil_Error( __FUNCTION__ . ": Round $currentRound in game $gameid for player $playerid already scored. Invalid round save. Bailing" );
-		return Array( "Error" => "Game Error. Contact admin@farkledice.com" ); 
+		return Array( "Error" => "Game Error. Contact admin@farkledice.com" );
 	}
-	
+
+	// Challenge Mode: Track dice saved for money (only if not farkled)
+	if (!$farkled && $roundScore > 0) {
+		$challengeRun = Challenge_GetRunForGame($gameid);
+		if ($challengeRun) {
+			// Count dice saved this round (all dice marked as saved in sets)
+			$sql = "SELECT COALESCE(SUM(
+				CASE WHEN d1save > 0 THEN 1 ELSE 0 END +
+				CASE WHEN d2save > 0 THEN 1 ELSE 0 END +
+				CASE WHEN d3save > 0 THEN 1 ELSE 0 END +
+				CASE WHEN d4save > 0 THEN 1 ELSE 0 END +
+				CASE WHEN d5save > 0 THEN 1 ELSE 0 END +
+				CASE WHEN d6save > 0 THEN 1 ELSE 0 END
+			), 0) as dice_saved
+			FROM farkle_sets
+			WHERE gameid=$gameid AND playerid=$playerid AND roundnum=$currentRound";
+			$diceData = db_select_query($sql, SQL_SINGLE_ROW);
+			$diceSavedThisRound = (int)$diceData['dice_saved'];
+
+			if ($diceSavedThisRound > 0) {
+				// $1 per die saved
+				Challenge_UpdateMoney($challengeRun['run_id'], $diceSavedThisRound);
+				BaseUtil_Debug(__FUNCTION__ . ": Challenge: earned \$$diceSavedThisRound for $diceSavedThisRound dice saved", 7);
+
+				// Update total dice saved for the run
+				$dbh = db_connect();
+				$sql = "UPDATE farkle_challenge_runs SET dice_saved_total = dice_saved_total + :dice
+				        WHERE run_id = :run_id";
+				$stmt = $dbh->prepare($sql);
+				$stmt->execute([':dice' => $diceSavedThisRound, ':run_id' => $challengeRun['run_id']]);
+			}
+		}
+	}
+
 	// Player farkled -- give them achievement.
 	if( $roundScore == 0 )
 	{

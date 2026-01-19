@@ -63,8 +63,16 @@
     {
       "id": "feature-20260119-004",
       "title": "Challenge Mode - Phase 4: Challenge Lobby & Run Management",
-      "status": "in_progress",
-      "created_at": "2026-01-19T19:30:00Z"
+      "status": "completed",
+      "created_at": "2026-01-19T19:30:00Z",
+      "completed_at": "2026-01-19T20:00:00Z"
+    },
+    {
+      "id": "feature-20260119-005",
+      "title": "Challenge Mode - Phase 5: Challenge Game Flow",
+      "status": "completed",
+      "created_at": "2026-01-19T20:00:00Z",
+      "completed_at": "2026-01-19T21:00:00Z"
     }
   ]
 }

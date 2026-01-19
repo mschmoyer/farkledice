@@ -6,6 +6,8 @@
  * Handles starting new runs, resuming runs, and getting challenge status.
  */
 
+require_once('farkleChallengeConfig.php');
+
 /**
  * Get the player's challenge status including active run, stats, and bot lineup
  * @param int $playerId The player ID
@@ -25,7 +27,7 @@ function Challenge_GetStatus($playerId) {
     $sql = "SELECT r.*,
                    (SELECT COUNT(*) FROM farkle_challenge_dice_inventory WHERE run_id = r.run_id) as dice_count
             FROM farkle_challenge_runs r
-            WHERE r.playerid = :playerid AND r.status = 'active'
+            WHERE r.player_id = :playerid AND r.status = 'active'
             LIMIT 1";
     $stmt = $dbh->prepare($sql);
     $stmt->execute([':playerid' => $playerId]);
@@ -33,36 +35,41 @@ function Challenge_GetStatus($playerId) {
 
     if ($activeRun) {
         $result['has_active_run'] = true;
+
+        // Get current bot info from config
+        $currentBotNum = $activeRun['current_bot_number'];
+        $currentBot = Challenge_GetBotConfig($currentBotNum);
+
         $result['active_run'] = [
             'run_id' => $activeRun['run_id'],
-            'current_bot_num' => $activeRun['current_bot_num'],
-            'money' => $activeRun['money'],
-            'dice_saved_total' => $activeRun['dice_saved_total'],
-            'started_at' => $activeRun['started_at']
+            'current_bot_num' => $currentBotNum,
+            'money' => $activeRun['current_money'],
+            'dice_saved_total' => $activeRun['total_dice_saved'],
+            'started_at' => $activeRun['created_date'],
+            'current_bot' => $currentBot ? [
+                'bot_name' => $currentBot['name'],
+                'title' => $currentBot['title'],
+                'difficulty' => $currentBot['difficulty'],
+                'target_score' => $currentBot['point_target'],
+                'description' => $currentBot['description'],
+                'rules_display' => $currentBot['rules_display'],
+                'rules' => $currentBot['rules'],
+            ] : null
         ];
 
-        // Get current bot info
-        $sql = "SELECT * FROM farkle_challenge_bot_lineup WHERE bot_number = :bot_num";
-        $stmt = $dbh->prepare($sql);
-        $stmt->execute([':bot_num' => $activeRun['current_bot_num']]);
-        $currentBot = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($currentBot) {
-            $result['active_run']['current_bot'] = $currentBot;
-        }
-
         // Get player's dice inventory
-        $sql = "SELECT i.slot_number, d.name, d.effect_value
+        $sql = "SELECT i.dice_slot AS slot_number, d.name, d.effect_value
                 FROM farkle_challenge_dice_inventory i
                 JOIN farkle_challenge_dice_types d ON d.dice_type_id = i.dice_type_id
                 WHERE i.run_id = :run_id
-                ORDER BY i.slot_number";
+                ORDER BY i.dice_slot";
         $stmt = $dbh->prepare($sql);
         $stmt->execute([':run_id' => $activeRun['run_id']]);
         $result['active_run']['dice_inventory'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     // Get player's challenge stats
-    $sql = "SELECT * FROM farkle_challenge_stats WHERE playerid = :playerid";
+    $sql = "SELECT * FROM farkle_challenge_stats WHERE player_id = :playerid";
     $stmt = $dbh->prepare($sql);
     $stmt->execute([':playerid' => $playerId]);
     $stats = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -70,10 +77,10 @@ function Challenge_GetStatus($playerId) {
     if ($stats) {
         $result['stats'] = [
             'total_runs' => $stats['total_runs'],
-            'total_wins' => $stats['total_wins'],
-            'furthest_bot' => $stats['furthest_bot'],
+            'total_wins' => $stats['completed_runs'],
+            'furthest_bot' => $stats['furthest_bot_reached'],
             'total_money_earned' => $stats['total_money_earned'],
-            'total_dice_saved' => $stats['total_dice_saved']
+            'total_dice_saved' => $stats['total_dice_purchased'] // Using total_dice_purchased as proxy
         ];
     } else {
         $result['stats'] = [
@@ -85,29 +92,9 @@ function Challenge_GetStatus($playerId) {
         ];
     }
 
-    // Get bot lineup (first 5 visible, rest hidden until reached)
-    $sql = "SELECT bot_number, bot_name, difficulty, target_score, personality
-            FROM farkle_challenge_bot_lineup
-            ORDER BY bot_number";
-    $stmt = $dbh->prepare($sql);
-    $stmt->execute();
-    $bots = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+    // Get bot lineup from config (some hidden based on progress)
     $furthestBot = $result['stats']['furthest_bot'];
-    foreach ($bots as $bot) {
-        // Show full info for bots up to furthest + 1, hide later bots
-        if ($bot['bot_number'] <= $furthestBot + 1 || $bot['bot_number'] <= 3) {
-            $result['bot_lineup'][] = $bot;
-        } else {
-            $result['bot_lineup'][] = [
-                'bot_number' => $bot['bot_number'],
-                'bot_name' => '???',
-                'difficulty' => '???',
-                'target_score' => '???',
-                'personality' => 'Unknown challenger awaits...'
-            ];
-        }
-    }
+    $result['bot_lineup'] = Challenge_GetBotListForLobby($furthestBot);
 
     return $result;
 }
@@ -122,7 +109,7 @@ function Challenge_StartRun($playerId) {
 
     // Check for existing active run
     $sql = "SELECT run_id FROM farkle_challenge_runs
-            WHERE playerid = :playerid AND status = 'active'";
+            WHERE player_id = :playerid AND status = 'active'";
     $stmt = $dbh->prepare($sql);
     $stmt->execute([':playerid' => $playerId]);
 
@@ -134,7 +121,7 @@ function Challenge_StartRun($playerId) {
         $dbh->beginTransaction();
 
         // Create new run
-        $sql = "INSERT INTO farkle_challenge_runs (playerid, status, current_bot_num, money, dice_saved_total)
+        $sql = "INSERT INTO farkle_challenge_runs (player_id, status, current_bot_number, current_money, total_dice_saved)
                 VALUES (:playerid, 'active', 1, 0, 0)
                 RETURNING run_id";
         $stmt = $dbh->prepare($sql);
@@ -143,7 +130,7 @@ function Challenge_StartRun($playerId) {
         $runId = $result['run_id'];
 
         // Initialize 6 standard dice in inventory
-        $sql = "INSERT INTO farkle_challenge_dice_inventory (run_id, slot_number, dice_type_id)
+        $sql = "INSERT INTO farkle_challenge_dice_inventory (run_id, dice_slot, dice_type_id)
                 VALUES (:run_id, :slot, 1)";
         $stmt = $dbh->prepare($sql);
 
@@ -152,9 +139,9 @@ function Challenge_StartRun($playerId) {
         }
 
         // Update or create player stats
-        $sql = "INSERT INTO farkle_challenge_stats (playerid, total_runs)
+        $sql = "INSERT INTO farkle_challenge_stats (player_id, total_runs)
                 VALUES (:playerid, 1)
-                ON CONFLICT (playerid) DO UPDATE SET total_runs = farkle_challenge_stats.total_runs + 1";
+                ON CONFLICT (player_id) DO UPDATE SET total_runs = farkle_challenge_stats.total_runs + 1";
         $stmt = $dbh->prepare($sql);
         $stmt->execute([':playerid' => $playerId]);
 
@@ -184,7 +171,7 @@ function Challenge_StartBotGame($playerId, $runId) {
 
     // Get the active run
     $sql = "SELECT * FROM farkle_challenge_runs
-            WHERE run_id = :run_id AND playerid = :playerid AND status = 'active'";
+            WHERE run_id = :run_id AND player_id = :playerid AND status = 'active'";
     $stmt = $dbh->prepare($sql);
     $stmt->execute([':run_id' => $runId, ':playerid' => $playerId]);
     $run = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -193,10 +180,15 @@ function Challenge_StartBotGame($playerId, $runId) {
         return ['error' => 'No active challenge run found.'];
     }
 
-    $botNum = $run['current_bot_num'];
+    $botNum = $run['current_bot_number'];
 
-    // Get the bot for this position
-    $sql = "SELECT * FROM farkle_challenge_bot_lineup WHERE bot_number = :bot_num";
+    // Get the bot for this position (with aliased columns for JS compatibility)
+    $sql = "SELECT b.bot_number, b.display_name AS bot_name, p.difficulty,
+                   b.point_target AS target_score, b.description AS personality,
+                   b.personality_id, b.special_rules, b.bot_dice_types
+            FROM farkle_challenge_bot_lineup b
+            JOIN farkle_bot_personalities p ON b.personality_id = p.personality_id
+            WHERE b.bot_number = :bot_num";
     $stmt = $dbh->prepare($sql);
     $stmt->execute([':bot_num' => $botNum]);
     $bot = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -205,7 +197,7 @@ function Challenge_StartBotGame($playerId, $runId) {
         return ['error' => 'Bot not found for position ' . $botNum];
     }
 
-    // Get or create the bot player
+    // Get or create the bot player (use display_name to find the bot player)
     $sql = "SELECT playerid FROM farkle_players WHERE username = :username AND is_bot = TRUE";
     $stmt = $dbh->prepare($sql);
     $stmt->execute([':username' => $bot['bot_name']]);
@@ -230,9 +222,14 @@ function Challenge_StartBotGame($playerId, $runId) {
     if (is_array($gameResult) && isset($gameResult[0]) && isset($gameResult[0]['gameid'])) {
         $gameId = $gameResult[0]['gameid'];
 
-        $sql = "UPDATE farkle_games SET bot_play_mode = 'interactive' WHERE gameid = :gameid";
+        $sql = "UPDATE farkle_games SET
+                    bot_play_mode = 'interactive',
+                    is_challenge_game = TRUE,
+                    challenge_run_id = :run_id,
+                    challenge_bot_number = :bot_num
+                WHERE gameid = :gameid";
         $stmt = $dbh->prepare($sql);
-        $stmt->execute([':gameid' => $gameId]);
+        $stmt->execute([':run_id' => $runId, ':bot_num' => $botNum, ':gameid' => $gameId]);
 
         return [
             'success' => true,
@@ -260,7 +257,7 @@ function Challenge_RecordGameResult($playerId, $runId, $won, $diceSaved = 0) {
 
     // Get the active run
     $sql = "SELECT * FROM farkle_challenge_runs
-            WHERE run_id = :run_id AND playerid = :playerid AND status = 'active'";
+            WHERE run_id = :run_id AND player_id = :playerid AND status = 'active'";
     $stmt = $dbh->prepare($sql);
     $stmt->execute([':run_id' => $runId, ':playerid' => $playerId]);
     $run = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -269,8 +266,8 @@ function Challenge_RecordGameResult($playerId, $runId, $won, $diceSaved = 0) {
         return ['error' => 'No active challenge run found.'];
     }
 
-    $currentBot = $run['current_bot_num'];
-    $money = $run['money'] + $diceSaved; // $1 per die saved
+    $currentBot = $run['current_bot_number'];
+    $money = $run['current_money'] + $diceSaved; // $1 per die saved
 
     if ($won) {
         // Player won - advance to next bot or complete the challenge
@@ -279,22 +276,21 @@ function Challenge_RecordGameResult($playerId, $runId, $won, $diceSaved = 0) {
         if ($nextBot > 20) {
             // Challenge complete!
             $sql = "UPDATE farkle_challenge_runs
-                    SET status = 'completed', current_bot_num = 20,
-                        money = :money, dice_saved_total = dice_saved_total + :dice_saved,
-                        completed_at = NOW()
+                    SET status = 'completed', current_bot_number = 20,
+                        current_money = :money, total_dice_saved = total_dice_saved + :dice_saved,
+                        completed_date = NOW()
                     WHERE run_id = :run_id";
             $stmt = $dbh->prepare($sql);
             $stmt->execute([':money' => $money, ':dice_saved' => $diceSaved, ':run_id' => $runId]);
 
             // Update stats - player completed the challenge!
             $sql = "UPDATE farkle_challenge_stats
-                    SET total_wins = total_wins + 1,
-                        furthest_bot = GREATEST(furthest_bot, 20),
-                        total_money_earned = total_money_earned + :money,
-                        total_dice_saved = total_dice_saved + :dice_saved
-                    WHERE playerid = :playerid";
+                    SET completed_runs = completed_runs + 1,
+                        furthest_bot_reached = GREATEST(furthest_bot_reached, 20),
+                        total_money_earned = total_money_earned + :money
+                    WHERE player_id = :playerid";
             $stmt = $dbh->prepare($sql);
-            $stmt->execute([':money' => $money, ':dice_saved' => $diceSaved, ':playerid' => $playerId]);
+            $stmt->execute([':money' => $money, ':playerid' => $playerId]);
 
             return [
                 'success' => true,
@@ -304,8 +300,8 @@ function Challenge_RecordGameResult($playerId, $runId, $won, $diceSaved = 0) {
         } else {
             // Advance to next bot
             $sql = "UPDATE farkle_challenge_runs
-                    SET current_bot_num = :next_bot, money = :money,
-                        dice_saved_total = dice_saved_total + :dice_saved
+                    SET current_bot_number = :next_bot, current_money = :money,
+                        total_dice_saved = total_dice_saved + :dice_saved
                     WHERE run_id = :run_id";
             $stmt = $dbh->prepare($sql);
             $stmt->execute([
@@ -317,10 +313,9 @@ function Challenge_RecordGameResult($playerId, $runId, $won, $diceSaved = 0) {
 
             // Update furthest bot stat if needed
             $sql = "UPDATE farkle_challenge_stats
-                    SET furthest_bot = GREATEST(furthest_bot, :bot_num),
-                        total_money_earned = total_money_earned + :dice_saved,
-                        total_dice_saved = total_dice_saved + :dice_saved
-                    WHERE playerid = :playerid";
+                    SET furthest_bot_reached = GREATEST(furthest_bot_reached, :bot_num),
+                        total_money_earned = total_money_earned + :dice_saved
+                    WHERE player_id = :playerid";
             $stmt = $dbh->prepare($sql);
             $stmt->execute([':bot_num' => $currentBot, ':dice_saved' => $diceSaved, ':playerid' => $playerId]);
 
@@ -334,15 +329,15 @@ function Challenge_RecordGameResult($playerId, $runId, $won, $diceSaved = 0) {
     } else {
         // Player lost - end the run
         $sql = "UPDATE farkle_challenge_runs
-                SET status = 'failed', completed_at = NOW()
+                SET status = 'failed', completed_date = NOW()
                 WHERE run_id = :run_id";
         $stmt = $dbh->prepare($sql);
         $stmt->execute([':run_id' => $runId]);
 
         // Update stats
         $sql = "UPDATE farkle_challenge_stats
-                SET furthest_bot = GREATEST(furthest_bot, :bot_num)
-                WHERE playerid = :playerid";
+                SET furthest_bot_reached = GREATEST(furthest_bot_reached, :bot_num)
+                WHERE player_id = :playerid";
         $stmt = $dbh->prepare($sql);
         $stmt->execute([':bot_num' => $currentBot - 1, ':playerid' => $playerId]);
 
@@ -364,8 +359,8 @@ function Challenge_AbandonRun($playerId) {
     $dbh = db_connect();
 
     $sql = "UPDATE farkle_challenge_runs
-            SET status = 'abandoned', completed_at = NOW()
-            WHERE playerid = :playerid AND status = 'active'";
+            SET status = 'abandoned', completed_date = NOW()
+            WHERE player_id = :playerid AND status = 'active'";
     $stmt = $dbh->prepare($sql);
     $stmt->execute([':playerid' => $playerId]);
 

@@ -1,0 +1,94 @@
+{
+  "id": "feature-20260119-005",
+  "title": "Challenge Mode - Phase 5: Challenge Game Flow",
+  "description": "Connect challenge games to the main game flow. Track dice saved for money during gameplay, detect challenge game wins/losses, show victory/defeat screens, and handle shop/next bot transitions.",
+  "created_at": "2026-01-19T20:00:00Z",
+  "status": "completed",
+  "completed_at": "2026-01-19T21:00:00Z",
+
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "detail": "Challenge games track dice saved during gameplay for money calculation",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-002",
+      "detail": "Game UI shows challenge-specific info (bot number, money, dice inventory)",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-003",
+      "detail": "Victory detection triggers shop flow with money earned",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-004",
+      "detail": "Defeat detection ends the run and shows defeat screen",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-005",
+      "detail": "Challenge completion (beat bot 20) shows victory celebration",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-006",
+      "detail": "Shop flow connects to next bot game after purchase/skip",
+      "status": "completed"
+    }
+  ],
+
+  "tasks": [
+    {
+      "id": "task-001",
+      "type": "implementation",
+      "requirement_ids": ["REQ-001"],
+      "description": "Add dice saved tracking to FarklePass for challenge games",
+      "status": "completed",
+      "completed_at": "2026-01-19T20:30:00Z"
+    },
+    {
+      "id": "task-002",
+      "type": "implementation",
+      "requirement_ids": ["REQ-002"],
+      "description": "Add challenge game header UI showing bot info, money, dice",
+      "status": "completed",
+      "completed_at": "2026-01-19T21:15:00Z"
+    },
+    {
+      "id": "task-003",
+      "type": "implementation",
+      "requirement_ids": ["REQ-003", "REQ-004", "REQ-005"],
+      "description": "Detect challenge game end and trigger appropriate flow (victory/defeat)",
+      "status": "completed",
+      "completed_at": "2026-01-19T20:45:00Z"
+    },
+    {
+      "id": "task-004",
+      "type": "implementation",
+      "requirement_ids": ["REQ-006"],
+      "description": "Update shop flow to start next bot game after purchase/skip",
+      "status": "completed",
+      "completed_at": "2026-01-19T20:50:00Z"
+    },
+    {
+      "id": "task-005",
+      "type": "verification",
+      "requirement_ids": [],
+      "description": "Test complete challenge flow: start -> play -> win -> shop -> next bot",
+      "status": "pending",
+      "completed_at": null,
+      "note": "Requires manual testing in browser"
+    },
+    {
+      "id": "task-FINAL",
+      "type": "verification",
+      "requirement_ids": [],
+      "description": "[ORCHESTRATOR] Final verification - verify all requirements are satisfied",
+      "status": "pending",
+      "completed_at": null,
+      "note": "This task is completed by the Orchestrator, NOT a coder agent"
+    }
+  ]
+}

@@ -98,8 +98,107 @@ function FarkleResetGame( theGameId )
 
 	$('#divGamePlayers').empty();
 	FarkleDiceReset();
+
+	// Hide challenge header on reset
+	$('#divChallengeHeader').hide();
 }
-	
+
+/**
+ * Update the challenge mode header if this is a challenge game
+ */
+function UpdateChallengeHeader() {
+	if( !gGameData ) return;
+
+	var headerDiv = $('#divChallengeHeader');
+	if( !headerDiv.length ) return;
+
+	// Check if this is a challenge game
+	if( gGameData.is_challenge_game && gGameData.challenge_run_id ) {
+		ConsoleDebug('UpdateChallengeHeader: Challenge game detected - bot #' + gGameData.challenge_bot_number);
+
+		// Store the run ID for later use
+		gChallengeRunId = gGameData.challenge_run_id;
+
+		// Update bot info from game data (populated from config)
+		$('#challengeHeaderBotNum').text(gGameData.challenge_bot_number || '?');
+		$('#challengeHeaderBotName').text(gGameData.challenge_bot_name || '');
+		$('#challengeHeaderTarget').text(addCommas(gGameData.challenge_point_target) || '???');
+
+		// Set difficulty color
+		var diffColor = '#666';
+		var diff = gGameData.challenge_bot_difficulty || '';
+		if( diff === 'Easy' ) diffColor = '#1d8711';
+		else if( diff === 'Medium' ) diffColor = '#FFA500';
+		else if( diff === 'Hard' ) diffColor = '#cc0000';
+		else if( diff === 'Boss' || diff === 'LEGENDARY' ) diffColor = '#9400D3';
+		$('#challengeHeaderDifficulty').text(diff).css('color', diffColor);
+
+		// Update money (we'll fetch from challenge status)
+		UpdateChallengeHeaderMoney();
+
+		// Show the header
+		headerDiv.show();
+	} else {
+		// Not a challenge game - hide header
+		headerDiv.hide();
+	}
+}
+
+/**
+ * Fetch and update the money display in challenge header
+ */
+function UpdateChallengeHeaderMoney() {
+	if( !gGameData || !gGameData.challenge_run_id ) return;
+
+	var params = 'action=get_challenge_status&playerid=' + playerid;
+
+	AjaxCallPost(gAjaxUrl, function() {
+		if( ajaxrequest.responseText ) {
+			try {
+				var response = eval("(" + ajaxrequest.responseText + ")");
+				if( !response.Error && response.active_run ) {
+					$('#challengeHeaderMoney').text(response.active_run.money || 0);
+
+					// Update dice inventory display
+					RenderChallengeHeaderDice(response.active_run.dice_inventory || []);
+				}
+			} catch(e) {
+				ConsoleDebug('UpdateChallengeHeaderMoney: Parse error - ' + e);
+			}
+		}
+	}, params);
+}
+
+/**
+ * Render dice inventory in the challenge header
+ */
+function RenderChallengeHeaderDice(inventory) {
+	var html = '';
+
+	for( var i = 0; i < 6; i++ ) {
+		var die = null;
+		// Find die for this slot
+		for( var j = 0; j < inventory.length; j++ ) {
+			if( inventory[j].slot_number == (i + 1) ) {
+				die = inventory[j];
+				break;
+			}
+		}
+
+		var shortWord = 'STD';
+		if( die && die.effect_value ) {
+			try {
+				var effectVal = JSON.parse(die.effect_value);
+				shortWord = effectVal.short_word || 'STD';
+			} catch(e) {}
+		}
+
+		html += '<span style="display: inline-block; margin: 0 3px; color: #ccc;">' + shortWord + '</span>';
+	}
+
+	$('#divChallengeHeaderDice').html(html);
+}
+
 function ResumeGame( theGameId )
 {
 	ConsoleDebug( 'Resuming Farkle game #'+theGameId+'...' ); 
@@ -193,14 +292,17 @@ function GameUpdateEx( gameData ) {
 			$('#lblGameInfo').html( "<i>Solo games do not give wins and limited XP.</i>" );
 			
 		$('#dbgGameId').html( gGameData.gameid );
-		
+
+		// Update challenge header if this is a challenge game
+		UpdateChallengeHeader();
+
 		CheckForAchievement( gameData[4] );
-		// What is 5? 
+		// What is 5?
 		CheckForLevel( gameData[6] );
-		
+
 		if( gGameData.winningplayer > 0 ) {
 			FarkleGameDisplayEnded();
-		} else {				
+		} else {
 			FarkleGameActiveMode();
 		}
 	}
@@ -255,14 +357,34 @@ function FarkleGameWatchMode() {
 }
 
 function FarkleGameDisplayEnded() {
-		
+
 	ConsoleDebug( "Updating game page to show a finished game." );
+
+	// Check if this is a challenge game
+	if( gGameData.is_challenge_game && gGameData.challenge_run_id ) {
+		ConsoleDebug( "FarkleGameDisplayEnded: This is a challenge game - run_id=" + gGameData.challenge_run_id );
+
+		// Determine if player won or lost
+		var playerWon = (gGameData.winningplayer == playerid);
+
+		// Store run ID for challenge functions
+		gChallengeRunId = gGameData.challenge_run_id;
+
+		// Clear game state
+		FarkleDiceReset();
+		clearTimeout( gGameTimer );
+
+		// Call challenge game end handler (dice saved is tracked server-side)
+		ChallengeGameEnded(playerWon, 0);
+		return;
+	}
+
 	// Let the player choose a title if desired.
 	if( g_myPlayerIndex > -1 &&	gGameData.winningplayer == gGamePlayerData[g_myPlayerIndex].playerid )
 		ShowXPGain( 5 + (gGameData.maxturns-2) );
 
-	FarkleDiceReset(); 
-	
+	FarkleDiceReset();
+
 	var gameWinMsg;
 
 	if( gGameData.gamewith == GAME_WITH_SOLO ) {
@@ -274,28 +396,28 @@ function FarkleGameDisplayEnded() {
 			gameWinMsg = "You lost. Winning player: " + gGamePlayerData[getOpponentIndexById( gGameData.winningplayer )].username;
 		}
 	}
-		
+
 	$('#btnPostGame').show();
 	$('#btnRollDice').hide();
-		
+
 	// Show the game ending XP gain for player
 	var gameXP = 0;
-	if( gGameData.winningplayer == playerid && gGameData.maxturns > 1 )	gameXP = 10 + (gGameData.maxturns-2); 
-	else if( gGameData.winningplayer != playerid && gGameData.maxturns > 1 ) gameXP = 5 + (gGameData.maxturns-2); 
-	else gameXP = 3; 
+	if( gGameData.winningplayer == playerid && gGameData.maxturns > 1 )	gameXP = 10 + (gGameData.maxturns-2);
+	else if( gGameData.winningplayer != playerid && gGameData.maxturns > 1 ) gameXP = 5 + (gGameData.maxturns-2);
+	else gameXP = 3;
 
 	ShowXPGain( gameXP );
-	
+
 	$('#lblGameExpires').html( 'Game ended: ' + gGameData.gamefinish );
 	divTurnActionObj.innerHTML = gameWinMsg;
 	gGameState == 3;
 	clearTimeout( gGameTimer );
 	FarkleGameDisplayDice();
-	
-	// Modify the layout to prevent weird things from happening and show play again button. 
+
+	// Modify the layout to prevent weird things from happening and show play again button.
 	$('#btnQuitGame').hide();
 	btnRollDiceObj.setAttribute('disabled','');
-	btnPassObj.setAttribute('disabled','');		
+	btnPassObj.setAttribute('disabled','');
 
 	$('#btnPlayAgain').hide();
 	$('#btnNewRandom').hide();
@@ -1080,6 +1202,11 @@ function PassTurn( ) {
 
 			// Enable roll button immediately so players can skip the delay if desired
 			btnRollDiceObj.removeAttribute('disabled');
+
+			// Update challenge header money if this is a challenge game
+			if( gGameData && gGameData.is_challenge_game ) {
+				UpdateChallengeHeaderMoney();
+			}
 
 			ConsoleDebug( "PassTurn: Delaying update hook for "+newDiff+" milliseconds. "+millisDiff+"ms has passed before now." );
 			// Still delay the automatic reset to allow score viewing

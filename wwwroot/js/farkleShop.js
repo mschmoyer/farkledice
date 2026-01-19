@@ -300,8 +300,12 @@ function ContinueToNextBot() {
 	// Hide shop
 	$('#divChallengeShop').hide();
 
-	// TODO: Start next bot game
-	// This will be implemented in the challenge game flow
-	// For now, return to lobby
-	ShowLobby();
+	// Start next bot game using the current challenge run
+	if (gShopRunId > 0) {
+		gChallengeRunId = gShopRunId;
+		ChallengeStartBotGame();
+	} else {
+		ConsoleDebug('ContinueToNextBot: No run ID, returning to lobby');
+		ShowChallengeLobby();
+	}
 }

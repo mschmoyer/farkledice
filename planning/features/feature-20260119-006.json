@@ -1,0 +1,60 @@
+{
+  "id": "feature-20260119-006",
+  "title": "Challenge Mode - Phase 6: AI Bot Integration",
+  "description": "Align challenge mode with the new AI bot system. Update PHP code to use correct schema, create 20 unique challenge-specific bot personalities (separate from standard 'Play a Bot' personalities), and ensure challenge bots have proper player records.",
+  "created_at": "2026-01-19T21:30:00Z",
+  "status": "in_progress",
+  "completed_at": null,
+
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "detail": "Update farkleChallenge.php to use correct column names (display_name, point_target, description)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-002",
+      "detail": "Join with farkle_bot_personalities table to get difficulty level",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-003",
+      "detail": "Create 20 unique challenge-specific bot personalities (IDs 16-35, separate from standard bot IDs 1-15)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-004",
+      "detail": "Update challenge bot lineup to reference new challenge-specific personalities",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-005",
+      "detail": "Ensure each challenge bot has a corresponding farkle_players record with is_bot=true",
+      "status": "pending"
+    }
+  ],
+
+  "tasks": [
+    {
+      "id": "task-001",
+      "type": "implementation",
+      "requirement_ids": ["REQ-001", "REQ-002"],
+      "description": "Update farkleChallenge.php to use correct schema and join with personalities",
+      "status": "pending"
+    },
+    {
+      "id": "task-002",
+      "type": "implementation",
+      "requirement_ids": ["REQ-003", "REQ-004", "REQ-005"],
+      "description": "Create SQL migration script for 20 challenge bot personalities and player records",
+      "status": "pending"
+    },
+    {
+      "id": "task-003",
+      "type": "verification",
+      "requirement_ids": [],
+      "description": "Verify challenge mode works with new bot system",
+      "status": "pending"
+    }
+  ]
+}
