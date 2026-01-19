@@ -25,6 +25,8 @@
 
 {include file="farkle_div_shop.tpl"}
 
+{include file="farkle_div_challengelobby.tpl"}
+
 {if isset($adminlevel) && $adminlevel > 0}
 	{include file="farkle_div_admin.tpl"}
 {/if}
@@ -174,6 +176,7 @@
 <script type="text/javascript" src="/js/farkleLeaderboard.js?vers=1.1"></script>
 <script type="text/javascript" src="/js/farkleAdmin.js?vers=1.0"></script>
 <script type="text/javascript" src="/js/farkleShop.js?vers=1.0"></script>
+<script type="text/javascript" src="/js/farkleChallenge.js?vers=1.0"></script>
 
 <script>{literal}
 $(document).ready(function()

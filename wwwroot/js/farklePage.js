@@ -31,6 +31,7 @@ var divTouranmentListObj;
 var lblRegErrorObj;
 var divAdminObj;
 var divChallengeShopObj;
+var divChallengeLobbyObj;
 
 var gPlayerInfoItem = 0;
 var gAchievementsLoaded = 0;
@@ -89,6 +90,7 @@ function pageInit( )
 	//divTournamentListObj = 	$('#divTournamentList');
 	divAdminObj = 			$('#divAdmin');
 	divChallengeShopObj = 	$('#divChallengeShop');
+	divChallengeLobbyObj = 	$('#divChallengeLobby');
 
 	if( theResumeGameId ) ConsoleDebug( 'ResumeGameId = '+theResumeGameId ); 
 	
@@ -211,6 +213,12 @@ function HideAllWindows()
 		divChallengeShopObj.hide();
 	}
 	$('#slotSelectionOverlay').hide();
+
+	if( divChallengeLobbyObj )
+	{
+		if( divChallengeLobbyObj.is(":visible") ) gLastPage = divChallengeLobbyObj;
+		divChallengeLobbyObj.hide();
+	}
 }
 
 function PageGoBack()

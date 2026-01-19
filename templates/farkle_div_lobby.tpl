@@ -61,6 +61,7 @@
 					onMouseOver="this.style.cursor='hand';" id="btnLobbyTournaments" style="display: none;">
 			</tr></td>*}
 						
+			<tr><td><input type="button" class="mobileButton lobbyButton" buttoncolor="yellow" value="Challenge" onClick="ShowChallengeLobby()" id="btnLobbyChallenge"></td></tr>
 			<tr><td><input type="button" class="mobileButton lobbyButton" value="New Game" 		onClick="ShowNewGame()" 		id="btnLobbyNewGame"></td></tr>
 			<tr><td><input type="button" class="mobileButton lobbyButton" buttoncolor="blue" 	value="Tournament" 				id="btnLobbyTournament"></td></tr>
 			{*<tr><td><input type="button" class="mobileButton lobbyButton" value="Register" 	onClick="ShowRegister()" 		id="btnLobbyRegister" ></td></tr>*}

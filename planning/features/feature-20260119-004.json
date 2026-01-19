@@ -1,0 +1,129 @@
+{
+  "id": "feature-20260119-004",
+  "title": "Challenge Mode - Phase 4: Challenge Lobby & Run Management",
+  "description": "Implement the Challenge Mode lobby where players can start new runs, resume existing runs, view the 20-bot lineup, and see their stats. Enforces single active run constraint. Follows existing Farkle UI patterns with mobile-first design.",
+  "created_at": "2026-01-19T19:30:00Z",
+  "status": "in_progress",
+  "completed_at": null,
+
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "detail": "farkleChallenge.php provides backend functions for run management (start, resume, get status)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-002",
+      "detail": "Player can start a new challenge run (creates run record, initializes 6 standard dice)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-003",
+      "detail": "Player can only have one active run at a time (enforced by database and UI)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-004",
+      "detail": "Player can resume an existing active run from the lobby",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-005",
+      "detail": "Challenge lobby displays the 20-bot lineup with difficulty indicators",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-006",
+      "detail": "Challenge lobby shows player's challenge stats (runs, furthest bot, etc.)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-007",
+      "detail": "farkle_fetch.php has challenge actions using existing action pattern",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-008",
+      "detail": "Challenge lobby template (farkle_div_challengelobby.tpl) matches existing UI patterns",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-009",
+      "detail": "farkleChallenge.js integrates with HideAllWindows and navigation patterns",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-010",
+      "detail": "Challenge Mode button added to main lobby (farkle_div_lobby.tpl)",
+      "status": "pending"
+    }
+  ],
+
+  "tasks": [
+    {
+      "id": "task-001",
+      "type": "implementation",
+      "requirement_ids": ["REQ-001", "REQ-002", "REQ-003", "REQ-004"],
+      "description": "Create wwwroot/farkleChallenge.php with run management functions",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-002",
+      "type": "implementation",
+      "requirement_ids": ["REQ-007"],
+      "description": "Add challenge actions to farkle_fetch.php (get_challenge_status, start_challenge, resume_challenge)",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-003",
+      "type": "implementation",
+      "requirement_ids": ["REQ-008", "REQ-005", "REQ-006"],
+      "description": "Create templates/farkle_div_challengelobby.tpl with lobby UI",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-004",
+      "type": "implementation",
+      "requirement_ids": ["REQ-009"],
+      "description": "Create wwwroot/js/farkleChallenge.js with lobby controller",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-005",
+      "type": "implementation",
+      "requirement_ids": ["REQ-010"],
+      "description": "Add Challenge Mode button to main lobby template",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-006",
+      "type": "implementation",
+      "requirement_ids": ["REQ-009"],
+      "description": "Integrate challenge lobby into farkle.tpl and farklePage.js",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-007",
+      "type": "verification",
+      "requirement_ids": [],
+      "description": "Test challenge lobby flow: view lobby, start run, resume run",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-FINAL",
+      "type": "verification",
+      "requirement_ids": [],
+      "description": "[ORCHESTRATOR] Final verification - verify all requirements are satisfied",
+      "status": "pending",
+      "completed_at": null,
+      "note": "This task is completed by the Orchestrator, NOT a coder agent"
+    }
+  ]
+}

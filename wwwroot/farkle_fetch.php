@@ -57,8 +57,9 @@
 				require_once('farkleTournament.php');
 				require_once('farkleLeaderboard.php');
 				require_once('farkleFriends.php');
-				require_once('farkleShop.php'); 
-			
+				require_once('farkleShop.php');
+				require_once('farkleChallenge.php');
+
 				if( !isset($p['newdice']) ) $p['newdice'] = null; // Protects against old clients without the javascript update. 
 			
 				// Lobby Info & Options
@@ -268,6 +269,72 @@
 						} else {
 							$rc = Array('Error' => 'Purchase failed. Please try again.');
 						}
+					}
+				}
+
+				// Challenge Mode Commands
+				else if( $p['action'] == 'get_challenge_status' )
+				{
+					$result = Challenge_GetStatus($_SESSION['playerid']);
+					$rc = $result;
+					$rc['Error'] = null;
+				}
+				else if( $p['action'] == 'start_challenge' )
+				{
+					$result = Challenge_StartRun($_SESSION['playerid']);
+
+					if (isset($result['error'])) {
+						$rc = Array('Error' => $result['error']);
+					} else {
+						$rc = $result;
+						$rc['Error'] = null;
+					}
+				}
+				else if( $p['action'] == 'start_challenge_game' )
+				{
+					$runId = intval($_POST['run_id'] ?? 0);
+
+					if ($runId <= 0) {
+						$rc = Array('Error' => 'Invalid challenge run ID.');
+					} else {
+						$result = Challenge_StartBotGame($_SESSION['playerid'], $runId);
+
+						if (isset($result['error'])) {
+							$rc = Array('Error' => $result['error']);
+						} else {
+							$rc = $result;
+							$rc['Error'] = null;
+						}
+					}
+				}
+				else if( $p['action'] == 'challenge_game_result' )
+				{
+					$runId = intval($_POST['run_id'] ?? 0);
+					$won = ($_POST['won'] ?? '0') === '1';
+					$diceSaved = intval($_POST['dice_saved'] ?? 0);
+
+					if ($runId <= 0) {
+						$rc = Array('Error' => 'Invalid challenge run ID.');
+					} else {
+						$result = Challenge_RecordGameResult($_SESSION['playerid'], $runId, $won, $diceSaved);
+
+						if (isset($result['error'])) {
+							$rc = Array('Error' => $result['error']);
+						} else {
+							$rc = $result;
+							$rc['Error'] = null;
+						}
+					}
+				}
+				else if( $p['action'] == 'abandon_challenge' )
+				{
+					$result = Challenge_AbandonRun($_SESSION['playerid']);
+
+					if (isset($result['error'])) {
+						$rc = Array('Error' => $result['error']);
+					} else {
+						$rc = $result;
+						$rc['Error'] = null;
 					}
 				}
 

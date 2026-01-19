@@ -50,8 +50,15 @@
     {
       "id": "feature-20260119-003",
       "title": "Challenge Mode - Phase 3: Dice Effect Engine",
+      "status": "completed",
+      "created_at": "2026-01-19T18:00:00Z",
+      "completed_at": "2026-01-19T19:30:00Z"
+    },
+    {
+      "id": "feature-20260119-004",
+      "title": "Challenge Mode - Phase 4: Challenge Lobby & Run Management",
       "status": "in_progress",
-      "created_at": "2026-01-19T18:00:00Z"
+      "created_at": "2026-01-19T19:30:00Z"
     }
   ]
 }
