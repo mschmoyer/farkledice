@@ -16,6 +16,54 @@ define('CLAUDE_API_VERSION', '2023-06-01');
 define('CLAUDE_MODEL', 'claude-3-5-haiku-20241022');
 define('CLAUDE_MAX_TOKENS', 1024);
 define('CLAUDE_TIMEOUT_SECONDS', 5);
+define('CLAUDE_LOG_FILE', __DIR__ . '/../logs/claude.log');
+
+/**
+ * Check if Claude logging is enabled via environment variable
+ *
+ * @return bool True if logging is enabled
+ */
+function isClaudeLoggingEnabled() {
+	$loggingEnabled = getenv('CLAUDE_LOGGING');
+
+	if (empty($loggingEnabled) && isset($_ENV['CLAUDE_LOGGING'])) {
+		$loggingEnabled = $_ENV['CLAUDE_LOGGING'];
+	}
+
+	if (empty($loggingEnabled) && isset($_SERVER['CLAUDE_LOGGING'])) {
+		$loggingEnabled = $_SERVER['CLAUDE_LOGGING'];
+	}
+
+	return !empty($loggingEnabled) && ($loggingEnabled === 'true' || $loggingEnabled === '1');
+}
+
+/**
+ * Write Claude API interaction to log file
+ *
+ * @param string $type 'request' or 'response'
+ * @param array $data Data to log (will be JSON encoded)
+ */
+function logClaudeInteraction($type, $data) {
+	if (!isClaudeLoggingEnabled()) {
+		return;
+	}
+
+	// Ensure log directory exists
+	$logDir = dirname(CLAUDE_LOG_FILE);
+	if (!is_dir($logDir)) {
+		@mkdir($logDir, 0755, true);
+	}
+
+	$timestamp = date('Y-m-d H:i:s');
+	$logEntry = sprintf(
+		"[%s] === %s ===\n%s\n\n",
+		$timestamp,
+		strtoupper($type),
+		json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+	);
+
+	@file_put_contents(CLAUDE_LOG_FILE, $logEntry, FILE_APPEND | LOCK_EX);
+}
 
 /**
  * Get Claude API key from environment variables
@@ -76,6 +124,9 @@ function callClaudeAPI($systemPrompt, $messages, $tools = null) {
         return ['error' => 'Failed to encode request payload'];
     }
 
+    // Log the request payload (before API call)
+    logClaudeInteraction('request', $payload);
+
     // Initialize cURL
     $ch = curl_init();
 
@@ -130,6 +181,9 @@ function callClaudeAPI($systemPrompt, $messages, $tools = null) {
         error_log('Claude API Error: Invalid JSON response - ' . json_last_error_msg() . ' - Response snippet: ' . substr($response, 0, 500));
         return ['error' => 'Invalid API response'];
     }
+
+    // Log the successful response
+    logClaudeInteraction('response', $parsedResponse);
 
     return $parsedResponse;
 }
@@ -467,21 +521,19 @@ function parseBotDecision($apiResponse) {
 }
 
 /**
- * Build a comprehensive system prompt for a bot personality
+ * Build a system prompt for a bot personality
  *
- * Generates a system prompt that includes:
- * - Bot personality and character traits
- * - Play style tendencies and strategy guidance
- * - Conversation style and chat message guidance
- * - Risk tolerance behavior
- * - Trash talk level guidance
- * - Complete Farkle rules and scoring reference
- * - Instructions for using the make_farkle_decision tool
+ * MIGRATION NOTE: This function now simply returns the pre-built system_prompt
+ * from the personality configuration. The prompt is built once in
+ * farkleBotPersonalities.php using helper functions.
  *
- * This prompt guides Claude to make decisions that are consistent with
- * the bot's personality while playing Farkle effectively.
+ * Legacy support: If personality data has old-style fields (personality_prompt,
+ * play_style_tendencies, etc.), it will build the prompt dynamically for
+ * backward compatibility.
  *
- * @param array $personalityData Bot personality data from database
+ * @param array $personalityData Bot personality data from configuration
+ *   - system_prompt: Pre-built system prompt (new format)
+ *   OR legacy fields:
  *   - name: Bot name
  *   - personality_prompt: Core personality description
  *   - play_style_tendencies: Strategy and decision-making tendencies
@@ -492,6 +544,13 @@ function parseBotDecision($apiResponse) {
  * @return string Complete system prompt for Claude API
  */
 function buildBotSystemPrompt($personalityData, $difficulty = null) {
+    // NEW FORMAT: Use pre-built system prompt if available
+    if (isset($personalityData['system_prompt']) && !empty($personalityData['system_prompt'])) {
+        return $personalityData['system_prompt'];
+    }
+
+    // LEGACY FORMAT: Build prompt dynamically from component fields
+    // This provides backward compatibility if personality data comes from database
     // Validate required fields
     $requiredFields = ['name', 'personality_prompt', 'play_style_tendencies', 'conversation_style'];
     foreach ($requiredFields as $field) {
@@ -551,6 +610,15 @@ function buildBotSystemPrompt($personalityData, $difficulty = null) {
     $systemPrompt .= "2. action: Either 'roll_again' (to roll remaining dice) or 'bank' (to end turn and save points)\n";
     $systemPrompt .= "3. reasoning: Brief internal reasoning for your decision (1 sentence, stay in character)\n";
     $systemPrompt .= "4. chat_message: A personality-driven message to the player (1-2 sentences, entertaining and in-character)\n\n";
+
+    $systemPrompt .= "CHAT MESSAGE GUIDELINES:\n";
+    $systemPrompt .= "- On your FIRST roll of the turn (when turn_score_so_far is 0), comment on your opponent's previous round performance\n";
+    $systemPrompt .= "  - Use their last_round_score to make your comment\n";
+    $systemPrompt .= "  - If they scored well (500+): React according to your personality (impressed, competitive, dismissive, etc.)\n";
+    $systemPrompt .= "  - If they scored poorly (0 = farkled, <300 = weak): React according to your personality (sympathetic, mocking, encouraging, etc.)\n";
+    $systemPrompt .= "  - Stay in character - make it conversational and natural\n";
+    $systemPrompt .= "- On subsequent rolls in the same turn, comment on YOUR dice/strategy as usual\n";
+    $systemPrompt .= "- Always be entertaining and reflect your unique personality\n\n";
 
     $systemPrompt .= "IMPORTANT DECISION-MAKING GUIDELINES:\n";
     $systemPrompt .= "- Choose ONE scoring combination from the available options provided\n";
@@ -829,7 +897,8 @@ function buildGameContext($gameState, $botPlayerData, $opponentData = []) {
                 $context['opponents'][] = [
                     'username' => $opponent['username'] ?? 'Unknown',
                     'total_score' => intval($opponent['total_score'] ?? 0),
-                    'round_score' => intval($opponent['round_score'] ?? 0)
+                    'round_score' => intval($opponent['round_score'] ?? 0),
+                    'last_round_score' => intval($opponent['last_round_score'] ?? 0)
                 ];
             }
         }

@@ -9,6 +9,7 @@ services:
       - .:/var/www/html
       - ./docker/backbone:/var/www/backbone
       - ./docker/configs:/var/www/configs
+      - ./docker/ssl:/etc/apache2/ssl
       - ./logs:/var/www/html/logs
     environment:
       - APACHE_DOCUMENT_ROOT=/var/www/html/wwwroot
@@ -17,6 +18,7 @@ services:
       - DB_USER=farkle_user
       - DB_PASS=farkle_pass
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - CLAUDE_LOGGING=${CLAUDE_LOGGING:-false}
     depends_on:
       - db
     networks:

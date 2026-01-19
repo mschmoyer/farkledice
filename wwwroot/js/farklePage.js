@@ -202,6 +202,12 @@ function HideAllWindows()
 		if( divAdminObj.is(":visible") ) gLastPage = divAdminObj;
 		divAdminObj.hide();
 	}
+
+	// Hide bot selection windows
+	$('#divBotGame').hide();
+	$('#divBotEasy').hide();
+	$('#divBotMedium').hide();
+	$('#divBotHard').hide();
 }
 
 function PageGoBack()

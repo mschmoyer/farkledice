@@ -621,38 +621,99 @@ function Bot_Hard_ShouldRollAgain($turnScore, $diceRemaining, $gameContext) {
 // ============================================================================
 
 /**
- * Fetch bot personality data from database
+ * Map database personality_id to code personality key
  *
- * Retrieves the personality configuration for AI-powered bot decision-making.
+ * This mapping maintains backward compatibility with existing bot player records
+ * that reference database personality IDs. The mapping is based on the original
+ * personality_id values from farkle_bot_personalities table.
  *
- * @param int $personalityId Personality ID from farkle_bot_personalities table
+ * @param int $personalityId Database personality ID
+ * @return string|null Personality key or null if not found
+ */
+function mapPersonalityIdToKey($personalityId) {
+	$mapping = [
+		1  => 'byte',
+		2  => 'chip',
+		3  => 'beep',
+		4  => 'spark',
+		5  => 'dot',
+		6  => 'cyber',
+		7  => 'logic',
+		8  => 'binary',
+		9  => 'glitch',
+		10 => 'echo',
+		11 => 'neural',
+		12 => 'quantum',
+		13 => 'apex',
+		14 => 'sigma',
+		15 => 'prime',
+	];
+
+	return $mapping[$personalityId] ?? null;
+}
+
+/**
+ * Fetch bot personality data from code configuration
+ *
+ * Retrieves the personality configuration for AI-powered bot decision-making
+ * from the code-based personality definitions file.
+ *
+ * MIGRATION NOTE: This replaces the database-driven personality system.
+ * Personalities are now defined in farkleBotPersonalities.php for easier
+ * version control and deployment.
+ *
+ * This function accepts either:
+ * - A personality key (string) like 'byte', 'neural', 'prime'
+ * - A database personality_id (integer) which is mapped to a key for backward compatibility
+ *
+ * @param string|int $personalityKeyOrId Personality key or database personality ID
  * @return array|null Personality data or null if not found
  */
-function fetchBotPersonality($personalityId) {
-	require_once(__DIR__ . '/../includes/dbutil.php');
+function fetchBotPersonality($personalityKeyOrId) {
+	// Load personality configuration file
+	require_once(__DIR__ . '/farkleBotPersonalities.php');
 
-	$conn = db_connect();
-	if (!$conn) {
-		error_log("fetchBotPersonality: Database connection failed");
+	// If it's an integer, map to key first (backward compatibility)
+	if (is_numeric($personalityKeyOrId)) {
+		$personalityKey = mapPersonalityIdToKey(intval($personalityKeyOrId));
+		if (!$personalityKey) {
+			error_log("fetchBotPersonality: No personality mapping found for ID: $personalityKeyOrId");
+			return null;
+		}
+	} else {
+		$personalityKey = $personalityKeyOrId;
+	}
+
+	// Get personality by key
+	$personality = getBotPersonality($personalityKey);
+
+	if (!$personality) {
+		error_log("fetchBotPersonality: No personality found for key: $personalityKey");
 		return null;
 	}
 
-	$stmt = $conn->prepare("
-		SELECT personality_id, name, difficulty, personality_type,
-		       personality_prompt, play_style_tendencies, conversation_style,
-		       risk_tolerance, trash_talk_level
-		FROM farkle_bot_personalities
-		WHERE personality_id = :personality_id AND is_active = true
-	");
+	return $personality;
+}
 
-	$stmt->execute([':personality_id' => $personalityId]);
-	$personality = $stmt->fetch(PDO::FETCH_ASSOC);
+/**
+ * Fetch bot personality by name (backward compatibility helper)
+ *
+ * @param string $name Bot name (e.g., 'Byte', 'Neural', 'Prime')
+ * @return array|null Personality data or null if not found
+ */
+function fetchBotPersonalityByName($name) {
+	// Load personality configuration file
+	require_once(__DIR__ . '/farkleBotPersonalities.php');
+
+	// Get personality by name
+	$personality = getBotPersonalityByName($name);
 
 	if (!$personality) {
-		error_log("fetchBotPersonality: No active personality found for ID: $personalityId");
+		error_log("fetchBotPersonalityByName: No personality found for name: $name");
+		return null;
 	}
 
-	return $personality ?: null;
+	return $personality;
 }
 
 /**
@@ -707,9 +768,10 @@ function Bot_MakeAIDecision($gameData, $botPlayerData, $personalityId, $diceRoll
 		foreach ($gameData['players'] as $player) {
 			if ($player['playerid'] != $botPlayerData['playerid']) {
 				$opponentData[] = [
-					'username' => 'Opponent', // We don't need real username for context
+					'username' => $player['username'] ?? 'Opponent',
 					'total_score' => $player['playerscore'] ?? 0,
-					'round_score' => 0 // Not tracked in current game data
+					'round_score' => 0, // Not tracked in current game data
+					'last_round_score' => $player['lastroundscore'] ?? 0
 				];
 			}
 		}

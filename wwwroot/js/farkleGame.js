@@ -416,7 +416,20 @@ function PopulatePlayerData( thePlayerData )
 			if( gGameData.winningplayer == 0 && g_myPlayerIndex > -1 &&
 				gGamePlayerData[g_myPlayerIndex].playerround < 11 && i != g_myPlayerIndex && p.playerround > 1 )
 			{
-				scoreStr = addCommas(p.rollingscore);
+				// For bot players, always show their full current score (not rollingscore)
+				// This allows immediate feedback when bots complete their turns
+				if( p.is_bot ) {
+					var finalScore = p.playerscore;
+					// If playerscore is missing, calculate from rollingscore + lastroundscore
+					if( !finalScore || finalScore === '' || finalScore === null || finalScore === undefined ) {
+						finalScore = parseInt(p.rollingscore || 0) + parseInt(p.lastroundscore || 0);
+						ConsoleDebug( "PopulatePlayerData: Bot score calculated: " + finalScore );
+					}
+					scoreStr = addCommas(finalScore);
+				} else {
+					// For human opponents, only show rollingscore (hide current round until player catches up)
+					scoreStr = addCommas(p.rollingscore);
+				}
 			}
 			// For completed games or players who have played at least one round
 			else if( p.playerround > 1 || gGameData.winningplayer > 0 ){
@@ -459,6 +472,9 @@ function PopulatePlayerData( thePlayerData )
 			}
 		}
 	}
+
+	// Update bot type indicator
+	UpdateBotTypeIndicator();
 
 	// Check if it's a bot's turn and start bot play if needed
 	Bot_CheckAndStartTurn();
@@ -533,6 +549,10 @@ function Bot_StartTurn( botPlayer ) {
 	FarkleDiceReset();
 	console.log('Bot_StartTurn: Cleared dice state');
 
+	// Disable player buttons during bot turn
+	$('#btnRollDice').attr('disabled', 'disabled');
+	$('#btnPass').attr('disabled', 'disabled');
+
 	// Show bot thinking message
 	var thinkingMsg = botPlayer.username + " " + (botPlayer.playertitle || '') + " is thinking...";
 	divTurnActionObj.innerHTML = '<span style="color: #96D3F2;">' + thinkingMsg + '</span>';
@@ -565,8 +585,22 @@ function Bot_ExecuteNextStep( botPlayerId, currentStatus ) {
 	console.log( "Bot_ExecuteNextStep: Current status:", currentStatus );
 	ConsoleDebug( "Bot_ExecuteNextStep: Executing step for bot " + botPlayerId );
 
+	// Safety timeout: if AJAX doesn't complete within 15 seconds, reset bot state
+	var ajaxTimeout = setTimeout(function() {
+		console.error("Bot_ExecuteNextStep: AJAX timeout - resetting bot state");
+		ConsoleError("Bot_ExecuteNextStep: AJAX call timed out after 15 seconds");
+		gBotIsPlaying = false;
+		// Re-enable player buttons
+		$('#btnRollDice').removeAttr('disabled');
+		$('#btnPass').removeAttr('disabled');
+		farkleGetUpdate();
+	}, 15000);
+
 	FarkleAjaxCall(
 		function() {
+			// Clear the timeout since we got a response
+			clearTimeout(ajaxTimeout);
+
 			console.log('Bot_ExecuteNextStep: Received response:', ajaxrequest.responseText);
 			var stepResult = FarkleParseAjaxResponse( ajaxrequest.responseText );
 			console.log('Bot_ExecuteNextStep: Parsed step result:', stepResult);
@@ -581,6 +615,9 @@ function Bot_ExecuteNextStep( botPlayerId, currentStatus ) {
 				console.error( "Bot_ExecuteNextStep: Failed to execute step: " + (stepResult ? stepResult.Error : "Unknown error") );
 				ConsoleError( "Bot_ExecuteNextStep: Failed to execute step: " + (stepResult ? stepResult.Error : "Unknown error") );
 				gBotIsPlaying = false;
+				// Re-enable player buttons
+				$('#btnRollDice').removeAttr('disabled');
+				$('#btnPass').removeAttr('disabled');
 				// Refresh game state
 				farkleGetUpdate();
 			}
@@ -610,6 +647,10 @@ function Bot_ProcessStepResult( botPlayerId, stepResult ) {
 			if( stepResult.dice && stepResult.dice.length > 0 ) {
 				Bot_AnimateDiceRoll( stepResult.dice );
 			}
+			// Show thinking message while waiting for next decision
+			setTimeout( function() {
+				divTurnActionObj.innerHTML = '<span style="color: #96D3F2;">Thinking...</span>';
+			}, BOT_STEP_DELAY_MS / 2 );
 			// Continue to next step after animation delay
 			setTimeout( function() {
 				Bot_PollAndExecuteStep( botPlayerId );
@@ -645,6 +686,11 @@ function Bot_ProcessStepResult( botPlayerId, stepResult ) {
 					}
 				}
 			}
+
+			// Show thinking message while waiting for next decision
+			setTimeout( function() {
+				divTurnActionObj.innerHTML = '<span style="color: #96D3F2;">Thinking...</span>';
+			}, BOT_STEP_DELAY_MS / 2 );
 
 			// Continue to next step
 			setTimeout( function() {
@@ -688,6 +734,9 @@ function Bot_ProcessStepResult( botPlayerId, stepResult ) {
 				gBotIsPlaying = false;
 				// Clear dice state before refreshing
 				FarkleDiceReset();
+				// Re-enable player buttons (will be updated by game state)
+				$('#btnRollDice').removeAttr('disabled');
+				$('#btnPass').removeAttr('disabled');
 				farkleGetUpdate();
 			}, SCORE_VIEW_DELAY_MS );
 			break;
@@ -695,9 +744,48 @@ function Bot_ProcessStepResult( botPlayerId, stepResult ) {
 		default:
 			ConsoleError( "Bot_ProcessStepResult: Unknown step type: " + step );
 			gBotIsPlaying = false;
+			// Re-enable player buttons in case of error
+			$('#btnRollDice').removeAttr('disabled');
+			$('#btnPass').removeAttr('disabled');
 			farkleGetUpdate();
 			break;
 	}
+}
+
+/**
+ * Update the bot type indicator at bottom of game screen
+ */
+function UpdateBotTypeIndicator() {
+	// Find bot opponent (not the current player)
+	var botOpponent = null;
+
+	if (!gGamePlayerData || gGamePlayerData.length < 2) {
+		$('#divBotTypeIndicator').hide();
+		return;
+	}
+
+	for (var i = 0; i < gGamePlayerData.length; i++) {
+		var player = gGamePlayerData[i];
+		if (player.is_bot && player.playerid != playerid) {
+			botOpponent = player;
+			break;
+		}
+	}
+
+	if (!botOpponent) {
+		$('#divBotTypeIndicator').hide();
+		return;
+	}
+
+	// Check if bot has personality_id (AI-powered) or uses algorithm (scripted)
+	var indicatorText = '';
+	if (botOpponent.personality_id && botOpponent.personality_id > 0) {
+		indicatorText = 'You are playing an AI-powered bot';
+	} else {
+		indicatorText = 'You are playing a scripted bot';
+	}
+
+	$('#divBotTypeIndicator').text(indicatorText).show();
 }
 
 /**
@@ -732,10 +820,21 @@ function Bot_DisplayMessage( message ) {
 		// Add message to chat history
 		var divMessages = document.getElementById('divBotChatMessages');
 		if( divMessages ) {
-			var messageHtml = '<div style="margin-bottom: 6px;">' +
-			                  '<span style="color: #96D3F2;">' + message + '</span>' +
+			// Console-log style: simple left-aligned text with prefix
+			var messageHtml = '<div style="margin-bottom: 4px; opacity: 0;">' +
+			                  '> ' + message +
 			                  '</div>';
 			divMessages.innerHTML += messageHtml;
+
+			// Fade in animation
+			var allMessages = divMessages.querySelectorAll('div');
+			var lastMessage = allMessages[allMessages.length - 1];
+			if( lastMessage ) {
+				setTimeout(function() {
+					lastMessage.style.transition = 'opacity 0.3s ease-in';
+					lastMessage.style.opacity = '1';
+				}, 10);
+			}
 
 			// Auto-scroll to bottom
 			divMessages.scrollTop = divMessages.scrollHeight;

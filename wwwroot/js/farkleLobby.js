@@ -200,8 +200,14 @@ function LobbyBackFromIdle()
 function showBotGameModal() {
 	console.log('showBotGameModal: Function called');
 
+	// Hide the main game type selection screen
+	$('#divGameTypes').hide();
+
 	// Hide other game type divs
-	HideAllGameTypeDivs();
+	$('#divGameType0').hide();
+	$('#divGameType1').hide();
+	$('#divGameType2').hide();
+	$('#divNewGameStart').hide();
 
 	// Show bot game selection div (similar to Play Random)
 	$('#divBotGame').show();

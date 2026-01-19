@@ -3,11 +3,11 @@
 
 	<!-- NEW GAME SCREEN - CHOOSE GAME TYPE -->
 	<div id="divGameTypes" align="center">
+		<img src="/images/btn-playabot-new.png" width="290px" style="cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,0);" onClick="showBotGameModal()" ontouchstart=""><br/>
 		<img src="/images/btn-invitefriends-new.png" width="290px" style="cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,0);" onClick="sendRequestViaMultiFriendSelector()" ontouchstart=""><br/>
 		<img src="/images/btn-playfriends-new.png" width="290px" style="cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,0);" onClick="SelectPlayType(2,1)" ontouchstart=""><br/>
 		<img src="/images/btn-playrandom-new.png" width="290px" style="cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,0);" onClick="SelectPlayType(2,0)" ontouchstart=""><br/>
 		<img src="/images/btn-playsolo-new.png" width="290px" style="cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,0);" onClick="StartSoloGame()" ontouchstart=""><br/>
-		<img src="/images/btn-playabot-new.png" width="290px" style="cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,0);" onClick="showBotGameModal()" ontouchstart=""><br/>
 		<br/>
 		<input type="button" class="mobileButton" value="Back" buttoncolor="red"
 			onClick="ShowLobby()" style="width: 250px;">
@@ -36,16 +36,16 @@
 			<p style="margin-bottom: 15px;">Choose your opponent's difficulty:</p>
 
 			<input type="button" class="mobileButton" buttoncolor="green"
-			       value="🟢 Easy Bot" onClick="startBotGame('easy')"
-			       style="width: 250px; margin: 5px;">
+			       value="🟢 Chill" onClick="startBotGame('easy')"
+			       style="width: 250px; margin: 5px; display: block;">
 
-			<input type="button" class="mobileButton" buttoncolor="yellow"
-			       value="🟡 Medium Bot" onClick="startBotGame('medium')"
-			       style="width: 250px; margin: 5px;">
+			<input type="button" class="mobileButton" buttoncolor="orange"
+			       value="🟠 Average" onClick="startBotGame('medium')"
+			       style="width: 250px; margin: 5px; display: block;">
 
 			<input type="button" class="mobileButton" buttoncolor="red"
-			       value="🔴 Hard Bot" onClick="startBotGame('hard')"
-			       style="width: 250px; margin: 5px;">
+			       value="🔴 Competitive" onClick="startBotGame('hard')"
+			       style="width: 250px; margin: 5px; display: block;">
 
 			<p style="font-size: 12px; color: #888; margin-top: 15px;">
 				A random AI personality will be selected.

@@ -60,6 +60,42 @@ grep "192.168." logs/access.log
 
 **Note:** Log files are stored in `logs/` directory and mounted as a Docker volume. Access logs are NOT included in `docker logs` output to reduce noise.
 
+**Claude API Logs (AI Bot Debugging):**
+
+To debug AI bot decision-making, enable Claude API logging to see the full prompts and responses:
+
+```bash
+# 1. Enable logging in .env file
+echo "CLAUDE_LOGGING=true" >> .env
+
+# 2. Restart containers to pick up the change
+docker-compose restart web
+
+# 3. View Claude API logs in real-time
+tail -f logs/claude.log
+
+# 4. To disable logging later
+# Edit .env and change CLAUDE_LOGGING=false, then restart
+```
+
+**What gets logged:**
+- Full system prompts sent to Claude
+- User messages with game state context
+- Function calling schemas (dice selection tools)
+- Complete Claude API responses
+- Bot personality and decision reasoning
+
+**Important:** Claude logs can grow quickly. Only enable when actively debugging AI bot behavior. Disable when done to save disk space.
+
+**AI Bot Configuration:**
+
+To modify Claude API prompts or model settings:
+
+- **Model config** (model, tokens, timeout): `wwwroot/farkleBotAI_Claude.php` - constants at top of file (CLAUDE_MODEL, CLAUDE_MAX_TOKENS, etc.)
+- **System prompt builder**: `wwwroot/farkleBotAI_Claude.php` - `buildBotSystemPrompt()` function
+- **Bot personalities**: Database table `farkle_bot_personalities` - personality traits that shape prompts
+- **Function calling schema**: `wwwroot/farkleBotAI_Claude.php` - `getBotDecisionTools()` function
+
 ### Local Database Access
 
 Credentials are stored in `.env.local`. When running psql commands against the local Docker database, use:
@@ -81,6 +117,25 @@ docker exec -it farkle_db psql -U farkle_user -d farkle_db
 docker exec farkle_db psql -U farkle_user -d farkle_db -c "SELECT username, adminlevel FROM farkle_players;"
 docker exec farkle_db psql -U farkle_user -d farkle_db -c "UPDATE farkle_players SET adminlevel = 1 WHERE username = 'mschmoyer';"
 ```
+
+### Local HTTPS (Optional)
+
+For trusted HTTPS at `https://localhost:8443` without browser warnings:
+
+```bash
+# One-time setup
+brew install mkcert
+mkcert -install
+
+# Generate certs for this project
+mkdir -p docker/ssl
+mkcert -cert-file docker/ssl/localhost.crt -key-file docker/ssl/localhost.key localhost 127.0.0.1
+
+# Rebuild container
+docker-compose down && docker-compose up -d --build
+```
+
+Without mkcert, the container auto-generates self-signed certs (browser will warn but still works).
 
 ## Heroku Production Environment
 
@@ -132,6 +187,20 @@ The orchestrator will:
 - Ensure all requirements are satisfied
 
 See `planning/README.md` for details.
+
+## Pull Requests
+
+When creating a pull request using `gh pr create`, always open it in the browser immediately after creation:
+
+```bash
+# After creating PR, open it automatically
+gh pr create --title "..." --body "..." && open $(gh pr view --json url -q .url)
+
+# Or if you have the PR URL
+open https://github.com/mschmoyer/farkledice/pull/4
+```
+
+**Best practice**: Use the `open` command (macOS) to launch the PR in the default browser so the user can review it immediately.
 
 ## Architecture
 
@@ -209,6 +278,8 @@ Templates are in `templates/` directory:
 - `wwwroot/admin/` - Administrative tools
 - `src/` - Additional source files (minimal usage)
 - `tests/` - Test files
+
+**Note:** When creating test PHP files, place them in a `/test` subfolder to keep them organized and separate from production code.
 
 ### Database
 
