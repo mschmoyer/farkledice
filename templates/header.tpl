@@ -35,11 +35,8 @@
 
 	<!-- Icons -->
 	<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
-	<link rel="icon" type="image/png" sizes="512x512" href="/images/site-icon.png">
-	<link rel="apple-touch-icon" href="/images/site-icon.png">
-
-	<!-- iOS Splash Screen -->
-	<link rel="apple-touch-startup-image" href="/images/farkle-loading-screen.png">
+	<link rel="icon" type="image/png" sizes="512x512" href="/images/site-icon-512.png">
+	<link rel="apple-touch-icon" href="/images/site-icon-180.png">
 
 	<!-- Web App Manifest -->
 	<link rel="manifest" href="/manifest.json">

@@ -86,8 +86,14 @@
 
 # Alternative cache headers if mod_expires not available
 <IfModule mod_headers.c>
+    # PWA manifest - immutable for aggressive caching
+    <FilesMatch "manifest\.json$">
+        Header set Cache-Control "max-age=31536000, public, immutable"
+    </FilesMatch>
+
+    # Images (including PWA icons) - immutable for aggressive caching
     <FilesMatch "\.(jpg|jpeg|png|gif|webp|svg|ico)$">
-        Header set Cache-Control "max-age=31536000, public"
+        Header set Cache-Control "max-age=31536000, public, immutable"
     </FilesMatch>
 
     <FilesMatch "\.(css|js)$">

@@ -53,7 +53,7 @@ var GAME_STATE_WATCHING = 4;
 var gBotTurnTimer = null;
 var gBotIsPlaying = false;
 var gBotPlayerIds = [];  // Array of bot player IDs in current game
-var BOT_STEP_DELAY_MS = 800;  // Delay between bot steps for animation 
+var BOT_STEP_DELAY_MS = 1200;  // Delay between bot steps for animation 
 
 var LAST_ROUND = 10;
 
