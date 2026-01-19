@@ -267,9 +267,13 @@ function Bot_Step_ChoosingKeepers($state, $gameData, $botPlayer) {
 
 	// Check for farkle
 	if ($decision['farkled']) {
-		// Generate farkle message
-		$context = Bot_BuildMessageContext($state['gameid'], $state['playerid'], $gameData);
-		$message = Bot_SelectMessage(4, $botPlayer, $context); // Category 4: Farkle
+		// Use AI chat message if available, otherwise generate algorithmic message
+		if (!empty($decision['chat_message'])) {
+			$message = $decision['chat_message'];
+		} else {
+			$context = Bot_BuildMessageContext($state['gameid'], $state['playerid'], $gameData);
+			$message = Bot_SelectMessage(4, $botPlayer, $context); // Category 4: Farkle
+		}
 
 		// Transition to farkled state
 		$updates = [
@@ -291,14 +295,19 @@ function Bot_Step_ChoosingKeepers($state, $gameData, $botPlayer) {
 	$newTurnScore = $decision['new_turn_score'];
 	$newDiceRemaining = $decision['new_dice_remaining'];
 
-	// Build message context with keeper info
-	$context = Bot_BuildMessageContext($state['gameid'], $state['playerid'], $gameData);
-	$context['bot_last_keep_score'] = $keeperChoice['points'];
-	$context['dice_description'] = $keeperChoice['description'];
-	$context['num_dice_left'] = $newDiceRemaining;
+	// Use AI chat message if available, otherwise generate algorithmic message
+	if (!empty($decision['chat_message'])) {
+		$message = $decision['chat_message'];
+	} else {
+		// Build message context with keeper info
+		$context = Bot_BuildMessageContext($state['gameid'], $state['playerid'], $gameData);
+		$context['bot_last_keep_score'] = $keeperChoice['points'];
+		$context['dice_description'] = $keeperChoice['description'];
+		$context['num_dice_left'] = $newDiceRemaining;
 
-	// Generate keeper selection message (Category 1)
-	$message = Bot_SelectMessage(1, $botPlayer, $context);
+		// Generate keeper selection message (Category 1)
+		$message = Bot_SelectMessage(1, $botPlayer, $context);
+	}
 
 	// Update state
 	$updates = [
@@ -366,13 +375,18 @@ function Bot_Step_DecidingRoll($state, $gameData, $botPlayer) {
 	$context['farkle_prob'] = round(Bot_CalculateFarkleProbability($state['dice_remaining']) * 100, 1);
 
 	if ($shouldRoll) {
-		// Check for hot dice (all dice used)
-		if ($state['dice_remaining'] == 6) {
-			// Hot dice! Generate hot dice message (Category 5)
-			$message = Bot_SelectMessage(5, $botPlayer, $context);
+		// Use AI chat message if available, otherwise generate algorithmic message
+		if (!empty($decision['chat_message'])) {
+			$message = $decision['chat_message'];
 		} else {
-			// Regular roll again decision (Category 2)
-			$message = Bot_SelectMessage(2, $botPlayer, $context);
+			// Check for hot dice (all dice used)
+			if ($state['dice_remaining'] == 6) {
+				// Hot dice! Generate hot dice message (Category 5)
+				$message = Bot_SelectMessage(5, $botPlayer, $context);
+			} else {
+				// Regular roll again decision (Category 2)
+				$message = Bot_SelectMessage(2, $botPlayer, $context);
+			}
 		}
 
 		// Transition back to rolling
@@ -389,8 +403,13 @@ function Bot_Step_DecidingRoll($state, $gameData, $botPlayer) {
 			'state' => $newState
 		];
 	} else {
-		// Banking decision (Category 3)
-		$message = Bot_SelectMessage(3, $botPlayer, $context);
+		// Use AI chat message if available, otherwise generate algorithmic message
+		if (!empty($decision['chat_message'])) {
+			$message = $decision['chat_message'];
+		} else {
+			// Banking decision (Category 3)
+			$message = Bot_SelectMessage(3, $botPlayer, $context);
+		}
 
 		// Transition to banking
 		$updates = [
@@ -879,7 +898,7 @@ function Bot_GetGameData($gameId) {
  * @return array|null Bot player record or null if not found
  */
 function Bot_GetBotPlayer($playerId) {
-	$sql = "SELECT playerid, username, bot_algorithm, playerlevel
+	$sql = "SELECT playerid, username, bot_algorithm, playerlevel, personality_id
 	        FROM farkle_players
 	        WHERE playerid = :playerid AND is_bot = TRUE";
 

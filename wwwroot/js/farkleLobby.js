@@ -200,39 +200,11 @@ function LobbyBackFromIdle()
 function showBotGameModal() {
 	console.log('showBotGameModal: Function called');
 
-	var html = '<div id="botGameModalOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center;" onclick="closeBotGameModal()" ontouchstart="">';
-	html += '  <div class="bot-select-modal" onclick="event.stopPropagation()" ontouchstart="">';
-	html += '    <h2>Play Against a Bot</h2>';
-	html += '    <p style="text-align: center; color: #666; margin-bottom: 20px;">Choose your opponent\'s difficulty:</p>';
+	// Hide other game type divs
+	HideAllGameTypeDivs();
 
-	// Easy bots
-	html += '    <div class="bot-option" onclick="startBotGame(\'easy\')" ontouchstart="">';
-	html += '      <h3>🟢 Easy</h3>';
-	html += '      <p>Friendly and makes mistakes - great for learning!</p>';
-	html += '      <small>Bots: Byte, Chip, Beep</small>';
-	html += '    </div>';
-
-	// Medium bots
-	html += '    <div class="bot-option" onclick="startBotGame(\'medium\')" ontouchstart="">';
-	html += '      <h3>🟡 Medium</h3>';
-	html += '      <p>Solid tactical play with strategic thinking</p>';
-	html += '      <small>Bots: Cyber, Logic, Binary</small>';
-	html += '    </div>';
-
-	// Hard bots
-	html += '    <div class="bot-option" onclick="startBotGame(\'hard\')" ontouchstart="">';
-	html += '      <h3>🔴 Hard</h3>';
-	html += '      <p>Advanced AI with optimal decision-making</p>';
-	html += '      <small>Bots: Neural, Quantum, Apex</small>';
-	html += '    </div>';
-
-	html += '    <div style="text-align: center; margin-top: 16px;">';
-	html += '      <button class="mobileButton" onclick="closeBotGameModal()" style="width: 120px;">Cancel</button>';
-	html += '    </div>';
-	html += '  </div>';
-	html += '</div>';
-
-	$('body').append(html);
+	// Show bot game selection div (similar to Play Random)
+	$('#divBotGame').show();
 }
 
 /**
@@ -246,8 +218,6 @@ function closeBotGameModal() {
  * Start a game against a bot
  */
 function startBotGame(algorithm) {
-	closeBotGameModal();
-
 	console.log('startBotGame: Starting bot game with algorithm: ' + algorithm);
 	console.log('startBotGame: playerid =', playerid);
 	console.log('startBotGame: gAjaxUrl =', gAjaxUrl);

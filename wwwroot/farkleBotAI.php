@@ -599,6 +599,186 @@ function Bot_Hard_ShouldRollAgain($turnScore, $diceRemaining, $gameContext) {
 }
 
 // ============================================================================
+// AI-POWERED DECISION-MAKING (REQ-008, REQ-016, REQ-018)
+// ============================================================================
+
+/**
+ * Fetch bot personality data from database
+ *
+ * Retrieves the personality configuration for AI-powered bot decision-making.
+ *
+ * @param int $personalityId Personality ID from farkle_bot_personalities table
+ * @return array|null Personality data or null if not found
+ */
+function fetchBotPersonality($personalityId) {
+	require_once(__DIR__ . '/../includes/dbutil.php');
+
+	$conn = db_connect();
+	if (!$conn) {
+		error_log("fetchBotPersonality: Database connection failed");
+		return null;
+	}
+
+	$stmt = $conn->prepare("
+		SELECT personality_id, name, difficulty, personality_type,
+		       personality_prompt, play_style_tendencies, conversation_style,
+		       risk_tolerance, trash_talk_level
+		FROM farkle_bot_personalities
+		WHERE personality_id = :personality_id AND is_active = true
+	");
+
+	$stmt->execute([':personality_id' => $personalityId]);
+	$personality = $stmt->fetch(PDO::FETCH_ASSOC);
+
+	if (!$personality) {
+		error_log("fetchBotPersonality: No active personality found for ID: $personalityId");
+	}
+
+	return $personality ?: null;
+}
+
+/**
+ * Make AI-powered bot decision using Claude API
+ *
+ * Calls Claude API with bot personality and game context to get a decision.
+ * Returns structured decision with keeper choice, action, and chat message.
+ *
+ * Implements REQ-008 (fallback on failure), REQ-016 (AI decision-making),
+ * and REQ-018 (5-second timeout).
+ *
+ * @param array $gameData Complete game state
+ * @param array $botPlayerData Bot player record
+ * @param int $personalityId Personality ID for AI prompt
+ * @param array $diceRoll Current dice roll
+ * @param int $turnScore Current turn score
+ * @param int $diceRemaining Number of dice in this roll
+ * @return array|null Decision array or null on failure
+ */
+function Bot_MakeAIDecision($gameData, $botPlayerData, $personalityId, $diceRoll, $turnScore, $diceRemaining) {
+	// Include Claude API client
+	require_once(__DIR__ . '/farkleBotAI_Claude.php');
+
+	// 1. Fetch personality data from database
+	$personality = fetchBotPersonality($personalityId);
+	if (!$personality) {
+		error_log("Bot_MakeAIDecision: Failed to fetch personality for ID: $personalityId");
+		return null;
+	}
+
+	// 2. Build system prompt
+	$systemPrompt = buildBotSystemPrompt($personality);
+
+	// 3. Get all scoring combinations available
+	$scoringCombinations = Bot_GetAllScoringCombinations($diceRoll);
+
+	// Check for farkle
+	if (empty($scoringCombinations)) {
+		// No scoring combos = farkle, return immediately without calling API
+		return [
+			'keeper_choice' => null,
+			'should_roll' => false,
+			'algorithm' => 'ai-claude',
+			'farkled' => true,
+			'ai_powered' => true
+		];
+	}
+
+	// 4. Build opponent data
+	$opponentData = [];
+	if (isset($gameData['players']) && is_array($gameData['players'])) {
+		foreach ($gameData['players'] as $player) {
+			if ($player['playerid'] != $botPlayerData['playerid']) {
+				$opponentData[] = [
+					'username' => 'Opponent', // We don't need real username for context
+					'total_score' => $player['playerscore'] ?? 0,
+					'round_score' => 0 // Not tracked in current game data
+				];
+			}
+		}
+	}
+
+	// 5. Build game context
+	$gameContext = buildGameContext(
+		[
+			'game_mode' => ($gameData['gamemode'] ?? GAME_MODE_10ROUND) == GAME_MODE_10ROUND ? '10round' : 'standard',
+			'current_round' => $gameData['currentround'] ?? 1,
+			'points_to_win' => 10000,
+			'dice_available' => $diceRemaining,
+			'current_roll' => $diceRoll,
+			'turn_score' => $turnScore,
+			'round_score' => 0
+		],
+		[
+			'playerid' => $botPlayerData['playerid'],
+			'username' => $botPlayerData['username'],
+			'total_score' => $gameData['bot_score'] ?? 0,
+			'round_score' => 0,
+			'level' => $botPlayerData['playerlevel'] ?? 1
+		],
+		$opponentData
+	);
+
+	// Game context is already sanitized by buildGameContext()
+
+	// 6. Build user message with game context
+	$userMessage = "Current game state:\n" . json_encode($gameContext, JSON_PRETTY_PRINT);
+	$userMessage .= "\n\nMake your decision using the make_farkle_decision tool.";
+
+	// 7. Call Claude API with timeout (5 seconds via CLAUDE_TIMEOUT_SECONDS)
+	$messages = [
+		['role' => 'user', 'content' => $userMessage]
+	];
+
+	$response = callClaudeAPI($systemPrompt, $messages, getBotDecisionTools());
+
+	// 8. Check for errors
+	if (isset($response['error'])) {
+		error_log("Bot_MakeAIDecision: Claude API error: " . $response['error']);
+		return null;
+	}
+
+	// 9. Parse bot decision
+	$decision = parseBotDecision($response);
+
+	if (!$decision) {
+		error_log("Bot_MakeAIDecision: Failed to parse bot decision from Claude response");
+		return null;
+	}
+
+	// 10. Validate decision structure
+	if (!isset($decision['selected_combination']) ||
+	    !isset($decision['action']) ||
+	    !is_array($decision['selected_combination']) ||
+	    !isset($decision['selected_combination']['dice'])) {
+		error_log("Bot_MakeAIDecision: Invalid decision structure from Claude");
+		return null;
+	}
+
+	// 11. Calculate new turn score and dice remaining
+	$keeperChoice = $decision['selected_combination'];
+	$newTurnScore = $turnScore + ($keeperChoice['points'] ?? 0);
+	$newDiceRemaining = $diceRemaining - count($keeperChoice['dice'] ?? []);
+
+	// Hot dice: if we used all dice, we get 6 again
+	if ($newDiceRemaining == 0) {
+		$newDiceRemaining = 6;
+	}
+
+	// 12. Return decision in expected format
+	return [
+		'keeper_choice' => $keeperChoice,
+		'should_roll' => ($decision['action'] === 'roll_again'),
+		'algorithm' => 'ai-claude',
+		'farkled' => false,
+		'new_turn_score' => $newTurnScore,
+		'new_dice_remaining' => $newDiceRemaining,
+		'ai_powered' => true,
+		'chat_message' => $decision['chat_message'] ?? '',
+		'reasoning' => $decision['reasoning'] ?? ''
+	];
+}
+
+// ============================================================================
 // MAIN ENTRY POINT
 // ============================================================================
 
@@ -606,9 +786,10 @@ function Bot_Hard_ShouldRollAgain($turnScore, $diceRemaining, $gameContext) {
  * Main decision function for bot play
  *
  * This is the primary entry point called by the game engine.
- * It routes to the appropriate algorithm based on bot difficulty.
+ * Routes to AI-powered decision-making if personality_id exists,
+ * otherwise falls back to algorithmic bot based on difficulty.
  *
- * @param array $botPlayer Bot player record with 'bot_algorithm' field
+ * @param array $botPlayer Bot player record with 'bot_algorithm' and 'personality_id' fields
  * @param array $gameData Complete game state
  * @param array $diceRoll Current dice roll to evaluate
  * @param int $turnScore Current turn score before this roll
@@ -617,8 +798,27 @@ function Bot_Hard_ShouldRollAgain($turnScore, $diceRemaining, $gameContext) {
  *   - 'keeper_choice': null (farkle) or ['dice' => [...], 'points' => N, 'description' => '...']
  *   - 'should_roll': bool (only valid if keeper_choice is not null)
  *   - 'algorithm': string (which algorithm was used)
+ *   - 'ai_powered': bool (true if AI was used)
+ *   - 'chat_message': string (optional, if AI generated a message)
  */
 function Bot_MakeDecision($botPlayer, $gameData, $diceRoll, $turnScore, $diceRemaining) {
+	// Check if bot has personality_id for AI-powered decision-making
+	$personalityId = $botPlayer['personality_id'] ?? null;
+
+	if (!empty($personalityId)) {
+		// Try AI-powered decision
+		$aiDecision = Bot_MakeAIDecision($gameData, $botPlayer, $personalityId, $diceRoll, $turnScore, $diceRemaining);
+
+		if ($aiDecision !== null && !isset($aiDecision['error'])) {
+			// AI decision succeeded
+			return $aiDecision;
+		}
+
+		// AI failed - fall through to algorithmic bot
+		error_log("AI decision failed for bot {$botPlayer['username']}, using algorithmic fallback");
+	}
+
+	// Use algorithmic bot (original logic or fallback)
 	$algorithm = $botPlayer['bot_algorithm'] ?? 'medium';
 
 	// Step 1: Choose which dice to keep

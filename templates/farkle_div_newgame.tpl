@@ -16,19 +16,44 @@
 	<div>
 		{* RANDOM MODE *}
 		<div id="divGameType0" class="loginBox" style="display: none; margin: 5px;">
-			
+
 			<input id="btnGame2Player" type="button" class="mobileButton" buttoncolor="brown" value="2 Players" onClick="SelectGamePlayers(2)">
 			<input id="btnGame4Player" type="button" class="mobileButton" buttoncolor="brown" value="4 Players" onClick="SelectGamePlayers(4)">
-		
-			<p>If an open random table is found, you will join that. Otherwise we'll sit you down at a new table and let you play while we look for 
+
+			<p>If an open random table is found, you will join that. Otherwise we'll sit you down at a new table and let you play while we look for
 			other players to join you.</p>
 		</div>
-		
+
 		{* SOLO MODE *}
 		<div id="divGameType2" class="loginBox" style="display: none; margin: 5px;">
-			
+
 			<p style="margin: -8px 0 10px 0;">A solo game of Farkle where the goal is to get the highest score in 10 rounds. In this mode, you
 			can still earn achievements but games do not count for wins.</p>
+		</div>
+
+		{* BOT GAME MODE *}
+		<div id="divBotGame" class="loginBox" style="display: none; margin: 5px;">
+			<p style="margin-bottom: 15px;">Choose your opponent's difficulty:</p>
+
+			<input type="button" class="mobileButton" buttoncolor="green"
+			       value="🟢 Easy Bot" onClick="startBotGame('easy')"
+			       style="width: 250px; margin: 5px;">
+
+			<input type="button" class="mobileButton" buttoncolor="yellow"
+			       value="🟡 Medium Bot" onClick="startBotGame('medium')"
+			       style="width: 250px; margin: 5px;">
+
+			<input type="button" class="mobileButton" buttoncolor="red"
+			       value="🔴 Hard Bot" onClick="startBotGame('hard')"
+			       style="width: 250px; margin: 5px;">
+
+			<p style="font-size: 12px; color: #888; margin-top: 15px;">
+				A random AI personality will be selected.
+			</p>
+
+			<input type="button" class="mobileButton" buttoncolor="red"
+			       value="Back" onClick="ShowNewGame()"
+			       style="width: 90px; margin-top: 10px;">
 		</div>
 		
 		<div id="divNewGameStart"  class="loginBox" align="center" style="display:none;">

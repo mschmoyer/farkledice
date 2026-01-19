@@ -16,6 +16,7 @@ services:
       - DB_NAME=farkle_db
       - DB_USER=farkle_user
       - DB_PASS=farkle_pass
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     depends_on:
       - db
     networks:

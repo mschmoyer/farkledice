@@ -118,22 +118,37 @@
 							error_log("startbotgame: Invalid difficulty provided: $algorithm");
 							$rc = Array('Error' => 'Invalid bot difficulty. Choose easy, medium, or hard.');
 						} else {
-							// Select random bot with matching algorithm
-							$sql = "SELECT playerid, username FROM farkle_players
-							        WHERE is_bot = TRUE AND bot_algorithm = :algorithm
-							        ORDER BY RANDOM() LIMIT 1";
-							error_log("startbotgame: Querying for bot with algorithm: $algorithm");
-
 							$dbh = db_connect();
-							$stmt = $dbh->prepare($sql);
-							$stmt->execute([':algorithm' => $algorithm]);
-							$botPlayer = $stmt->fetch(PDO::FETCH_ASSOC);
 
-							if (!$botPlayer) {
-								error_log("startbotgame: No bot found for difficulty: $algorithm");
+							// Step 1: Get random personality from difficulty category
+							$sql = "SELECT personality_id, name FROM farkle_bot_personalities
+							        WHERE difficulty = :difficulty AND is_active = true
+							        ORDER BY RANDOM() LIMIT 1";
+							error_log("startbotgame: Querying for random personality with difficulty: $algorithm");
+
+							$stmt = $dbh->prepare($sql);
+							$stmt->execute([':difficulty' => $algorithm]);
+							$personality = $stmt->fetch(PDO::FETCH_ASSOC);
+
+							if (!$personality) {
+								error_log("startbotgame: No personality found for difficulty: $algorithm");
 								$rc = Array('Error' => 'No bot available for this difficulty.');
 							} else {
-								error_log("startbotgame: Selected bot player {$botPlayer['playerid']} ({$botPlayer['username']})");
+								error_log("startbotgame: Selected personality: {$personality['name']} (ID: {$personality['personality_id']})");
+
+								// Step 2: Get bot player linked to this personality
+								$sql = "SELECT playerid, username FROM farkle_players
+								        WHERE personality_id = :personality_id
+								        LIMIT 1";
+								$stmt = $dbh->prepare($sql);
+								$stmt->execute([':personality_id' => $personality['personality_id']]);
+								$botPlayer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+								if (!$botPlayer) {
+									error_log("startbotgame: No bot player exists for personality: {$personality['personality_id']}");
+									$rc = Array('Error' => 'Bot player not configured for this personality.');
+								} else {
+									error_log("startbotgame: Selected bot player {$botPlayer['playerid']} ({$botPlayer['username']})");
 
 								// Create 1v1 game (10-round mode)
 								$players = json_encode([$_SESSION['playerid'], $botPlayer['playerid']]);
@@ -167,6 +182,7 @@
 								} else {
 									error_log("startbotgame: FarkleNewGame returned unexpected result (no gameid, no error)");
 									$rc = Array('Error' => 'Failed to create bot game.');
+								}
 								}
 							}
 						}
