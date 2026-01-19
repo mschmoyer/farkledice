@@ -1,0 +1,244 @@
+{
+  "id": "feature-20260118-002",
+  "title": "Bot Player System with AI Opponents",
+  "description": "Add AI bot opponents with three difficulty levels that level up, have personalities, and provide interactive commentary. Bots can play in real-time for 'Play a Bot' mode or instantly fill unfilled random games. Includes 9 bot personalities with 1,650+ contextual messages.",
+  "created_at": "2026-01-18T19:00:00Z",
+  "status": "in_progress",
+  "completed_at": null,
+
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "detail": "PostgreSQL ENUM type 'bot_algorithm_type' created with values (easy, medium, hard)",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-002",
+      "detail": "farkle_players table has is_bot and bot_algorithm columns",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-003",
+      "detail": "farkle_games table has bot_play_mode column",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-004",
+      "detail": "farkle_bot_game_state table created for turn state tracking",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-005",
+      "detail": "9 bot player accounts seeded (3 per difficulty: Byte, Chip, Beep, Cyber, Logic, Binary, Neural, Quantum, Apex)",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-006",
+      "detail": "Migration script tested locally and deployed to Heroku",
+      "status": "in_progress",
+      "note": "Local testing completed, Heroku deployment pending (task-012)"
+    },
+    {
+      "id": "REQ-007",
+      "detail": "Bot AI can select which dice to keep from a roll (3 algorithms: easy/medium/hard)",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-008",
+      "detail": "Bot AI can decide whether to roll again or bank (3 algorithms)",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-009",
+      "detail": "Bot personality message system with 1,650+ messages across 11 categories",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-010",
+      "detail": "Message system supports dynamic variables ($player_username, $round, etc.)",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-011",
+      "detail": "Interactive turn state machine (rolling → choosing_keepers → deciding_roll → banking/farkled)",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-012",
+      "detail": "Bots can play in 'interactive' mode (visible turn progression)",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-013",
+      "detail": "Bots can play in 'instant' mode (complete 10 rounds immediately)",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-014",
+      "detail": "Background auto-fill for random games after timeout (1 min dev, 24 hrs prod)",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-015",
+      "detail": "Timed tasks consolidated into farkleTimedTasks.php",
+      "status": "completed",
+      "note": "Consolidated into existing farkleBackgroundTasks.php instead"
+    },
+    {
+      "id": "REQ-016",
+      "detail": "AJAX endpoints: startbotgame, getbotstatus, executebotstep",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-017",
+      "detail": "\"Play a Bot\" button in lobby",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-018",
+      "detail": "Bot selection modal with 3 difficulty options",
+      "status": "completed"
+    },
+    {
+      "id": "REQ-019",
+      "detail": "Bot chat message area displays last 5 messages",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-020",
+      "detail": "Bot turn polling system (500ms interval)",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-021",
+      "detail": "Dice roll animations during bot turns",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-022",
+      "detail": "Bot players marked with robot emoji in player list",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-023",
+      "detail": "Mobile/tablet responsive support",
+      "status": "pending"
+    },
+    {
+      "id": "REQ-024",
+      "detail": "Bot status messages during turn progression",
+      "status": "pending"
+    }
+  ],
+
+  "tasks": [
+    {
+      "id": "task-001",
+      "type": "implementation",
+      "requirement_ids": ["REQ-001", "REQ-002", "REQ-003", "REQ-004"],
+      "description": "Create database schema changes: ENUM type, table alterations, and bot_game_state table",
+      "status": "completed",
+      "completed_at": "2026-01-18T20:30:00Z"
+    },
+    {
+      "id": "task-002",
+      "type": "implementation",
+      "requirement_ids": ["REQ-005"],
+      "description": "Seed 9 bot player accounts with appropriate levels and personalities",
+      "status": "completed",
+      "completed_at": "2026-01-18T20:30:00Z",
+      "note": "Completed as part of task-001 migration file"
+    },
+    {
+      "id": "task-003",
+      "type": "implementation",
+      "requirement_ids": ["REQ-006"],
+      "description": "Test migration locally in Docker and create deployment checklist",
+      "status": "completed",
+      "completed_at": "2026-01-18T21:00:00Z",
+      "note": "Migration tested successfully, all verifications passed, checklist created at scripts/migrations/20260118-bot-players-CHECKLIST.md"
+    },
+    {
+      "id": "task-004",
+      "type": "implementation",
+      "requirement_ids": ["REQ-007", "REQ-008"],
+      "description": "Implement bot AI algorithms for keeper selection and roll decisions (easy/medium/hard)",
+      "status": "completed",
+      "completed_at": "2026-01-18T22:00:00Z"
+    },
+    {
+      "id": "task-005",
+      "type": "implementation",
+      "requirement_ids": ["REQ-009", "REQ-010"],
+      "description": "Create bot personality message system with 1,650+ messages and variable substitution",
+      "status": "completed",
+      "completed_at": "2026-01-18T23:00:00Z"
+    },
+    {
+      "id": "task-006",
+      "type": "implementation",
+      "requirement_ids": ["REQ-011", "REQ-012", "REQ-013"],
+      "description": "Build interactive turn state machine supporting both interactive and instant play modes",
+      "status": "completed",
+      "completed_at": "2026-01-18T23:30:00Z"
+    },
+    {
+      "id": "task-007",
+      "type": "implementation",
+      "requirement_ids": ["REQ-014", "REQ-015"],
+      "description": "Implement background auto-fill logic and consolidate timed tasks",
+      "status": "completed",
+      "completed_at": "2026-01-19T00:00:00Z",
+      "note": "Added bot auto-fill to existing farkleBackgroundTasks.php with throttled execution (60s dev / 24hrs prod)"
+    },
+    {
+      "id": "task-008",
+      "type": "implementation",
+      "requirement_ids": ["REQ-016"],
+      "description": "Create AJAX endpoints in farkle_fetch.php for bot game control",
+      "status": "completed",
+      "completed_at": "2026-01-18T23:45:00Z"
+    },
+    {
+      "id": "task-009",
+      "type": "implementation",
+      "requirement_ids": ["REQ-017", "REQ-018"],
+      "description": "Add \"Play a Bot\" button and bot selection modal to lobby UI",
+      "status": "completed",
+      "completed_at": "2026-01-18T23:50:00Z"
+    },
+    {
+      "id": "task-010",
+      "type": "implementation",
+      "requirement_ids": ["REQ-019", "REQ-022", "REQ-023", "REQ-024"],
+      "description": "Create bot chat message area with emoji indicators and mobile support",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-011",
+      "type": "implementation",
+      "requirement_ids": ["REQ-020", "REQ-021"],
+      "description": "Implement bot turn polling system with dice animations",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-012",
+      "type": "implementation",
+      "requirement_ids": ["REQ-006"],
+      "description": "Deploy migration to Heroku production database",
+      "status": "pending",
+      "completed_at": null
+    },
+    {
+      "id": "task-FINAL",
+      "type": "verification",
+      "requirement_ids": [],
+      "description": "[ORCHESTRATOR] Final verification - verify all requirements are satisfied",
+      "status": "pending",
+      "completed_at": null,
+      "note": "This task is completed by the Orchestrator, NOT a coder agent"
+    }
+  ]
+}

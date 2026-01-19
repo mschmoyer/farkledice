@@ -24,7 +24,8 @@ var gGameTimer;
 var timer_ticks = 0;
 var gDisplayingAchievement = 0;
 var gGameAjaxStatus = 0;
-var gAjaxStartTimestamp = 0; 
+var gAjaxStartTimestamp = 0;
+var gPassTurnTimeout = null; 
 
 var btnRollDiceObj;
 var btnPassObj;
@@ -40,12 +41,19 @@ var GAME_MODE_10ROUND = 2;
 var GAME_WITH_RANDOM = 0;
 var GAME_WITH_FRIENDS = 1;
 var GAME_WITH_SOLO = 2;
+var GAME_WITH_BOT = 3;
 
 var GAME_STATE_LOADING = 0;
 var GAME_STATE_ROLLING = 1;
-var GAME_STATE_ROLLED = 2; 
-var GAME_STATE_PASSED = 3; 
-var GAME_STATE_WATCHING = 4; 
+var GAME_STATE_ROLLED = 2;
+var GAME_STATE_PASSED = 3;
+var GAME_STATE_WATCHING = 4;
+
+// Bot-related globals
+var gBotTurnTimer = null;
+var gBotIsPlaying = false;
+var gBotPlayerIds = [];  // Array of bot player IDs in current game
+var BOT_STEP_DELAY_MS = 800;  // Delay between bot steps for animation 
 
 var LAST_ROUND = 10;
 
@@ -58,19 +66,37 @@ var SCORE_VIEW_DELAY_MS = 1500;
 	
 function FarkleResetGame( theGameId )
 {
-	ConsoleDebug( ' ** Resetting Farkle Game Page ** ' ); 
+	ConsoleDebug( ' ** Resetting Farkle Game Page ** ' );
 
 	// Reset game variables
 	gGameData = new Object();
-	gGamePlayerData = new Object(); 
-	
-	gCurGameId = theGameId;	
-	gGameData.gameid = theGameId; 
+	gGamePlayerData = new Object();
+
+	gCurGameId = theGameId;
+	gGameData.gameid = theGameId;
 	gGameAjaxStatus = 0;
 	FarkleGameUpdateState( GAME_STATE_LOADING );
-	
-	$('#divGamePlayers').empty();		
-	FarkleDiceReset();	
+
+	// Reset bot state
+	gBotIsPlaying = false;
+	gBotPlayerIds = [];
+	if( gBotTurnTimer ) {
+		clearTimeout( gBotTurnTimer );
+		gBotTurnTimer = null;
+	}
+
+	// Clear bot chat messages
+	var divBotChatMessages = document.getElementById('divBotChatMessages');
+	if( divBotChatMessages ) {
+		divBotChatMessages.innerHTML = '';
+	}
+	var divBotChat = document.getElementById('divBotChat');
+	if( divBotChat ) {
+		divBotChat.style.display = 'none';
+	}
+
+	$('#divGamePlayers').empty();
+	FarkleDiceReset();
 }
 	
 function ResumeGame( theGameId )
@@ -298,10 +324,25 @@ function FarkleGameUpdateState( newGameState ) {
 		strInfo = "Calculating...";
 		 
 	} else if( gGameState == GAME_STATE_ROLLING ) {
-		strInfo = "Your roll --";
-		if( gGameData.currentround == LAST_ROUND ) 
+		// Check if it's a bot's turn
+		var currentTurnPlayer = null;
+		for( var i = 0; i < gGamePlayerData.length; i++ ) {
+			if( gGamePlayerData[i].playerturn == gGameData.currentturn ) {
+				currentTurnPlayer = gGamePlayerData[i];
+				break;
+			}
+		}
+
+		// Show bot's name if it's their turn, otherwise show "Your roll"
+		if( currentTurnPlayer && currentTurnPlayer.is_bot ) {
+			strInfo = currentTurnPlayer.username + "'s roll --";
+		} else {
+			strInfo = "Your roll --";
+		}
+
+		if( gGameData.currentround == LAST_ROUND )
 			strInfo += ' <span style="color: yellow;">Last round!</span>';
-		else 
+		else if( g_myPlayerIndex > -1 )
 			strInfo += ' Round: <span style="color: #96D3F2;">' + gGamePlayerData[g_myPlayerIndex].playerround + '</span> of <span style="color: #96D3F2;">'+LAST_ROUND+'</span>';
 	}
 	
@@ -335,41 +376,63 @@ function PopulatePlayerData( thePlayerData )
 	gGamePlayerData = thePlayerData;
 	if( !gGamePlayerData )
 	{
-		ConsoleError( "PopulatePlayerData: missing player data for game." ); 
-		return 0; 
-		
-	} else {	
+		ConsoleError( "PopulatePlayerData: missing player data for game." );
+		return 0;
+
+	} else {
 		var i;
 		var scoreStr = "";
 		var roundStr = "";
-		var p; 
-		
-		ConsoleDebug( "PopulatePlayerData: populating. Number of players: "+thePlayerData.length ); 
-		
+		var p;
+
+		ConsoleDebug( "PopulatePlayerData: populating. Number of players: "+thePlayerData.length );
+
 		// Show the "Looking for players..." dialog if we started a random game and are awaiting another player
 		if( gGamePlayerData.length < gGameData.maxturns && gGameData.gamewith == GAME_WITH_RANDOM )
 			$('#divGameWaitingForPlayers').show();
 		else
 			$('#divGameWaitingForPlayers').hide();
-		
+
 		g_myPlayerIndex = -1;
+		gBotPlayerIds = [];  // Reset bot player list
+
 		for( i=0; i<gGamePlayerData.length; i++ )
 		{
 			p = gGamePlayerData[i];
-			
+
 			// Find our player's index in the data and record our player's latest score
-			if( p.playerid == playerid ) g_myPlayerIndex = i;				
+			if( p.playerid == playerid ) g_myPlayerIndex = i;
+
+			// Track bot players
+			if( p.is_bot ) {
+				gBotPlayerIds.push( parseInt(p.playerid) );
+				ConsoleDebug( "PopulatePlayerData: Found bot player: " + p.username + " (id=" + p.playerid + ")" );
+			}				
 		
 			scoreStr = "--";
+			ConsoleDebug( "PopulatePlayerData: Player " + p.username + " - playerround=" + p.playerround + ", playerscore=" + p.playerscore + ", rollingscore=" + p.rollingscore + ", lastroundscore=" + p.lastroundscore + ", winningplayer=" + gGameData.winningplayer );
+
+			// For active games where opponent hasn't finished
 			if( gGameData.winningplayer == 0 && g_myPlayerIndex > -1 &&
 				gGamePlayerData[g_myPlayerIndex].playerround < 11 && i != g_myPlayerIndex && p.playerround > 1 )
 			{
-				//newTag.find('.playerAchScore').html('????');
 				scoreStr = addCommas(p.rollingscore);
-			} else if( p.playerround > 1 ){
-				scoreStr = p.playerscore; 
 			}
-			
+			// For completed games or players who have played at least one round
+			else if( p.playerround > 1 || gGameData.winningplayer > 0 ){
+				// Use playerscore if it's a valid number
+				var finalScore = p.playerscore;
+
+				// If playerscore is missing, null, or 0, calculate from rollingscore + lastroundscore
+				// This handles cases where data might be incomplete
+				if( !finalScore || finalScore === '' || finalScore === null || finalScore === undefined ) {
+					finalScore = parseInt(p.rollingscore || 0) + parseInt(p.lastroundscore || 0);
+					ConsoleDebug( "PopulatePlayerData: Using calculated score for " + p.username + ": " + finalScore );
+				}
+
+				scoreStr = addCommas(finalScore);
+			}
+
 			FarkleGamePlayerTag( p, scoreStr ); 
 		}
 		
@@ -396,7 +459,288 @@ function PopulatePlayerData( thePlayerData )
 			}
 		}
 	}
-	return 1; 
+
+	// Check if it's a bot's turn and start bot play if needed
+	Bot_CheckAndStartTurn();
+
+	return 1;
+}
+
+// ============================================================================
+// BOT TURN HANDLING
+// ============================================================================
+
+/**
+ * Check if any bot needs to take their turn and start the process
+ */
+function Bot_CheckAndStartTurn() {
+	console.log('Bot_CheckAndStartTurn: CALLED');
+	console.log('Bot_CheckAndStartTurn: gGameData:', gGameData);
+	console.log('Bot_CheckAndStartTurn: gGamePlayerData:', gGamePlayerData);
+
+	// Only check if game is active and not in watch mode
+	if( gGameData.winningplayer > 0 ) {
+		console.log( "Bot_CheckAndStartTurn: Game already won, skipping" );
+		ConsoleDebug( "Bot_CheckAndStartTurn: Game already won, skipping" );
+		return;
+	}
+
+	// Don't interrupt if bot is already playing
+	if( gBotIsPlaying ) {
+		console.log( "Bot_CheckAndStartTurn: Bot already playing, skipping" );
+		ConsoleDebug( "Bot_CheckAndStartTurn: Bot already playing, skipping" );
+		return;
+	}
+
+	// Find which player's turn it is based on currentturn
+	var currentTurnPlayer = null;
+	for( var i = 0; i < gGamePlayerData.length; i++ ) {
+		console.log('Bot_CheckAndStartTurn: Checking player ' + i + ':', gGamePlayerData[i]);
+		if( gGamePlayerData[i].playerturn == gGameData.currentturn ) {
+			currentTurnPlayer = gGamePlayerData[i];
+			console.log('Bot_CheckAndStartTurn: Found current turn player:', currentTurnPlayer);
+			break;
+		}
+	}
+
+	if( !currentTurnPlayer ) {
+		console.log( "Bot_CheckAndStartTurn: Could not determine current turn player" );
+		ConsoleDebug( "Bot_CheckAndStartTurn: Could not determine current turn player" );
+		return;
+	}
+
+	console.log('Bot_CheckAndStartTurn: currentTurnPlayer.is_bot =', currentTurnPlayer.is_bot);
+	console.log('Bot_CheckAndStartTurn: currentTurnPlayer.playerround =', currentTurnPlayer.playerround);
+
+	// Check if current player is a bot and hasn't finished their rounds
+	if( currentTurnPlayer.is_bot && currentTurnPlayer.playerround <= LAST_ROUND ) {
+		ConsoleDebug( "Bot_CheckAndStartTurn: It's bot " + currentTurnPlayer.username + "'s turn (round " + currentTurnPlayer.playerround + ")" );
+		Bot_StartTurn( currentTurnPlayer );
+	}
+}
+
+/**
+ * Start a bot's turn
+ */
+function Bot_StartTurn( botPlayer ) {
+	console.log( "Bot_StartTurn: Starting turn for " + botPlayer.username, botPlayer );
+	ConsoleDebug( "Bot_StartTurn: Starting turn for " + botPlayer.username );
+
+	gBotIsPlaying = true;
+	console.log('Bot_StartTurn: Set gBotIsPlaying = true');
+
+	// Clear dice from player's previous turn
+	FarkleDiceReset();
+	console.log('Bot_StartTurn: Cleared dice state');
+
+	// Show bot thinking message
+	var thinkingMsg = botPlayer.username + " " + (botPlayer.playertitle || '') + " is thinking...";
+	divTurnActionObj.innerHTML = '<span style="color: #96D3F2;">' + thinkingMsg + '</span>';
+	console.log('Bot_StartTurn: Displayed thinking message:', thinkingMsg);
+
+	// Start polling for bot turn state
+	console.log('Bot_StartTurn: Scheduling poll in ' + BOT_STEP_DELAY_MS + 'ms');
+	setTimeout( function() {
+		Bot_PollAndExecuteStep( botPlayer.playerid );
+	}, BOT_STEP_DELAY_MS );
+}
+
+/**
+ * Poll bot status and execute next step
+ */
+function Bot_PollAndExecuteStep( botPlayerId ) {
+	console.log( "Bot_PollAndExecuteStep: Executing step for bot " + botPlayerId );
+	console.log( "Bot_PollAndExecuteStep: Game ID:", gGameData.gameid );
+	ConsoleDebug( "Bot_PollAndExecuteStep: Executing step for bot " + botPlayerId );
+
+	// Execute the next step (will auto-initialize state if needed)
+	Bot_ExecuteNextStep( botPlayerId, null );
+}
+
+/**
+ * Execute the next step in bot's turn
+ */
+function Bot_ExecuteNextStep( botPlayerId, currentStatus ) {
+	console.log( "Bot_ExecuteNextStep: Executing step for bot " + botPlayerId );
+	console.log( "Bot_ExecuteNextStep: Current status:", currentStatus );
+	ConsoleDebug( "Bot_ExecuteNextStep: Executing step for bot " + botPlayerId );
+
+	FarkleAjaxCall(
+		function() {
+			console.log('Bot_ExecuteNextStep: Received response:', ajaxrequest.responseText);
+			var stepResult = FarkleParseAjaxResponse( ajaxrequest.responseText );
+			console.log('Bot_ExecuteNextStep: Parsed step result:', stepResult);
+
+			if( stepResult && !stepResult.Error ) {
+				console.log( "Bot_ExecuteNextStep: Step executed, result=" + stepResult.step );
+				ConsoleDebug( "Bot_ExecuteNextStep: Step executed, result=" + stepResult.step );
+
+				// Process the step result
+				Bot_ProcessStepResult( botPlayerId, stepResult );
+			} else {
+				console.error( "Bot_ExecuteNextStep: Failed to execute step: " + (stepResult ? stepResult.Error : "Unknown error") );
+				ConsoleError( "Bot_ExecuteNextStep: Failed to execute step: " + (stepResult ? stepResult.Error : "Unknown error") );
+				gBotIsPlaying = false;
+				// Refresh game state
+				farkleGetUpdate();
+			}
+		},
+		'action=executebotstep&gameid=' + gGameData.gameid + '&botplayerid=' + botPlayerId
+	);
+}
+
+/**
+ * Process the result of a bot step and continue turn or end
+ */
+function Bot_ProcessStepResult( botPlayerId, stepResult ) {
+	var step = stepResult.step;
+	var message = stepResult.message || '';
+
+	ConsoleDebug( "Bot_ProcessStepResult: Processing step '" + step + "'" );
+
+	// Display bot message if present
+	if( message ) {
+		Bot_DisplayMessage( message );
+	}
+
+	// Handle different step types
+	switch( step ) {
+		case 'rolled':
+			// Bot rolled dice - show the dice
+			if( stepResult.dice && stepResult.dice.length > 0 ) {
+				Bot_AnimateDiceRoll( stepResult.dice );
+			}
+			// Continue to next step after animation delay
+			setTimeout( function() {
+				Bot_PollAndExecuteStep( botPlayerId );
+			}, BOT_STEP_DELAY_MS );
+			break;
+
+		case 'chose_keepers':
+			// Bot chose which dice to keep
+			var msg = "Keeping " + (stepResult.kept ? stepResult.kept.description : 'dice') +
+			          " for " + (stepResult.kept ? stepResult.kept.points : 0) + " points";
+			divTurnActionObj.innerHTML = '<span style="color: #96D3F2;">' + msg + '</span>';
+
+			// Mark the kept dice as saved (purple) visually
+			if( stepResult.kept && stepResult.kept.dice ) {
+				var keptDice = stepResult.kept.dice.slice(); // Copy the array
+
+				// Match kept dice values to dice positions and mark them as saved
+				for( var i = 0; i <= MAX_DICE && keptDice.length > 0; i++ ) {
+					// Find a die with a matching value that hasn't been saved yet
+					var dieValue = dice[i].value;
+					var keptIndex = keptDice.indexOf( dieValue );
+
+					if( keptIndex !== -1 && !dice[i].saved && !dice[i].scored ) {
+						// Mark this die as saved (purple)
+						dice[i].ImageObj.removeAttribute('rolled');
+						dice[i].ImageObj.setAttribute('saved', '');
+						dice[i].saved = 1;
+
+						// Remove this value from keptDice so we don't match it again
+						keptDice.splice( keptIndex, 1 );
+
+						console.log('Bot_ProcessStepResult: Marked dice[' + i + '] (value=' + dieValue + ') as saved');
+					}
+				}
+			}
+
+			// Continue to next step
+			setTimeout( function() {
+				Bot_PollAndExecuteStep( botPlayerId );
+			}, BOT_STEP_DELAY_MS );
+			break;
+
+		case 'roll_again':
+			// Bot decided to roll again
+			divTurnActionObj.innerHTML = '<span style="color: #96D3F2;">Rolling again...</span>';
+
+			// Continue to next step
+			setTimeout( function() {
+				Bot_PollAndExecuteStep( botPlayerId );
+			}, BOT_STEP_DELAY_MS );
+			break;
+
+		case 'banking':
+			// Bot decided to bank their score
+			divTurnActionObj.innerHTML = '<span style="color: #96D3F2;">Banking score...</span>';
+
+			// Continue to next step (will execute Bot_Step_Banking and return 'completed')
+			setTimeout( function() {
+				Bot_PollAndExecuteStep( botPlayerId );
+			}, BOT_STEP_DELAY_MS );
+			break;
+
+		case 'completed':
+			// Bot completed their turn - check if they banked or farkled
+			if( stepResult.banked ) {
+				// Bot banked their score
+				var bankMsg = "Banked " + (stepResult.final_score || 0) + " points!";
+				divTurnActionObj.innerHTML = '<span style="color: #7CFC00;">' + bankMsg + '</span>';
+			} else if( stepResult.farkled ) {
+				// Bot farkled
+				divTurnActionObj.innerHTML = '<span style="color: red;">Farkled!</span>';
+			}
+
+			// End bot turn and refresh game after a delay
+			setTimeout( function() {
+				gBotIsPlaying = false;
+				// Clear dice state before refreshing
+				FarkleDiceReset();
+				farkleGetUpdate();
+			}, SCORE_VIEW_DELAY_MS );
+			break;
+
+		default:
+			ConsoleError( "Bot_ProcessStepResult: Unknown step type: " + step );
+			gBotIsPlaying = false;
+			farkleGetUpdate();
+			break;
+	}
+}
+
+/**
+ * Animate bot's dice roll
+ */
+function Bot_AnimateDiceRoll( diceArray ) {
+	ConsoleDebug( "Bot_AnimateDiceRoll: Showing dice: " + diceArray.join(',') );
+
+	// Show dice on the table - use 0 for scored so dice appear white/normal when rolled
+	for( var i = 0; i < diceArray.length && i <= MAX_DICE; i++ ) {
+		if( diceArray[i] ) {
+			farkleUpdateDice( i, diceArray[i], 0 );  // 0 = not scored (white dice)
+		}
+	}
+	// Clear remaining dice
+	for( var i = diceArray.length; i <= MAX_DICE; i++ ) {
+		farkleUpdateDice( i, 0, 0 );
+	}
+}
+
+/**
+ * Display bot message in the UI
+ */
+function Bot_DisplayMessage( message ) {
+	ConsoleDebug( "Bot_DisplayMessage: " + message );
+
+	// Show bot chat window if not already visible
+	var divBotChat = document.getElementById('divBotChat');
+	if( divBotChat ) {
+		divBotChat.style.display = 'block';
+
+		// Add message to chat history
+		var divMessages = document.getElementById('divBotChatMessages');
+		if( divMessages ) {
+			var messageHtml = '<div style="margin-bottom: 6px;">' +
+			                  '<span style="color: #96D3F2;">' + message + '</span>' +
+			                  '</div>';
+			divMessages.innerHTML += messageHtml;
+
+			// Auto-scroll to bottom
+			divMessages.scrollTop = divMessages.scrollHeight;
+		}
+	}
 }
 
 function FarkleGamePlayerTag( p, scoreStr ) {
@@ -411,10 +755,21 @@ function FarkleGamePlayerTag( p, scoreStr ) {
 function RollDice() {
 
 	if( btnRollDiceObj.getAttribute('disabled') ) {
-		//ConsoleError( "RollDice: Exiting because button was disabled and somehow got clicked" ); 
-		return 0; // Exit if button disabled. 
+		//ConsoleError( "RollDice: Exiting because button was disabled and somehow got clicked" );
+		return 0; // Exit if button disabled.
 	}
-	
+
+	// If we're in PASSED state, player is skipping the score display delay
+	if( gGameState == GAME_STATE_PASSED ) {
+		ConsoleDebug( "RollDice: Player skipping score display, canceling timeout and proceeding to next roll." );
+		if( gPassTurnTimeout ) {
+			clearTimeout( gPassTurnTimeout );
+			gPassTurnTimeout = null;
+		}
+		FarkleGameRollReset();
+		return 0;
+	}
+
 	var diceScore = farkleScoreDice( );
 	
 	// Check the score of the player's chosen dice. If it's nothing, this is an invalid save
@@ -546,20 +901,24 @@ function PassTurn( ) {
 	gGameAjaxStatus = 1;
 	gAjaxStartTimestamp = new Date().getTime();
 	
-	FarkleAjaxCall(	function() { 
-			gGameAjaxStatus = 0; 
-			// We want to give 2.5 seconds to read the user's score no matter how long the ajax takes (but no longer). 
-			var nowMillis = new Date().getTime(); 
+	FarkleAjaxCall(	function() {
+			gGameAjaxStatus = 0;
+			// We want to give 2.5 seconds to read the user's score no matter how long the ajax takes (but no longer).
+			var nowMillis = new Date().getTime();
 			var millisDiff = nowMillis - gAjaxStartTimestamp;
 			var newDiff = parseInt(SCORE_VIEW_DELAY_MS-millisDiff);
-			
-			ConsoleDebug( "PassTurn: Delaying update hook for "+newDiff+" milliseconds. "+millisDiff+"ms has passed before now." ); 
+
+			// Enable roll button immediately so players can skip the delay if desired
+			btnRollDiceObj.removeAttribute('disabled');
+
+			ConsoleDebug( "PassTurn: Delaying update hook for "+newDiff+" milliseconds. "+millisDiff+"ms has passed before now." );
+			// Still delay the automatic reset to allow score viewing
 			if( parseInt(millisDiff) > SCORE_VIEW_DELAY_MS ) {
-				FarkleGameRollReset(); 
+				FarkleGameRollReset();
 			} else {
-				setTimeout( function() { FarkleGameRollReset(); }, newDiff ); 
+				gPassTurnTimeout = setTimeout( function() { FarkleGameRollReset(); }, newDiff );
 			}
-		}, 
+		},
 		'action=farklepass&gameid='+gGameData.gameid+'&saveddice='+JSON.stringify( GetDiceValArray() ) );
 	//DelayGameUpdate( 15000 );
 }

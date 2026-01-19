@@ -32,13 +32,13 @@ function SendPushNotification( $playerid, $alert, $sound="newGameTone.aif" )
 	
 	// DISABLED!! 
 	
-	$sql = "select c.playerid, d.token as token, 
-			(select count(*) 
-				from farkle_games a, farkle_games_players b 
-				where a.gameid=b.gameid and b.playerid=c.playerid and a.winningplayer=0 and 
+	$sql = "select c.playerid, d.devicetoken as token,
+			(select count(*)
+				from farkle_games a, farkle_games_players b
+				where a.gameid=b.gameid and b.playerid=c.playerid and a.winningplayer=0 and
 					( (a.gamemode=2 && b.playerRound < 11) || (a.gamemode=1 && a.currentturn=b.playerturn) ) ) as unfinished_games
-		from farkle_players c, farkle_players_devices d 
-		where c.playerid=d.playerid and d.device='ios_app' and d.token is not null";		
+		from farkle_players c, farkle_players_devices d
+		where c.playerid=d.playerid and d.device='ios_app' and d.devicetoken is not null";		
 		
 	if( strpos($playerid,',') !== 0 ) 
 	{

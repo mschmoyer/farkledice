@@ -41,10 +41,16 @@
 	
 	<!-- The player tags for each player currently playing -->
 	<div id="divGamePlayers" class="gamePlayersDiv"></div>
-	
+
 	<div id="divGameWaitingForPlayers" class="regularBox playerCardWidth" style="display: none; padding: 10px;">
 		<p>Looking for player(s) to join...</p>
 		<p>You may go ahead and play your rounds. Your score will be counted when a player joins</p>
+	</div>
+
+	<!-- Bot chat messages -->
+	<div id="divBotChat" class="regularBox playerCardWidth" style="display: none; padding: 10px;">
+		<div style="color: #96D3F2; font-weight: bold; margin-bottom: 8px; font-size: 14px;">Bot Chat</div>
+		<div id="divBotChatMessages" style="font-size: 13px; line-height: 1.6; max-height: 150px; overflow-y: auto;"></div>
 	</div>
 	
 	<table class="diceFrameWidth">

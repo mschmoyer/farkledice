@@ -50,16 +50,9 @@ RUN mkdir -p /etc/apache2/ssl && \
     -out /etc/apache2/ssl/localhost.crt \
     -subj "/C=US/ST=Local/L=Local/O=Dev/CN=localhost"
 
-# Configure SSL virtual host
-RUN echo '<VirtualHost *:443>\n\
-    ServerAdmin webmaster@localhost\n\
-    DocumentRoot ${APACHE_DOCUMENT_ROOT}\n\
-    SSLEngine on\n\
-    SSLCertificateFile /etc/apache2/ssl/localhost.crt\n\
-    SSLCertificateKeyFile /etc/apache2/ssl/localhost.key\n\
-    ErrorLog ${APACHE_LOG_DIR}/error.log\n\
-    CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
-</VirtualHost>' > /etc/apache2/sites-available/default-ssl.conf
+# Copy custom Apache configurations with separated logs
+COPY docker/apache/000-default.conf /etc/apache2/sites-available/000-default.conf
+COPY docker/apache/default-ssl.conf /etc/apache2/sites-available/default-ssl.conf
 
 # Enable SSL site
 RUN a2ensite default-ssl

@@ -193,3 +193,103 @@ function LobbyBackFromIdle()
 	$('#divLobbyIdle').hide();
 	StartLobbyTimer();
 }
+
+/**
+ * Show bot game selection modal
+ */
+function showBotGameModal() {
+	var html = '<div id="botGameModalOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center;" onclick="closeBotGameModal()">';
+	html += '  <div class="bot-select-modal" onclick="event.stopPropagation()">';
+	html += '    <h2>Play Against a Bot</h2>';
+	html += '    <p style="text-align: center; color: #666; margin-bottom: 20px;">Choose your opponent\'s difficulty:</p>';
+
+	// Easy bots
+	html += '    <div class="bot-option" onclick="startBotGame(\'easy\')">';
+	html += '      <h3>🟢 Easy</h3>';
+	html += '      <p>Friendly and makes mistakes - great for learning!</p>';
+	html += '      <small>Bots: Byte, Chip, Beep</small>';
+	html += '    </div>';
+
+	// Medium bots
+	html += '    <div class="bot-option" onclick="startBotGame(\'medium\')">';
+	html += '      <h3>🟡 Medium</h3>';
+	html += '      <p>Solid tactical play with strategic thinking</p>';
+	html += '      <small>Bots: Cyber, Logic, Binary</small>';
+	html += '    </div>';
+
+	// Hard bots
+	html += '    <div class="bot-option" onclick="startBotGame(\'hard\')">';
+	html += '      <h3>🔴 Hard</h3>';
+	html += '      <p>Advanced AI with optimal decision-making</p>';
+	html += '      <small>Bots: Neural, Quantum, Apex</small>';
+	html += '    </div>';
+
+	html += '    <div style="text-align: center; margin-top: 16px;">';
+	html += '      <button class="mobileButton" onclick="closeBotGameModal()" style="width: 120px;">Cancel</button>';
+	html += '    </div>';
+	html += '  </div>';
+	html += '</div>';
+
+	$('body').append(html);
+}
+
+/**
+ * Close bot game selection modal
+ */
+function closeBotGameModal() {
+	$('#botGameModalOverlay').remove();
+}
+
+/**
+ * Start a game against a bot
+ */
+function startBotGame(algorithm) {
+	closeBotGameModal();
+
+	console.log('startBotGame: Starting bot game with algorithm: ' + algorithm);
+	console.log('startBotGame: playerid =', playerid);
+	console.log('startBotGame: gAjaxUrl =', gAjaxUrl);
+	ConsoleDebug('startBotGame: Starting bot game with algorithm: ' + algorithm);
+
+	var params = 'action=startbotgame&playerid=' + playerid + '&algorithm=' + algorithm;
+	console.log('startBotGame: Params =', params);
+	console.log('startBotGame: About to call AjaxCallPost...');
+
+	AjaxCallPost(gAjaxUrl, function() {
+		console.log('startBotGame: AJAX callback fired!');
+		console.log('startBotGame: Received response:', ajaxrequest.responseText);
+
+		if (ajaxrequest.responseText) {
+			try {
+				var response = eval("(" + ajaxrequest.responseText + ")");
+				console.log('startBotGame: Parsed response:', response);
+
+				if (response.Error) {
+					console.error('startBotGame: Error from server:', response.Error);
+					return;
+				}
+
+				// Start game using same flow as regular games
+				// Response is array format: [gameData, playerData, diceData, ...]
+				if (response && response[0] && response[0].gameid) {
+					console.log('startBotGame: Game created with ID ' + response[0].gameid + ', bot: ' + response.botname);
+					console.log('startBotGame: Full response:', response);
+					console.log('startBotGame: Calling HideAllWindows and showing game');
+
+					HideAllWindows();
+					divGameObj.show();
+
+					console.log('startBotGame: Calling FarkleGameStarted with response');
+					FarkleGameStarted(response);
+				} else {
+					console.error('startBotGame: No gameid in response:', response);
+				}
+			} catch (e) {
+				console.error('startBotGame: Error parsing response:', e);
+				ConsoleDebug('startBotGame: Error parsing response: ' + e);
+			}
+		} else {
+			console.error('startBotGame: No response text received');
+		}
+	}, params);
+}

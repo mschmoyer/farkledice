@@ -169,7 +169,7 @@ async function selectScoreableDice(page: Page): Promise<boolean> {
 /**
  * Waits for the game state to change (indicating turn is complete)
  */
-async function waitForTurnComplete(page: Page, timeout = 30000): Promise<void> {
+async function waitForTurnComplete(page: Page, timeout = 120000): Promise<void> {
   const startTime = Date.now();
 
   while (Date.now() - startTime < timeout) {
@@ -225,46 +225,22 @@ test.describe('Farkle Game Automation', () => {
     await page.waitForSelector('#divLobby', { state: 'visible', timeout: 15000 });
     console.log('Successfully logged in and reached lobby');
 
-    // Check for available games
+    // Create a bot game for automated testing
+    console.log('Creating bot game...');
+    await page.click('input[value="New Game"]');
+    await page.waitForTimeout(500);
+
+    // Click "Play a Bot"
+    await page.click('img[onclick*="showBotGameModal()"]');
+    await page.waitForTimeout(500);
+
+    // Wait for bot modal to appear and click Easy difficulty
+    await page.waitForSelector('.bot-option', { state: 'visible', timeout: 5000 });
+    console.log('Bot modal appeared, selecting Easy difficulty...');
+
+    // Click the first bot option (Easy)
+    await page.locator('.bot-option').first().click();
     await page.waitForTimeout(1000);
-
-    const availableGamesVisible = await page.locator('#divLobbyGames').isVisible();
-    const noGamesVisible = await page.locator('#divLobbyNoGames').isVisible();
-
-    let gameStarted = false;
-
-    // Try to join an existing game first
-    if (availableGamesVisible && !noGamesVisible) {
-      console.log('Checking for available games...');
-      const gameCards = await page.locator('#divLobbyGames .gameCard').count();
-
-      if (gameCards > 0) {
-        console.log(`Found ${gameCards} available game(s), joining the first one`);
-        await page.locator('#divLobbyGames .gameCard').first().click();
-        gameStarted = true;
-      }
-    }
-
-    // If no games available, create a random game
-    if (!gameStarted) {
-      console.log('No available games found, creating random game...');
-      await page.click('input[value="New Game"]');
-      await page.waitForTimeout(500);
-
-      // Click "Play Random"
-      await page.click('img[onclick*="SelectPlayType(2,0)"]');
-      await page.waitForTimeout(500);
-
-      // Select 2 players
-      const twoPlayerBtn = await page.locator('input[value="2 Players"]');
-      if (await twoPlayerBtn.isVisible()) {
-        await twoPlayerBtn.click();
-        await page.waitForTimeout(500);
-      }
-
-      // Start the game
-      await page.click('input[value="Start Game"]');
-    }
 
     // Wait for game to load
     await page.waitForSelector('#divGame', { state: 'visible', timeout: 10000 });
@@ -280,7 +256,7 @@ test.describe('Farkle Game Automation', () => {
       // Check if it's our turn
       let isOurTurn = false;
       let attempts = 0;
-      const maxAttempts = 60; // Wait up to 60 seconds for our turn
+      const maxAttempts = 120; // Wait up to 120 seconds for our turn (matches timeout)
 
       while (!isOurTurn && attempts < maxAttempts) {
         const turnText = await page.locator('#divTurnAction').textContent();
@@ -327,7 +303,7 @@ test.describe('Farkle Game Automation', () => {
 
       // Wait for next turn or game end
       try {
-        await waitForTurnComplete(page, 30000);
+        await waitForTurnComplete(page, 120000);
       } catch (error) {
         console.log('Could not detect turn completion, continuing...');
       }

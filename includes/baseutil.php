@@ -26,14 +26,20 @@
 		}
 	}
 
+	// Enable error logging to Docker stdout/stderr
+	ini_set('log_errors', '1');
+	ini_set('error_log', 'php://stderr');
+	ini_set('display_errors', '0');
+	ini_set('error_reporting', E_ALL);
+
 	$g_debug = 0;
 	$g_flushcache = 0;
 	$gMobileMode = 0;
 	$gTabletMode = 0;
-	$g_json = 0; 
-	
+	$g_json = 0;
+
 	$gFolder = 'wwwroot';
-	
+
 	// Debug turned off for production
 	if( !empty($_REQUEST['debug']) )
 		$g_debug = $_REQUEST['debug'];

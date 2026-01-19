@@ -653,7 +653,8 @@ function FarkleSendUpdate( $playerid, $gameid )
 		a.lastxpgain, a.lastroundscore, $rollingScore
 		COALESCE((select COALESCE(sum(setscore),0) from farkle_sets where playerid=a.playerid and gameid=$gameid and roundnum=$currentRound),0) as roundscore,
 		a.playerturn, COALESCE(b.playertitle,'') as playertitle, b.titlelevel,
-		NOW() - a.lastplayed as lastplayedseconds
+		NOW() - a.lastplayed as lastplayedseconds,
+		b.is_bot, b.bot_algorithm
 		from farkle_games_players a, farkle_players b
 		where a.gameid=$gameid and a.playerid=b.playerid
 		ORDER BY (a.playerid=$playerid) desc, a.playerscore desc, b.lastplayed desc";
@@ -1018,15 +1019,42 @@ function FarklePass( $playerid, $gameid, $savedDice, $farkled = 0, $updateTime =
 			where gameid=$gameid and playerid=$playerid";
 	$result = db_command($sql);
 	
-	if( $currentRound >= LAST_ROUND ) 
+	if( $currentRound >= LAST_ROUND )
 	{
 		// This player has finished a 10 round game
 		GivePlayerXP( $playerid, PLAYERLEVEL_FINISH_XP + (1 * ($gameData['maxturns'] - 2)) );
-		
+
 		Ach_CheckPerfectGame( $playerid, $gameid );
-		
-		// Check if the game is finished. 
-		GameIsCompleted( $gameid, $gameData['maxturns']); // Don't award "game finish XP"	
+
+		// Check if the game is finished.
+		GameIsCompleted( $gameid, $gameData['maxturns']); // Don't award "game finish XP"
+	}
+
+	// For bot games in interactive mode (player turns only), advance to next player's turn
+	// (Bot turns handle their own advancement in Bot_Step_Banking/Farkled)
+	if( $gameData['gamemode'] == GAME_MODE_10ROUND ) {
+		$sql = "SELECT bot_play_mode FROM farkle_games WHERE gameid = $gameid";
+		$botMode = db_select_query($sql, SQL_SINGLE_VALUE);
+
+		if( $botMode == 'interactive' ) {
+			// Check if this is a player (not bot) completing their turn
+			$sql = "SELECT is_bot FROM farkle_players WHERE playerid = $playerid";
+			$isBot = db_select_query($sql, SQL_SINGLE_VALUE);
+
+			if( !$isBot ) {
+				// Get current turn and number of players
+				$sql = "SELECT currentturn,
+				        (SELECT COUNT(*) FROM farkle_games_players WHERE gameid = $gameid) as num_players
+				        FROM farkle_games WHERE gameid = $gameid";
+				$turnData = db_select_query($sql, SQL_SINGLE_ROW);
+
+				$nextTurn = ($turnData['currentturn'] % $turnData['num_players']) + 1;
+				error_log("FarklePass: Player completed turn, advancing from {$turnData['currentturn']} to $nextTurn for bot game");
+
+				$sql = "UPDATE farkle_games SET currentturn = $nextTurn WHERE gameid = $gameid";
+				db_command($sql);
+			}
+		}
 	}
 
 	// Return the player's last round score
@@ -1328,10 +1356,10 @@ function NotifyOtherPlayersInGame( $gameid, $msg )
 	
 	//$startingPlayerName = $_SESSION['username']; 
 	
-	// Select all the other players who need to be notified. 
+	// Select all the other players who need to be notified.
 	$sql = "select a.playerid as playerid
 		from farkle_players a, farkle_games_players b, farkle_players_devices d
-		where a.playerid=b.playerid and b.gameid=$gameid and a.playerid != $playerid and b.playerid=d.playerid and d.token is not null"; 
+		where a.playerid=b.playerid and b.gameid=$gameid and a.playerid != $playerid and b.playerid=d.playerid and d.devicetoken is not null"; 
 	$players = db_select_query( $sql, SQL_MULTI_ROW );
 		
 	if( !empty($players) )

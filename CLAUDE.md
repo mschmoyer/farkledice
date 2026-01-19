@@ -24,6 +24,42 @@ Access at http://localhost:8080 (see DOCKER.md for full instructions)
 
 Test credentials: `testuser` / `test123`
 
+### Viewing Logs
+
+**Error logs are separated from access logs for easier troubleshooting.** When debugging issues, use error logs to see PHP errors, warnings, and Apache errors without access log noise.
+
+**Error Logs (for troubleshooting):**
+```bash
+# View recent errors (last 50 lines)
+tail -n 50 logs/error.log
+
+# Follow error log in real-time
+tail -f logs/error.log
+
+# Docker logs (errors only, no access logs)
+docker logs -f farkle_web
+
+# View last 100 lines from Docker
+docker logs --tail 100 farkle_web
+
+# Search for specific error
+grep "Fatal error" logs/error.log
+```
+
+**Access Logs (HTTP requests):**
+```bash
+# View recent access requests
+tail -n 50 logs/access.log
+
+# Follow access log in real-time
+tail -f logs/access.log
+
+# See requests from specific IP
+grep "192.168." logs/access.log
+```
+
+**Note:** Log files are stored in `logs/` directory and mounted as a Docker volume. Access logs are NOT included in `docker logs` output to reduce noise.
+
 ### Local Database Access
 
 Credentials are stored in `.env.local`. When running psql commands against the local Docker database, use:
@@ -181,18 +217,27 @@ Templates are in `templates/` directory:
 - Local: Config from `../configs/siteconfig.ini` or env vars (DB_HOST, DB_USER, etc.)
 - Heroku: Auto-configured via `DATABASE_URL` environment variable
 
-**Key tables:**
-- `farkle_players` - User accounts and profiles
-- `farkle_players_devices` - Session/device tracking
-- `farkle_sessions` - Database-backed PHP sessions
-- `farkle_games` - Game instances
-- `farkle_games_players` - Player participation in games
-- `farkle_achievements` - Achievement definitions
-- `farkle_player_achievements` - Player achievement unlocks
-- `farkle_friends` - Friend relationships
-- `farkle_tournaments` - Tournament data
+**Schema Overview:**
 
-Schema: `docker/init.sql` | Migration: `scripts/migrate-db.php`
+See `docker/init.sql` for complete schema. Migration: `scripts/migrate-db.php`
+
+**NOTE:** Update this block if you add or edit the database schema.
+
+**Core Tables:**
+- `farkle_sessions` - PHP sessions (session_id, session_data, last_access)
+- `farkle_players` - User accounts (playerid, username, password, email, adminlevel, level, xp, wins, losses, games_played, totalpoints, farkles, highest10round, active)
+- `farkle_players_devices` - Device tracking (playerid, sessionid, device, token, lastused)
+
+**Game Tables:**
+- `farkle_games` - Game instances (gameid, whostarted, gamewith, gamemode, breakin, pointstowin, currentround, currentplayer, winningplayer, playerarray, created_date, last_activity)
+- `farkle_games_players` - Player participation (gameid, playerid, score, playerround, roundscore, turnscore, playerorder, diceonhand, quit, lastplayed)
+
+**Social Tables:**
+- `farkle_friends` - Friend relationships (playerid, friendid, status ENUM: pending/accepted/blocked, sourceid, removed)
+- `farkle_achievements` - Achievement definitions (achievementid, name, description, xp_reward, worth, title, imagefile)
+- `farkle_achievements_players` - Player unlocks (playerid, achievementid, earned_date)
+- `farkle_tournaments` - Tournament data (tournamentid, name, status ENUM: upcoming/active/completed, start_date, end_date)
+- `farkle_tournament_participants` - Tournament players (tournamentid, playerid, score, rank)
 
 ### Game Constants
 
