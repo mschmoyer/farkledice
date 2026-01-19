@@ -11,6 +11,24 @@
 require_once('farkleDiceScoring.php');
 
 /**
+ * Format dice array as visual representation
+ *
+ * @param array $dice Array of dice values (e.g., [1, 5, 2])
+ * @return string Visual representation (e.g., "[1][5][2]")
+ */
+function Bot_FormatDiceArray($dice) {
+	if (empty($dice)) {
+		return '';
+	}
+
+	$formatted = '';
+	foreach ($dice as $die) {
+		$formatted .= "[{$die}]";
+	}
+	return $formatted;
+}
+
+/**
  * Get all possible scoring combinations from a dice roll
  *
  * This function analyzes a dice roll and returns ALL possible scoring combinations,
@@ -38,7 +56,7 @@ function Bot_GetAllScoringCombinations($diceRoll) {
 			$combinations[] = [
 				'dice' => $diceRoll,
 				'points' => 1000,
-				'description' => 'straight (1-6)'
+				'description' => 'straight ' . Bot_FormatDiceArray($diceRoll)
 			];
 		}
 
@@ -56,7 +74,7 @@ function Bot_GetAllScoringCombinations($diceRoll) {
 			$combinations[] = [
 				'dice' => $pairDice,
 				'points' => 750,
-				'description' => 'three pairs'
+				'description' => 'three pairs ' . Bot_FormatDiceArray($pairDice)
 			];
 		}
 
@@ -75,7 +93,7 @@ function Bot_GetAllScoringCombinations($diceRoll) {
 			$combinations[] = [
 				'dice' => $tripletDice,
 				'points' => 2500,
-				'description' => 'two triplets'
+				'description' => 'two triplets ' . Bot_FormatDiceArray($tripletDice)
 			];
 		}
 	}
@@ -91,7 +109,7 @@ function Bot_GetAllScoringCombinations($diceRoll) {
 			$combinations[] = [
 				'dice' => $dice,
 				'points' => $points,
-				'description' => "six {$i}s"
+				'description' => "six {$i}s " . Bot_FormatDiceArray($dice)
 			];
 		}
 	}
@@ -104,7 +122,7 @@ function Bot_GetAllScoringCombinations($diceRoll) {
 			$combinations[] = [
 				'dice' => $dice,
 				'points' => $points,
-				'description' => "five {$i}s"
+				'description' => "five {$i}s " . Bot_FormatDiceArray($dice)
 			];
 		}
 	}
@@ -117,7 +135,7 @@ function Bot_GetAllScoringCombinations($diceRoll) {
 			$combinations[] = [
 				'dice' => $dice,
 				'points' => $points,
-				'description' => "four {$i}s"
+				'description' => "four {$i}s " . Bot_FormatDiceArray($dice)
 			];
 		}
 	}
@@ -130,7 +148,7 @@ function Bot_GetAllScoringCombinations($diceRoll) {
 			$combinations[] = [
 				'dice' => $dice,
 				'points' => $points,
-				'description' => "three {$i}s"
+				'description' => "three {$i}s " . Bot_FormatDiceArray($dice)
 			];
 		}
 	}
@@ -143,7 +161,7 @@ function Bot_GetAllScoringCombinations($diceRoll) {
 		$combinations[] = [
 			'dice' => $dice,
 			'points' => $points,
-			'description' => "{$numOnes} one{$plural}"
+			'description' => "{$numOnes} one{$plural} " . Bot_FormatDiceArray($dice)
 		];
 	}
 
@@ -155,7 +173,7 @@ function Bot_GetAllScoringCombinations($diceRoll) {
 		$combinations[] = [
 			'dice' => $dice,
 			'points' => $points,
-			'description' => "{$numFives} five{$plural}"
+			'description' => "{$numFives} five{$plural} " . Bot_FormatDiceArray($dice)
 		];
 	}
 
@@ -173,7 +191,7 @@ function Bot_GetAllScoringCombinations($diceRoll) {
 				$combinations[] = [
 					'dice' => $dice,
 					'points' => $points,
-					'description' => "three {$i}s + {$numOnes} one" . ($numOnes > 1 ? 's' : '')
+					'description' => "three {$i}s + {$numOnes} one" . ($numOnes > 1 ? 's' : '') . " " . Bot_FormatDiceArray($dice)
 				];
 			}
 
@@ -187,7 +205,7 @@ function Bot_GetAllScoringCombinations($diceRoll) {
 				$combinations[] = [
 					'dice' => $dice,
 					'points' => $points,
-					'description' => "three {$i}s + {$numFives} five" . ($numFives > 1 ? 's' : '')
+					'description' => "three {$i}s + {$numFives} five" . ($numFives > 1 ? 's' : '') . " " . Bot_FormatDiceArray($dice)
 				];
 			}
 
@@ -199,7 +217,7 @@ function Bot_GetAllScoringCombinations($diceRoll) {
 				$combinations[] = [
 					'dice' => $dice,
 					'points' => $points,
-					'description' => "three {$i}s + one 1 + one 5"
+					'description' => "three {$i}s + one 1 + one 5 " . Bot_FormatDiceArray($dice)
 				];
 			}
 		}
@@ -214,7 +232,7 @@ function Bot_GetAllScoringCombinations($diceRoll) {
 				$combinations[] = [
 					'dice' => $dice,
 					'points' => $points,
-					'description' => "{$numOnes} one" . ($numOnes > 1 ? 's' : '') . " + {$numFives} five" . ($numFives > 1 ? 's' : '')
+					'description' => "{$numOnes} one" . ($numOnes > 1 ? 's' : '') . " + {$numFives} five" . ($numFives > 1 ? 's' : '') . " " . Bot_FormatDiceArray($dice)
 				];
 			}
 		}
