@@ -171,9 +171,5 @@ $link = db_connect();
 if (!session_id()) {
 	require_once('session-handler.php');
 	init_database_session_handler($link);
-	// Debug: Log that handler was initialized
-	error_log("Database session handler initialized");
-} else {
-	error_log("Session already started, cannot register handler. Session ID: " . session_id());
 }
 ?>

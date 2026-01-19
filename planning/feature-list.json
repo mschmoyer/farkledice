@@ -32,6 +32,19 @@
       "title": "Bot Player System with AI Opponents",
       "status": "in_progress",
       "created_at": "2026-01-18T19:00:00Z"
+    },
+    {
+      "id": "feature-20260119-001",
+      "title": "Challenge Mode - Phase 1: Database Schema & Foundation",
+      "status": "completed",
+      "created_at": "2026-01-19T05:36:10Z",
+      "completed_at": "2026-01-19T14:05:40Z"
+    },
+    {
+      "id": "feature-20260119-002",
+      "title": "Challenge Mode - Phase 2: Shop System",
+      "status": "in_progress",
+      "created_at": "2026-01-19T14:15:46Z"
     }
   ]
 }
