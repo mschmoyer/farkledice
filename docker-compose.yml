@@ -9,6 +9,7 @@ services:
       - .:/var/www/html
       - ./docker/backbone:/var/www/backbone
       - ./docker/configs:/var/www/configs
+      - ./logs:/var/www/html/logs
     environment:
       - APACHE_DOCUMENT_ROOT=/var/www/html/wwwroot
       - DB_HOST=db

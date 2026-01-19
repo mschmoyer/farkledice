@@ -135,21 +135,23 @@ function Bot_FillWaitingRandomGames($waitTimeoutSeconds)
 	$dbh = db_connect();
 
 	// Find random games that:
-	// 1. Are missing players (actualplayers < maxturns)
+	// 1. Are missing players (player_count < maxturns)
 	// 2. Have been waiting longer than timeout
 	// 3. Don't already have a bot
 	// 4. Are still active (winningplayer = 0)
-	$sql = "SELECT g.gameid, g.maxturns, g.actualplayers, g.gamestart
+	$sql = "SELECT g.gameid, g.maxturns, COUNT(gp.playerid) as actualplayers, g.gamestart
 			FROM farkle_games g
+			LEFT JOIN farkle_games_players gp ON g.gameid = gp.gameid
 			WHERE g.gamewith = 0
 			  AND g.winningplayer = 0
-			  AND g.maxturns > g.actualplayers
 			  AND g.gamestart < NOW() - interval '{$waitTimeoutSeconds}' second
 			  AND NOT EXISTS (
-				  SELECT 1 FROM farkle_games_players gp
-				  INNER JOIN farkle_players p ON gp.playerid = p.playerid
-				  WHERE gp.gameid = g.gameid AND p.is_bot = TRUE
+				  SELECT 1 FROM farkle_games_players gp2
+				  INNER JOIN farkle_players p ON gp2.playerid = p.playerid
+				  WHERE gp2.gameid = g.gameid AND p.is_bot = TRUE
 			  )
+			GROUP BY g.gameid, g.maxturns, g.gamestart
+			HAVING COUNT(gp.playerid) < g.maxturns
 			ORDER BY g.gamestart ASC
 			LIMIT 10";
 

@@ -2,14 +2,15 @@
 <div id="divNewGame" align="center" style="display: none; max-width: 600px;">
 
 	<!-- NEW GAME SCREEN - CHOOSE GAME TYPE -->
-	<div id="divGameTypes" align="center">	
-		<img src="/images/btn_invitefriends.png" onClick="sendRequestViaMultiFriendSelector()"><br/>
-		<img src="/images/btn_playfriends.png" 	onClick="SelectPlayType(2,1)"><br/>
-		<img src="/images/btn_playrandom.png"	onClick="SelectPlayType(2,0)"><br/>
-		<img src="/images/btn_solo.png"			onClick="StartSoloGame()"><br/>
-		<br/>		
-		<input type="button" class="mobileButton" value="Back" buttoncolor="red" 
-			onClick="ShowLobby()" style="width: 250px;">		
+	<div id="divGameTypes" align="center">
+		<img src="/images/btn-invitefriends-new.png" width="290px" style="cursor: pointer;" onClick="sendRequestViaMultiFriendSelector()"><br/>
+		<img src="/images/btn-playfriends-new.png" width="290px" style="cursor: pointer;" onClick="SelectPlayType(2,1)"><br/>
+		<img src="/images/btn-playrandom-new.png" width="290px" style="cursor: pointer;" onClick="SelectPlayType(2,0)"><br/>
+		<img src="/images/btn-playsolo-new.png" width="290px" style="cursor: pointer;" onClick="StartSoloGame()"><br/>
+		<img src="/images/btn-playabot-new.png" width="290px" style="cursor: pointer;" onClick="showBotGameModal()"><br/>
+		<br/>
+		<input type="button" class="mobileButton" value="Back" buttoncolor="red"
+			onClick="ShowLobby()" style="width: 250px;">
 	</div>
 
 	<div>

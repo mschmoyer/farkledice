@@ -53,10 +53,9 @@ function addJavascript(jsname,pos) {
 } 
 
 function ConsoleError( message ) {
-	
+
 	if( playerid == 1 ) {
-		alert( message );
-		console.log( message ); 
+		console.error( message );
 	}
 }
 

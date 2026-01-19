@@ -134,13 +134,23 @@ function Bot_UpdateTurnState($gameId, $playerId, $updates) {
  */
 function Bot_ExecuteStep($gameId, $playerId) {
 	BaseUtil_Debug(__FUNCTION__ . ": Executing step for game $gameId, player $playerId", 14);
+	error_log("Bot_ExecuteStep: Called for game $gameId, player $playerId");
 
 	// Get current state
 	$state = Bot_GetTurnState($gameId, $playerId);
 
+	// If no state exists, initialize it (first turn)
 	if (!$state) {
-		BaseUtil_Error(__FUNCTION__ . ": No state found for game $gameId, player $playerId");
-		return ['error' => 'No turn state found'];
+		error_log("Bot_ExecuteStep: No state found, initializing turn state");
+		BaseUtil_Debug(__FUNCTION__ . ": No state found, initializing turn for game $gameId, player $playerId", 14);
+		$state = Bot_InitializeTurnState($gameId, $playerId);
+
+		if (!$state) {
+			BaseUtil_Error(__FUNCTION__ . ": Failed to initialize turn state for game $gameId, player $playerId");
+			error_log("Bot_ExecuteStep: FAILED to initialize turn state");
+			return ['error' => 'Failed to initialize turn state'];
+		}
+		error_log("Bot_ExecuteStep: Turn state initialized successfully");
 	}
 
 	// Get game data and bot player record
@@ -259,7 +269,7 @@ function Bot_Step_ChoosingKeepers($state, $gameData, $botPlayer) {
 	if ($decision['farkled']) {
 		// Generate farkle message
 		$context = Bot_BuildMessageContext($state['gameid'], $state['playerid'], $gameData);
-		$message = Bot_SelectMessage($botPlayer, 4, $context); // Category 4: Farkle
+		$message = Bot_SelectMessage(4, $botPlayer, $context); // Category 4: Farkle
 
 		// Transition to farkled state
 		$updates = [
@@ -288,7 +298,7 @@ function Bot_Step_ChoosingKeepers($state, $gameData, $botPlayer) {
 	$context['num_dice_left'] = $newDiceRemaining;
 
 	// Generate keeper selection message (Category 1)
-	$message = Bot_SelectMessage($botPlayer, 1, $context);
+	$message = Bot_SelectMessage(1, $botPlayer, $context);
 
 	// Update state
 	$updates = [
@@ -359,10 +369,10 @@ function Bot_Step_DecidingRoll($state, $gameData, $botPlayer) {
 		// Check for hot dice (all dice used)
 		if ($state['dice_remaining'] == 6) {
 			// Hot dice! Generate hot dice message (Category 5)
-			$message = Bot_SelectMessage($botPlayer, 5, $context);
+			$message = Bot_SelectMessage(5, $botPlayer, $context);
 		} else {
 			// Regular roll again decision (Category 2)
-			$message = Bot_SelectMessage($botPlayer, 2, $context);
+			$message = Bot_SelectMessage(2, $botPlayer, $context);
 		}
 
 		// Transition back to rolling
@@ -380,7 +390,7 @@ function Bot_Step_DecidingRoll($state, $gameData, $botPlayer) {
 		];
 	} else {
 		// Banking decision (Category 3)
-		$message = Bot_SelectMessage($botPlayer, 3, $context);
+		$message = Bot_SelectMessage(3, $botPlayer, $context);
 
 		// Transition to banking
 		$updates = [
@@ -410,15 +420,89 @@ function Bot_Step_DecidingRoll($state, $gameData, $botPlayer) {
  */
 function Bot_Step_Banking($state, $gameData, $botPlayer) {
 	BaseUtil_Debug(__FUNCTION__ . ": Banking " . $state['turn_score'] . " points", 14);
+	error_log("Bot_Step_Banking: Banking turn score of " . $state['turn_score'] . " for player " . $state['playerid']);
 
 	$finalScore = $state['turn_score'];
+	$dbh = db_connect();
 
-	// Complete the turn (updates game database)
-	$success = Bot_CompleteTurn($state['gameid'], $state['playerid'], $finalScore);
+	try {
+		$dbh->beginTransaction();
 
-	if (!$success) {
-		BaseUtil_Error(__FUNCTION__ . ": Failed to complete turn");
-		return ['error' => 'Failed to complete turn'];
+		// Get current player game state
+		$sql = "SELECT playerscore, playerround FROM farkle_games_players
+		        WHERE gameid = :gameid AND playerid = :playerid";
+		$stmt = $dbh->prepare($sql);
+		$stmt->execute([':gameid' => $state['gameid'], ':playerid' => $state['playerid']]);
+		$playerGame = $stmt->fetch(PDO::FETCH_ASSOC);
+
+		$newScore = $playerGame['playerscore'] + $finalScore;
+		$newRound = $playerGame['playerround'] + 1;
+
+		// Update player score and round
+		$sql = "UPDATE farkle_games_players
+		        SET playerscore = :playerscore,
+		            playerround = :playerround,
+		            lastroundscore = :lastroundscore,
+		            lastplayed = NOW()
+		        WHERE gameid = :gameid AND playerid = :playerid";
+		$stmt = $dbh->prepare($sql);
+		$stmt->execute([
+			':playerscore' => $newScore,
+			':playerround' => $newRound,
+			':lastroundscore' => $finalScore,
+			':gameid' => $state['gameid'],
+			':playerid' => $state['playerid']
+		]);
+
+		// Insert round record
+		$sql = "INSERT INTO farkle_rounds (playerid, gameid, roundnum, roundscore, rounddatetime)
+		        VALUES (:playerid, :gameid, :roundnum, :roundscore, NOW())";
+		$stmt = $dbh->prepare($sql);
+		$stmt->execute([
+			':playerid' => $state['playerid'],
+			':gameid' => $state['gameid'],
+			':roundnum' => $playerGame['playerround'],
+			':roundscore' => $finalScore
+		]);
+
+		// Advance turn for bot games in interactive mode
+		if ($gameData['gamemode'] == GAME_MODE_10ROUND) {
+			$sql = "SELECT bot_play_mode FROM farkle_games WHERE gameid = :gameid";
+			$stmt = $dbh->prepare($sql);
+			$stmt->execute([':gameid' => $state['gameid']]);
+			$botMode = $stmt->fetchColumn();
+
+			if ($botMode == 'interactive') {
+				// Get current turn and number of players
+				$sql = "SELECT currentturn,
+				        (SELECT COUNT(*) FROM farkle_games_players WHERE gameid = :gameid) as num_players
+				        FROM farkle_games WHERE gameid = :gameid";
+				$stmt = $dbh->prepare($sql);
+				$stmt->execute([':gameid' => $state['gameid']]);
+				$turnData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+				$nextTurn = ($turnData['currentturn'] % $turnData['num_players']) + 1;
+
+				$sql = "UPDATE farkle_games SET currentturn = :currentturn WHERE gameid = :gameid";
+				$stmt = $dbh->prepare($sql);
+				$stmt->execute([':currentturn' => $nextTurn, ':gameid' => $state['gameid']]);
+
+				error_log("Bot_Step_Banking: Advanced turn from {$turnData['currentturn']} to $nextTurn");
+			}
+		}
+
+		// Clean up bot turn state
+		$sql = "DELETE FROM farkle_bot_game_state WHERE gameid = :gameid AND playerid = :playerid";
+		$stmt = $dbh->prepare($sql);
+		$stmt->execute([':gameid' => $state['gameid'], ':playerid' => $state['playerid']]);
+
+		$dbh->commit();
+		error_log("Bot_Step_Banking: Successfully banked $finalScore points. New score: $newScore");
+
+	} catch (Exception $e) {
+		$dbh->rollBack();
+		error_log("Bot_Step_Banking: ERROR - " . $e->getMessage());
+		return ['error' => 'Failed to bank score: ' . $e->getMessage()];
 	}
 
 	return [
@@ -440,13 +524,88 @@ function Bot_Step_Banking($state, $gameData, $botPlayer) {
  */
 function Bot_Step_Farkled($state, $gameData, $botPlayer) {
 	BaseUtil_Debug(__FUNCTION__ . ": Farkled - lost all points", 14);
+	error_log("Bot_Step_Farkled: Bot farkled, ending turn with 0 points for player " . $state['playerid']);
 
-	// Complete the turn with 0 points
-	$success = Bot_CompleteTurn($state['gameid'], $state['playerid'], 0);
+	$dbh = db_connect();
 
-	if (!$success) {
-		BaseUtil_Error(__FUNCTION__ . ": Failed to complete turn");
-		return ['error' => 'Failed to complete turn'];
+	try {
+		$dbh->beginTransaction();
+
+		// Get current player game state
+		$sql = "SELECT playerscore, playerround FROM farkle_games_players
+		        WHERE gameid = :gameid AND playerid = :playerid";
+		$stmt = $dbh->prepare($sql);
+		$stmt->execute([':gameid' => $state['gameid'], ':playerid' => $state['playerid']]);
+		$playerGame = $stmt->fetch(PDO::FETCH_ASSOC);
+
+		$newRound = $playerGame['playerround'] + 1;
+
+		// Update player round (score stays same, just advance round)
+		$sql = "UPDATE farkle_games_players
+		        SET playerround = :playerround,
+		            lastroundscore = 0,
+		            lastplayed = NOW()
+		        WHERE gameid = :gameid AND playerid = :playerid";
+		$stmt = $dbh->prepare($sql);
+		$stmt->execute([
+			':playerround' => $newRound,
+			':gameid' => $state['gameid'],
+			':playerid' => $state['playerid']
+		]);
+
+		// Insert round record with 0 score (farkle)
+		$sql = "INSERT INTO farkle_rounds (playerid, gameid, roundnum, roundscore, rounddatetime)
+		        VALUES (:playerid, :gameid, :roundnum, 0, NOW())";
+		$stmt = $dbh->prepare($sql);
+		$stmt->execute([
+			':playerid' => $state['playerid'],
+			':gameid' => $state['gameid'],
+			':roundnum' => $playerGame['playerround']
+		]);
+
+		// Update player farkle count
+		$sql = "UPDATE farkle_players SET farkles = farkles + 1 WHERE playerid = :playerid";
+		$stmt = $dbh->prepare($sql);
+		$stmt->execute([':playerid' => $state['playerid']]);
+
+		// Advance turn for bot games in interactive mode
+		if ($gameData['gamemode'] == GAME_MODE_10ROUND) {
+			$sql = "SELECT bot_play_mode FROM farkle_games WHERE gameid = :gameid";
+			$stmt = $dbh->prepare($sql);
+			$stmt->execute([':gameid' => $state['gameid']]);
+			$botMode = $stmt->fetchColumn();
+
+			if ($botMode == 'interactive') {
+				// Get current turn and number of players
+				$sql = "SELECT currentturn,
+				        (SELECT COUNT(*) FROM farkle_games_players WHERE gameid = :gameid) as num_players
+				        FROM farkle_games WHERE gameid = :gameid";
+				$stmt = $dbh->prepare($sql);
+				$stmt->execute([':gameid' => $state['gameid']]);
+				$turnData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+				$nextTurn = ($turnData['currentturn'] % $turnData['num_players']) + 1;
+
+				$sql = "UPDATE farkle_games SET currentturn = :currentturn WHERE gameid = :gameid";
+				$stmt = $dbh->prepare($sql);
+				$stmt->execute([':currentturn' => $nextTurn, ':gameid' => $state['gameid']]);
+
+				error_log("Bot_Step_Farkled: Advanced turn from {$turnData['currentturn']} to $nextTurn");
+			}
+		}
+
+		// Clean up bot turn state
+		$sql = "DELETE FROM farkle_bot_game_state WHERE gameid = :gameid AND playerid = :playerid";
+		$stmt = $dbh->prepare($sql);
+		$stmt->execute([':gameid' => $state['gameid'], ':playerid' => $state['playerid']]);
+
+		$dbh->commit();
+		error_log("Bot_Step_Farkled: Successfully recorded farkle for round {$playerGame['playerround']}");
+
+	} catch (Exception $e) {
+		$dbh->rollBack();
+		error_log("Bot_Step_Farkled: ERROR - " . $e->getMessage());
+		return ['error' => 'Failed to record farkle: ' . $e->getMessage()];
 	}
 
 	return [
@@ -554,7 +713,7 @@ function Bot_CompleteTurn($gameId, $playerId, $finalScore) {
 		$dbh->beginTransaction();
 
 		// Get current game state
-		$sql = "SELECT currentround, currentplayer FROM farkle_games WHERE gameid = :gameid";
+		$sql = "SELECT currentround, currentturn FROM farkle_games WHERE gameid = :gameid";
 		$stmt = $dbh->prepare($sql);
 		$stmt->execute([':gameid' => $gameId]);
 		$game = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -564,7 +723,7 @@ function Bot_CompleteTurn($gameId, $playerId, $finalScore) {
 		}
 
 		// Get player's game record
-		$sql = "SELECT playerid, playerturn, playerround, totalscore
+		$sql = "SELECT playerid, playerturn, playerround, playerscore
 		        FROM farkle_games_players
 		        WHERE gameid = :gameid AND playerid = :playerid";
 		$stmt = $dbh->prepare($sql);
@@ -576,19 +735,19 @@ function Bot_CompleteTurn($gameId, $playerId, $finalScore) {
 		}
 
 		// Update player's score and round
-		$newTotalScore = $playerGame['totalscore'] + $finalScore;
+		$newTotalScore = $playerGame['playerscore'] + $finalScore;
 		$newRound = $playerGame['playerround'] + 1;
 
 		$sql = "UPDATE farkle_games_players
-		        SET totalscore = :totalscore,
+		        SET playerscore = :playerscore,
 		            playerround = :playerround,
-		            lastscore = :lastscore
+		            lastroundscore = :lastroundscore
 		        WHERE gameid = :gameid AND playerid = :playerid";
 		$stmt = $dbh->prepare($sql);
 		$stmt->execute([
-			':totalscore' => $newTotalScore,
+			':playerscore' => $newTotalScore,
 			':playerround' => $newRound,
-			':lastscore' => $finalScore,
+			':lastroundscore' => $finalScore,
 			':gameid' => $gameId,
 			':playerid' => $playerId
 		]);
@@ -600,12 +759,12 @@ function Bot_CompleteTurn($gameId, $playerId, $finalScore) {
 		$stmt->execute([':gameid' => $gameId]);
 		$numPlayers = $stmt->fetchColumn();
 
-		$nextPlayer = ($game['currentplayer'] % $numPlayers) + 1;
+		$nextPlayer = ($game['currentturn'] % $numPlayers) + 1;
 
 		// Update game's current player
-		$sql = "UPDATE farkle_games SET currentplayer = :currentplayer WHERE gameid = :gameid";
+		$sql = "UPDATE farkle_games SET currentturn = :currentturn WHERE gameid = :gameid";
 		$stmt = $dbh->prepare($sql);
-		$stmt->execute([':currentplayer' => $nextPlayer, ':gameid' => $gameId]);
+		$stmt->execute([':currentturn' => $nextPlayer, ':gameid' => $gameId]);
 
 		// Clean up bot turn state
 		$sql = "DELETE FROM farkle_bot_game_state WHERE gameid = :gameid AND playerid = :playerid";
@@ -638,8 +797,8 @@ function Bot_CompleteTurn($gameId, $playerId, $finalScore) {
  * @return array|null Game data or null if not found
  */
 function Bot_GetGameData($gameId) {
-	$sql = "SELECT g.gameid, g.currentround, g.currentplayer, g.gamemode, g.maxturns,
-	               g.bot_play_mode, g.actualplayers
+	$sql = "SELECT g.gameid, g.currentround, g.currentturn, g.gamemode, g.maxturns,
+	               g.bot_play_mode
 	        FROM farkle_games g
 	        WHERE g.gameid = :gameid";
 
@@ -654,7 +813,7 @@ function Bot_GetGameData($gameId) {
 	}
 
 	// Get all players and scores
-	$sql = "SELECT playerid, playerturn, playerround, totalscore
+	$sql = "SELECT playerid, playerturn, playerround, playerscore
 	        FROM farkle_games_players
 	        WHERE gameid = :gameid
 	        ORDER BY playerturn";
@@ -668,8 +827,8 @@ function Bot_GetGameData($gameId) {
 	// Calculate scores for bot decision context
 	if (count($players) >= 2) {
 		// Assume first player is bot, second is opponent (simplified)
-		$game['bot_score'] = $players[0]['totalscore'] ?? 0;
-		$game['opponent_score'] = $players[1]['totalscore'] ?? 0;
+		$game['bot_score'] = $players[0]['playerscore'] ?? 0;
+		$game['opponent_score'] = $players[1]['playerscore'] ?? 0;
 	}
 
 	$game['total_rounds'] = 10; // Standard 10-round game
@@ -723,9 +882,9 @@ function Bot_BuildMessageContext($gameId, $botPlayerId, $gameData = null) {
 	if (isset($gameData['players']) && is_array($gameData['players'])) {
 		foreach ($gameData['players'] as $player) {
 			if ($player['playerid'] == $botPlayerId) {
-				$botScore = $player['totalscore'];
+				$botScore = $player['playerscore'];
 			} else {
-				$opponentScore = $player['totalscore'];
+				$opponentScore = $player['playerscore'];
 
 				// Get opponent details
 				$sql = "SELECT username, playerlevel FROM farkle_players WHERE playerid = :playerid";

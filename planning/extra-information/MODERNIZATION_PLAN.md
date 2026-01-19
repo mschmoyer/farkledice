@@ -118,6 +118,7 @@ We recommend a **phased approach** to minimize risk and allow incremental deploy
 #### 4. Update Docker Configuration
 
 **New Dockerfile:**
+
 ```dockerfile
 FROM php:8.3-apache
 
@@ -139,7 +140,7 @@ RUN a2enmod rewrite
 WORKDIR /var/www/html
 
 # Copy application files
-COPY . /var/www/html/
+COPY ../.. /var/www/html/
 
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader

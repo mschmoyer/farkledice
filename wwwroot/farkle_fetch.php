@@ -107,45 +107,73 @@
 				// Bot Player Commands
 				else if( $p['action'] == 'startbotgame' )
 				{
-					// Validate algorithm parameter
-					$algorithm = $_POST['algorithm'] ?? null;
-					if (!in_array($algorithm, ['easy', 'medium', 'hard'])) {
-						$rc = Array('Error' => 'Invalid bot difficulty. Choose easy, medium, or hard.');
-					} else {
-						// Select random bot with matching algorithm
-						$sql = "SELECT playerid, username FROM farkle_players
-						        WHERE is_bot = TRUE AND bot_algorithm = :algorithm
-						        ORDER BY RANDOM() LIMIT 1";
-						$dbh = db_connect();
-						$stmt = $dbh->prepare($sql);
-						$stmt->execute([':algorithm' => $algorithm]);
-						$botPlayer = $stmt->fetch(PDO::FETCH_ASSOC);
+					try {
+						error_log("startbotgame: Starting bot game creation for player {$_SESSION['playerid']}");
 
-						if (!$botPlayer) {
-							$rc = Array('Error' => 'No bot available for this difficulty.');
+						// Validate algorithm parameter
+						$algorithm = $_POST['algorithm'] ?? null;
+						error_log("startbotgame: Requested difficulty: " . ($algorithm ?? 'NULL'));
+
+						if (!in_array($algorithm, ['easy', 'medium', 'hard'])) {
+							error_log("startbotgame: Invalid difficulty provided: $algorithm");
+							$rc = Array('Error' => 'Invalid bot difficulty. Choose easy, medium, or hard.');
 						} else {
-							// Create 1v1 game (10-round mode)
-							$players = json_encode([$_SESSION['playerid'], $botPlayer['playerid']]);
-							$gameResult = FarkleNewGame($players, 0, 10000, GAME_WITH_FRIENDS, GAME_MODE_10ROUND, false, 2);
+							// Select random bot with matching algorithm
+							$sql = "SELECT playerid, username FROM farkle_players
+							        WHERE is_bot = TRUE AND bot_algorithm = :algorithm
+							        ORDER BY RANDOM() LIMIT 1";
+							error_log("startbotgame: Querying for bot with algorithm: $algorithm");
 
-							if (isset($gameResult['Error'])) {
-								$rc = $gameResult;
-							} else if (isset($gameResult['gameid'])) {
-								// Set bot play mode to interactive
-								$sql = "UPDATE farkle_games SET bot_play_mode = 'interactive' WHERE gameid = :gameid";
-								$stmt = $dbh->prepare($sql);
-								$stmt->execute([':gameid' => $gameResult['gameid']]);
+							$dbh = db_connect();
+							$stmt = $dbh->prepare($sql);
+							$stmt->execute([':algorithm' => $algorithm]);
+							$botPlayer = $stmt->fetch(PDO::FETCH_ASSOC);
 
-								// Return game info
-								$rc = Array(
-									'gameid' => $gameResult['gameid'],
-									'botname' => $botPlayer['username'],
-									'Error' => null
-								);
+							if (!$botPlayer) {
+								error_log("startbotgame: No bot found for difficulty: $algorithm");
+								$rc = Array('Error' => 'No bot available for this difficulty.');
 							} else {
-								$rc = Array('Error' => 'Failed to create bot game.');
+								error_log("startbotgame: Selected bot player {$botPlayer['playerid']} ({$botPlayer['username']})");
+
+								// Create 1v1 game (10-round mode)
+								$players = json_encode([$_SESSION['playerid'], $botPlayer['playerid']]);
+								error_log("startbotgame: Creating game with players: $players");
+								error_log("startbotgame: Calling FarkleNewGame with params - breakin:0, playto:10000, gamewith:".GAME_WITH_FRIENDS.", gamemode:".GAME_MODE_10ROUND);
+
+								$gameResult = FarkleNewGame($players, 0, 10000, GAME_WITH_FRIENDS, GAME_MODE_10ROUND, false, 2);
+								error_log("startbotgame: FarkleNewGame returned: " . json_encode($gameResult));
+
+								if (isset($gameResult['Error'])) {
+									error_log("startbotgame: FarkleNewGame returned error: {$gameResult['Error']}");
+									$rc = $gameResult;
+								} else if (is_array($gameResult) && isset($gameResult[0]) && isset($gameResult[0]['gameid'])) {
+									// FarkleNewGame returns FarkleSendUpdate result: array with game object at index 0
+									$gameid = $gameResult[0]['gameid'];
+									error_log("startbotgame: Game created successfully with gameid: {$gameid}");
+
+									// Set bot play mode to interactive
+									$sql = "UPDATE farkle_games SET bot_play_mode = 'interactive' WHERE gameid = :gameid";
+									$stmt = $dbh->prepare($sql);
+									$stmt->execute([':gameid' => $gameid]);
+									error_log("startbotgame: Set bot_play_mode to interactive for game {$gameid}");
+
+									// Return full game state (like regular startgame does)
+									// FarkleGameStarted expects this format
+									$rc = $gameResult;
+									$rc['botname'] = $botPlayer['username'];
+									$rc['Error'] = null;
+									error_log("startbotgame: Success! Returning full game state with gameid {$gameid}");
+									error_log("startbotgame: Response structure: " . json_encode(array_keys($rc)));
+								} else {
+									error_log("startbotgame: FarkleNewGame returned unexpected result (no gameid, no error)");
+									$rc = Array('Error' => 'Failed to create bot game.');
+								}
 							}
 						}
+					} catch (Exception $e) {
+						error_log("startbotgame: EXCEPTION caught: " . $e->getMessage());
+						error_log("startbotgame: Exception trace: " . $e->getTraceAsString());
+						$rc = Array('Error' => 'An error occurred while creating the bot game: ' . $e->getMessage());
 					}
 				}
 				else if( $p['action'] == 'getbotstatus' )

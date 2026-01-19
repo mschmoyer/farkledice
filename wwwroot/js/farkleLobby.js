@@ -246,29 +246,50 @@ function closeBotGameModal() {
 function startBotGame(algorithm) {
 	closeBotGameModal();
 
+	console.log('startBotGame: Starting bot game with algorithm: ' + algorithm);
+	console.log('startBotGame: playerid =', playerid);
+	console.log('startBotGame: gAjaxUrl =', gAjaxUrl);
 	ConsoleDebug('startBotGame: Starting bot game with algorithm: ' + algorithm);
 
 	var params = 'action=startbotgame&playerid=' + playerid + '&algorithm=' + algorithm;
+	console.log('startBotGame: Params =', params);
+	console.log('startBotGame: About to call AjaxCallPost...');
 
 	AjaxCallPost(gAjaxUrl, function() {
+		console.log('startBotGame: AJAX callback fired!');
+		console.log('startBotGame: Received response:', ajaxrequest.responseText);
+
 		if (ajaxrequest.responseText) {
 			try {
 				var response = eval("(" + ajaxrequest.responseText + ")");
+				console.log('startBotGame: Parsed response:', response);
 
 				if (response.Error) {
-					alert('Error starting bot game: ' + response.Error);
+					console.error('startBotGame: Error from server:', response.Error);
 					return;
 				}
 
-				// Navigate to game
-				if (response.gameid) {
-					ConsoleDebug('startBotGame: Navigating to game ' + response.gameid);
-					window.location.href = 'farkle.php?game=' + response.gameid;
+				// Start game using same flow as regular games
+				// Response is array format: [gameData, playerData, diceData, ...]
+				if (response && response[0] && response[0].gameid) {
+					console.log('startBotGame: Game created with ID ' + response[0].gameid + ', bot: ' + response.botname);
+					console.log('startBotGame: Full response:', response);
+					console.log('startBotGame: Calling HideAllWindows and showing game');
+
+					HideAllWindows();
+					divGameObj.show();
+
+					console.log('startBotGame: Calling FarkleGameStarted with response');
+					FarkleGameStarted(response);
+				} else {
+					console.error('startBotGame: No gameid in response:', response);
 				}
 			} catch (e) {
+				console.error('startBotGame: Error parsing response:', e);
 				ConsoleDebug('startBotGame: Error parsing response: ' + e);
-				alert('Error starting bot game. Please try again.');
 			}
+		} else {
+			console.error('startBotGame: No response text received');
 		}
 	}, params);
 }

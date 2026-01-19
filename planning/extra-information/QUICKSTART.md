@@ -83,8 +83,8 @@ tail -f logs/docker-server.log
 ## What's Next?
 
 - Read [DOCKER.md](DOCKER.md) for detailed Docker commands
-- Read [CLAUDE.md](CLAUDE.md) to understand the codebase
-- Read [README.md](README.md) for project information
+- Read [CLAUDE.md](../../CLAUDE.md) to understand the codebase
+- Read [README.md](../../README.md) for project information
 
 ## Alternative Start Methods
 
