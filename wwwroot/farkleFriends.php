@@ -12,8 +12,8 @@ function AddFriend( $playerid, $identstring, $ident )
 {	
 	if( $ident == 'username' )
 	{
-		$theIdent = strtolower(mysql_real_escape_string($identstring));
-		$sql = "select min(playerid) from farkle_players 
+		$theIdent = strtolower(db_escape_string($identstring));
+		$sql = "select min(playerid) from farkle_players
 			where lower(username)='$theIdent' or lower(fullname)='$theIdent'";
 			
 		$friendid = db_select_query( $sql, SQL_SINGLE_VALUE );
@@ -22,7 +22,7 @@ function AddFriend( $playerid, $identstring, $ident )
 	}
 	else if( $ident == 'email' )
 	{
-		$theIdent = strtolower(mysql_real_escape_string($identstring));
+		$theIdent = strtolower(db_escape_string($identstring));
 		$sql = "select * from farkle_players where lower(email)='$theIdent'";
 		$friendid = db_select_query( $sql, SQL_SINGLE_VALUE );
 		if( empty($friendid) )

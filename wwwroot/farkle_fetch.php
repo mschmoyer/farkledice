@@ -76,10 +76,11 @@
 				
 				// Player Info & Options
 				else if( $p['action'] == 'getplayerinfo' )		$rc = GetStats( $p['playerid'] );
-				else if( $p['action'] == 'saveoptions' ) 
+				else if( $p['action'] == 'saveoptions' )
 				{
-					if( !isset($p['random_selectable']) ) $p['random_selectable'] = 1; 
-					$rc = SaveOptions( $p['email'], $p['sendhourlyemails'], $p['random_selectable'] );
+					if( !isset($p['random_selectable']) ) $p['random_selectable'] = 1;
+					$displayname = isset($_POST['displayname']) ? $_POST['displayname'] : '';
+					$rc = SaveOptions( $p['email'], $p['sendhourlyemails'], $p['random_selectable'], $displayname );
 				}
 				else if( $p['action'] == 'updatetitle' )		$rc = Player_UpdateTitle( $p['titleid'] );
 				else if( $p['action'] == 'getleaderboard' )		$rc = GetLeaderBoard( );

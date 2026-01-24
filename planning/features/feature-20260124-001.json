@@ -1,0 +1,103 @@
+{
+  "id": "feature-20260124-001",
+  "title": "Display Name Feature for Profile Options",
+  "description": "Add a Display Name input field to the profile/options page, allowing users to set a custom name that will be shown throughout the app instead of their login username. The fullname column already exists in the database and is used via COALESCE(fullname, username) across 19+ files.",
+  "created_at": "2026-01-24T12:00:00Z",
+  "status": "completed",
+  "completed_at": "2026-01-24T15:25:00Z",
+
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "detail": "Display name input field appears on the Options tab for logged-in users viewing their own profile",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-002",
+      "detail": "Display name field is NOT shown when viewing another player's profile",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-003",
+      "detail": "Current display name (if set) is pre-populated in the input field",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-004",
+      "detail": "User can save a new or updated display name",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-005",
+      "detail": "User can clear display name (empty string saves as NULL, falls back to username)",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-006",
+      "detail": "Max length of 30 characters is enforced",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-007",
+      "detail": "Invalid characters are rejected (only alphanumeric, spaces, basic punctuation, and emoji allowed)",
+      "status": "satisfied"
+    },
+    {
+      "id": "REQ-008",
+      "detail": "Success message appears after saving",
+      "status": "satisfied"
+    }
+  ],
+
+  "tasks": [
+    {
+      "id": "task-001",
+      "type": "implementation",
+      "requirement_ids": ["REQ-003"],
+      "description": "Update GetStats() in farklePageFuncs.php to return raw fullname field separately from the COALESCE alias",
+      "status": "completed",
+      "completed_at": "2026-01-24T12:05:00Z"
+    },
+    {
+      "id": "task-002",
+      "type": "implementation",
+      "requirement_ids": ["REQ-001", "REQ-002", "REQ-003", "REQ-006"],
+      "description": "Add display name input field to Options tab in farkle_div_playerinfo.tpl template with maxlength=30 and proper visibility controls",
+      "status": "completed",
+      "completed_at": "2026-01-24T12:10:00Z"
+    },
+    {
+      "id": "task-003",
+      "type": "implementation",
+      "requirement_ids": ["REQ-004"],
+      "description": "Update JavaScript SaveOptions() in farklePlayerInfo.js to include displayname parameter in AJAX POST",
+      "status": "completed",
+      "completed_at": "2026-01-24T12:15:00Z"
+    },
+    {
+      "id": "task-004",
+      "type": "implementation",
+      "requirement_ids": ["REQ-004", "REQ-005", "REQ-006", "REQ-007", "REQ-008"],
+      "description": "Update SaveOptions() in farklePageFuncs.php to accept displayname parameter, validate (30 char max, allowed characters only), and save to database",
+      "status": "completed",
+      "completed_at": "2026-01-24T12:20:00Z"
+    },
+    {
+      "id": "task-005",
+      "type": "implementation",
+      "requirement_ids": ["REQ-004"],
+      "description": "Update farkle_fetch.php AJAX router to pass displayname POST parameter to SaveOptions()",
+      "status": "completed",
+      "completed_at": "2026-01-24T12:25:00Z"
+    },
+    {
+      "id": "task-FINAL",
+      "type": "verification",
+      "requirement_ids": [],
+      "description": "[ORCHESTRATOR] Final verification - verify all requirements are satisfied",
+      "status": "completed",
+      "completed_at": "2026-01-24T15:25:00Z",
+      "note": "This task is completed by the Orchestrator, NOT a coder agent"
+    }
+  ]
+}

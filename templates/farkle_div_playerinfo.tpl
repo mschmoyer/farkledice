@@ -67,10 +67,21 @@
 	</div>
 	
 	<div class="playerInfoContainer" id="divPlayerInfoItem3" align="center" style="margin: 0px;">
-	
-		 
+
+		<div style="margin-bottom: 15px;">
+			<label style="font-weight: bold;">Display Name:</label><br/>
+			<input type="text" id="displayname" maxlength="30" style="width: 200px; padding: 5px;"
+				   value=""
+				   onchange="PlayerInfoOptionsDirty();"
+				   onkeyup="PlayerInfoOptionsDirty();" />
+			<div style="font-size: 11px; color: #666; margin-top: 3px;">
+				Shown to other players instead of your username. Letters, numbers, spaces, and emoji allowed.
+			</div>
+		</div>
+		<hr style="margin: 15px 0; border: 0; border-top: 1px solid #ddd;" />
+
 		<table style="margin: 3px;" cellpadding="3px">
-		
+
 		<tr>
 			<td><b>Email game updates</b></td>
 			<td><input type="checkbox" id="chkEmailMe" onClick="PlayerInfoOptionsDirty()"><td>
