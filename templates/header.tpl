@@ -31,7 +31,7 @@
 	<meta name="mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-title" content="{$title}">
-	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="apple-mobile-web-app-status-bar-style" content="default">
 
 	<!-- Icons -->
 	<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
@@ -41,8 +41,8 @@
 	<!-- Web App Manifest -->
 	<link rel="manifest" href="/manifest.json">
 
-	<link rel="stylesheet" type="text/css" href="/css/mobile.css?vers=1.2" />
-	<link rel="stylesheet" type="text/css" href="/css/farkle.css?vers=1.2" />
+	<link rel="stylesheet" type="text/css" href="/css/mobile.css?vers=1.3" />
+	<link rel="stylesheet" type="text/css" href="/css/farkle.css?vers=1.3" />
 	{*{if $mobilemode}<link rel="stylesheet" type="text/css" href="/css/mobile_farkle.css" />{/if}*}
 		
 	<script type="text/javascript" src="/js/bubble_util.js"></script>
