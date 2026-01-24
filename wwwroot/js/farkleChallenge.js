@@ -89,6 +89,14 @@ function UpdateChallengeLobbyUI() {
 	RenderBotLineup(gChallengeStatus.bot_lineup);
 }
 
+// Dice category colors (same as shop)
+var gChallengeDiceColors = {
+	'farkle_lovers': '#cc0000',      // red
+	'farkle_protection': '#1d8711',  // green
+	'face_changers': '#4169E1',      // blue
+	'score_boosters': '#FFA500'      // orange
+};
+
 /**
  * Render player's dice inventory in the lobby
  */
@@ -99,7 +107,8 @@ function RenderChallengeDice(inventory) {
 		var die = null;
 		// Find die for this slot
 		for (var j = 0; j < inventory.length; j++) {
-			if (inventory[j].slot_number == (i + 1)) {
+			var slotNum = inventory[j].slot_number || inventory[j].dice_slot;
+			if (slotNum == (i + 1)) {
 				die = inventory[j];
 				break;
 			}
@@ -107,16 +116,37 @@ function RenderChallengeDice(inventory) {
 
 		var dieName = die ? die.name : 'Standard';
 		var shortWord = 'STD';
-		if (die && die.effect_value) {
-			try {
-				var effectVal = JSON.parse(die.effect_value);
-				shortWord = effectVal.short_word || 'STD';
-			} catch (e) {}
+		var isSpecial = false;
+		var categoryColor = '#666';
+
+		if (die) {
+			// Extract short_word from effect_value or direct property
+			if (die.short_word) {
+				shortWord = die.short_word;
+			} else if (die.effect_value) {
+				try {
+					var effectVal = typeof die.effect_value === 'string'
+						? JSON.parse(die.effect_value)
+						: die.effect_value;
+					shortWord = effectVal.short_word || 'STD';
+				} catch (e) {}
+			}
+
+			isSpecial = (shortWord !== 'STD' && dieName !== 'Standard');
+			if (isSpecial && die.category) {
+				categoryColor = gChallengeDiceColors[die.category] || '#4169E1';
+			}
 		}
 
-		html += '<span style="display: inline-block; margin: 2px; text-align: center;">';
-		html += '  <img src="/images/die1.gif" width="24" height="24" title="' + dieName + '"><br/>';
-		html += '  <span style="font-size: 10px; color: white;">' + shortWord + '</span>';
+		// Style differently for special dice
+		var borderStyle = isSpecial ? '2px solid ' + categoryColor : '1px solid #666';
+		var bgColor = isSpecial ? 'rgba(255,255,255,0.1)' : 'transparent';
+		var textColor = isSpecial ? categoryColor : '#999';
+
+		html += '<span style="display: inline-block; margin: 3px; padding: 3px; text-align: center; ';
+		html += 'border: ' + borderStyle + '; border-radius: 4px; background: ' + bgColor + ';">';
+		html += '  <img src="/images/diceFront1.png" width="28" height="28" title="' + dieName + '"><br/>';
+		html += '  <span style="font-size: 10px; font-weight: ' + (isSpecial ? 'bold' : 'normal') + '; color: ' + textColor + ';">' + shortWord + '</span>';
 		html += '</span>';
 	}
 
@@ -177,9 +207,16 @@ function ChallengeStartRun() {
 				gChallengeRunId = response.active_run ? response.active_run.run_id : 0;
 				UpdateChallengeLobbyUI();
 
-				// Start the first bot game
-				if (gChallengeRunId > 0) {
-					ChallengeStartBotGame();
+				// Show the shop before the first bot game
+				if (gChallengeRunId > 0 && response.active_run) {
+					var run = response.active_run;
+					var botNum = run.current_bot_num;
+					var botName = run.current_bot ? run.current_bot.bot_name : 'Bot #' + botNum;
+					var inventory = run.dice_inventory || [];
+					var money = run.money;
+
+					// Pass true for isStart since this is the beginning of the challenge
+					ShowChallengeShop(gChallengeRunId, money, botNum, botName, inventory, true);
 				}
 
 			} catch (e) {
@@ -225,9 +262,9 @@ function ChallengeStartBotGame() {
 
 				ConsoleDebug('ChallengeStartBotGame: Game created - ' + response.game_id);
 
-				// Game created - show the game
-				if (response.game_data && response.game_data[0]) {
-					FarkleGameStarted(response.game_data);
+				// Game created - show the game window and load the game
+				if (response.game_id) {
+					ShowFarkleGame(response.game_id);
 				}
 
 			} catch (e) {
@@ -265,6 +302,38 @@ function ChallengeAbandonRun() {
 
 			} catch (e) {
 				ConsoleDebug('ChallengeAbandonRun: Parse error - ' + e);
+			}
+		}
+	}, params);
+}
+
+/**
+ * Start over - abandon current run and start a new one
+ */
+function ChallengeStartOver() {
+	if (!confirm('Are you sure? This will abandon your current run.')) {
+		return;
+	}
+
+	ConsoleDebug('ChallengeStartOver: Abandoning and starting new run');
+
+	var params = 'action=abandon_challenge&playerid=' + playerid;
+
+	AjaxCallPost(gAjaxUrl, function() {
+		if (ajaxrequest.responseText) {
+			try {
+				var response = eval("(" + ajaxrequest.responseText + ")");
+
+				if (response.Error) {
+					alert('Error: ' + response.Error);
+					return;
+				}
+
+				// Now start a new run
+				ChallengeStartRun();
+
+			} catch (e) {
+				ConsoleDebug('ChallengeStartOver: Parse error - ' + e);
 			}
 		}
 	}, params);
@@ -356,7 +425,8 @@ function LoadChallengeStatusThenShop(money, botNum, botName) {
 					inventory = gChallengeStatus.active_run.dice_inventory;
 				}
 
-				ShowChallengeShop(gChallengeRunId, money, botNum, botName, inventory);
+				// Pass false for isStart since this is after a victory
+				ShowChallengeShop(gChallengeRunId, money, botNum, botName, inventory, false);
 
 			} catch (e) {
 				ConsoleDebug('LoadChallengeStatusThenShop: Parse error - ' + e);

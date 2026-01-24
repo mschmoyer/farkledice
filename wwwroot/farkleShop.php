@@ -53,7 +53,7 @@ function GetShopDice($runId, $count = 3) {
 			$query .= " AND dice_type_id NOT IN ($placeholders)";
 		}
 
-		$query .= " ORDER BY RANDOM() LIMIT :count";
+		$query .= " ORDER BY RANDOM() LIMIT ?";
 
 		$stmt = $db->prepare($query);
 
@@ -63,8 +63,8 @@ function GetShopDice($runId, $count = 3) {
 			$stmt->bindValue($paramIndex++, $diceId, PDO::PARAM_INT);
 		}
 
-		// Bind count
-		$stmt->bindValue(':count', $count, PDO::PARAM_INT);
+		// Bind count (positional parameter after owned dice)
+		$stmt->bindValue($paramIndex, $count, PDO::PARAM_INT);
 
 		$stmt->execute();
 		$availableDice = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -188,7 +188,7 @@ function PurchaseDice($runId, $diceTypeId, $slotNumber) {
 			// Get updated money
 			$newMoney = $currentMoney - $price;
 
-			// Get updated inventory
+			// Get updated inventory (include effect_value for short_word extraction)
 			$stmt = $db->prepare("
 				SELECT
 					inv.dice_slot,
@@ -197,7 +197,8 @@ function PurchaseDice($runId, $diceTypeId, $slotNumber) {
 					dt.tier,
 					dt.price,
 					dt.description as effect,
-					dt.effect_type as category
+					dt.effect_type as category,
+					dt.effect_value
 				FROM farkle_challenge_dice_inventory inv
 				JOIN farkle_challenge_dice_types dt ON inv.dice_type_id = dt.dice_type_id
 				WHERE inv.run_id = :run_id
@@ -205,6 +206,13 @@ function PurchaseDice($runId, $diceTypeId, $slotNumber) {
 			");
 			$stmt->execute(['run_id' => $runId]);
 			$inventory = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+			// Extract short_word from effect_value JSON for each die
+			foreach ($inventory as &$die) {
+				$effectValue = json_decode($die['effect_value'] ?? '{}', true);
+				$die['short_word'] = $effectValue['short_word'] ?? 'STD';
+			}
+			unset($die);
 
 			return [
 				'success' => true,

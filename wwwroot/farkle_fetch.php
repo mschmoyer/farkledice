@@ -91,7 +91,12 @@
 					$rc = FarkleNewGame( $p['players'], $p['breakin'], $p['playto'], $p['gamewith'], $p['gamemode'], 0, $p['rp'] );
 				} 
 				else if( $p['action'] == 'getnewgameinfo' )		$rc = GetNewGameInfo( $_SESSION['playerid'] );
-				else if( $p['action'] == 'farklegetupdate' )	$rc = FarkleSendUpdate( $_SESSION['playerid'], $p['gameid'] );
+				else if( $p['action'] == 'farklegetupdate' ) {
+					$rc = FarkleSendUpdate( $_SESSION['playerid'], $p['gameid'] );
+					if (empty($rc) || !is_array($rc) || !isset($rc[0])) {
+						error_log("farklegetupdate: Empty or invalid response for game {$p['gameid']}, player {$_SESSION['playerid']}. RC type: " . gettype($rc) . ", RC: " . json_encode($rc));
+					}
+				}
 				else if( $p['action'] == 'quitgame')			$rc = FarkleQuitGame( $_SESSION['playerid'], $p['gameid'] );
 				else if( $p['action'] == 'farkleroll' )			$rc = FarkleRoll( $_SESSION['playerid'], $p['gameid'], $p['saveddice'], $p['newdice'] );
 				else if( $p['action'] == 'farklepass' )			$rc = FarklePass( $_SESSION['playerid'], $p['gameid'], $p['saveddice'] );	

@@ -8,14 +8,25 @@
 <!-- CHALLENGE SHOP -->
 <div id="divChallengeShop" align="center" style="display: none;">
 
-	<!-- Victory Header -->
-	<div class="regularBox" style="margin: 5px;">
+	<!-- Victory Header (shown after defeating a bot) -->
+	<div id="divShopVictoryHeader" class="regularBox" style="margin: 5px; display: none;">
 		<div class="shadowed" style="font-size: 20px;">VICTORY!</div>
 		<p style="font-size: 14px; margin: 5px;">
 			You defeated Bot #<span id="shopBotNum">1</span> - <span id="shopBotName">Byte</span>
 		</p>
 		<div style="font-size: 16px; font-family: 'Courier New', monospace;">
 			Money: <span id="shopMoney">$0</span>
+		</div>
+	</div>
+
+	<!-- Start Header (shown at beginning of challenge run) -->
+	<div id="divShopStartHeader" class="regularBox" style="margin: 5px; display: none;">
+		<div class="shadowed" style="font-size: 20px;">CHALLENGE BEGUN!</div>
+		<p style="font-size: 14px; margin: 5px;">
+			Your first opponent: Bot #<span id="shopStartBotNum">1</span> - <span id="shopStartBotName">Byte</span>
+		</p>
+		<div style="font-size: 16px; font-family: 'Courier New', monospace;">
+			Money: <span id="shopStartMoney">$0</span>
 		</div>
 	</div>
 
@@ -45,6 +56,13 @@
 		<input type="button" class="mobileButton" buttoncolor="green"
 			value="CONTINUE" onClick="ContinueToNextBot()"
 			style="width: 150px; display: none;" id="btnContinueAfterPurchase">
+	</div>
+
+	<!-- Start Over option -->
+	<div style="margin: 10px;">
+		<input type="button" class="mobileButton" buttoncolor="grey"
+			value="Start Over" onClick="ChallengeStartOver()"
+			style="width: 120px; font-size: 12px;">
 	</div>
 
 </div>

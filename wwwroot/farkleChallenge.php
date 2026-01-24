@@ -52,13 +52,13 @@ function Challenge_GetStatus($playerId) {
                 'difficulty' => $currentBot['difficulty'],
                 'target_score' => $currentBot['point_target'],
                 'description' => $currentBot['description'],
-                'rules_display' => $currentBot['rules_display'],
-                'rules' => $currentBot['rules'],
+                'rules_display' => $currentBot['rules_display'] ?? null,
+                'rules' => $currentBot['rules'] ?? null,
             ] : null
         ];
 
-        // Get player's dice inventory
-        $sql = "SELECT i.dice_slot AS slot_number, d.name, d.effect_value
+        // Get player's dice inventory (include category for visual styling)
+        $sql = "SELECT i.dice_slot AS slot_number, d.name, d.effect_value, d.effect_type AS category
                 FROM farkle_challenge_dice_inventory i
                 JOIN farkle_challenge_dice_types d ON d.dice_type_id = i.dice_type_id
                 WHERE i.run_id = :run_id
@@ -120,9 +120,9 @@ function Challenge_StartRun($playerId) {
     try {
         $dbh->beginTransaction();
 
-        // Create new run
+        // Create new run - start with $5
         $sql = "INSERT INTO farkle_challenge_runs (player_id, status, current_bot_number, current_money, total_dice_saved)
-                VALUES (:playerid, 'active', 1, 0, 0)
+                VALUES (:playerid, 'active', 1, 5, 0)
                 RETURNING run_id";
         $stmt = $dbh->prepare($sql);
         $stmt->execute([':playerid' => $playerId]);
@@ -182,6 +182,27 @@ function Challenge_StartBotGame($playerId, $runId) {
 
     $botNum = $run['current_bot_number'];
 
+    // Check if there's already an in-progress game for this challenge run
+    $sql = "SELECT g.gameid, g.winningplayer
+            FROM farkle_games g
+            WHERE g.challenge_run_id = :run_id
+            AND g.challenge_bot_number = :bot_num
+            AND g.winningplayer = 0
+            ORDER BY g.gameid DESC LIMIT 1";
+    $stmt = $dbh->prepare($sql);
+    $stmt->execute([':run_id' => $runId, ':bot_num' => $botNum]);
+    $existingGame = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($existingGame) {
+        // Return existing game info so user can resume it
+        return [
+            'success' => true,
+            'game_id' => $existingGame['gameid'],
+            'bot_number' => $botNum,
+            'resumed' => true
+        ];
+    }
+
     // Get the bot for this position (with aliased columns for JS compatibility)
     $sql = "SELECT b.bot_number, b.display_name AS bot_name, p.difficulty,
                    b.point_target AS target_score, b.description AS personality,
@@ -197,14 +218,14 @@ function Challenge_StartBotGame($playerId, $runId) {
         return ['error' => 'Bot not found for position ' . $botNum];
     }
 
-    // Get or create the bot player (use display_name to find the bot player)
-    $sql = "SELECT playerid FROM farkle_players WHERE username = :username AND is_bot = TRUE";
+    // Get the bot player using personality_id to link lineup to player
+    $sql = "SELECT playerid, username FROM farkle_players WHERE personality_id = :personality_id AND is_bot = TRUE";
     $stmt = $dbh->prepare($sql);
-    $stmt->execute([':username' => $bot['bot_name']]);
+    $stmt->execute([':personality_id' => $bot['personality_id']]);
     $botPlayer = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$botPlayer) {
-        return ['error' => 'Bot player not found: ' . $bot['bot_name']];
+        return ['error' => 'Bot player not found for personality_id: ' . $bot['personality_id']];
     }
 
     // Create a 10-round game against this bot
@@ -235,6 +256,7 @@ function Challenge_StartBotGame($playerId, $runId) {
             'success' => true,
             'game_id' => $gameId,
             'bot_name' => $bot['bot_name'],
+            'bot_username' => $botPlayer['username'],
             'bot_number' => $botNum,
             'difficulty' => $bot['difficulty'],
             'game_data' => $gameResult

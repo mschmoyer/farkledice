@@ -14,6 +14,15 @@ var gFarkleDice;				// Helps to show accurate dice when you farkle
 var gLastFarkle = 0;
 var gTempRollData = 0;
 
+// Challenge mode dice inventory for visual styling
+var gChallengeDiceInventory = [];
+var gChallengeDiceColors = {
+	'farkle_lovers': '#cc0000',      // red
+	'farkle_protection': '#1d8711',  // green
+	'face_changers': '#4169E1',      // blue
+	'score_boosters': '#FFA500'      // orange
+};
+
 var g_myPlayerIndex = -1;
 
 var gRoundScore = 0; 
@@ -173,30 +182,114 @@ function UpdateChallengeHeaderMoney() {
  * Render dice inventory in the challenge header
  */
 function RenderChallengeHeaderDice(inventory) {
+	// Store inventory globally for game dice styling
+	gChallengeDiceInventory = inventory;
+
 	var html = '';
 
 	for( var i = 0; i < 6; i++ ) {
 		var die = null;
 		// Find die for this slot
 		for( var j = 0; j < inventory.length; j++ ) {
-			if( inventory[j].slot_number == (i + 1) ) {
+			var slotNum = inventory[j].slot_number || inventory[j].dice_slot;
+			if( slotNum == (i + 1) ) {
 				die = inventory[j];
 				break;
 			}
 		}
 
 		var shortWord = 'STD';
-		if( die && die.effect_value ) {
-			try {
-				var effectVal = JSON.parse(die.effect_value);
-				shortWord = effectVal.short_word || 'STD';
-			} catch(e) {}
+		var isSpecial = false;
+		var categoryColor = '#666';
+
+		if( die ) {
+			// Extract short_word from effect_value or direct property
+			if( die.short_word ) {
+				shortWord = die.short_word;
+			} else if( die.effect_value ) {
+				try {
+					var effectVal = typeof die.effect_value === 'string'
+						? JSON.parse(die.effect_value)
+						: die.effect_value;
+					shortWord = effectVal.short_word || 'STD';
+				} catch(e) {}
+			}
+
+			isSpecial = (shortWord !== 'STD' && die.name !== 'Standard' && die.name !== 'Standard Die');
+			if( isSpecial && die.category ) {
+				categoryColor = gChallengeDiceColors[die.category] || '#4169E1';
+			}
 		}
 
-		html += '<span style="display: inline-block; margin: 0 3px; color: #ccc;">' + shortWord + '</span>';
+		var textColor = isSpecial ? categoryColor : '#999';
+		var fontWeight = isSpecial ? 'bold' : 'normal';
+
+		html += '<span style="display: inline-block; margin: 0 3px; color: ' + textColor + '; font-weight: ' + fontWeight + ';">' + shortWord + '</span>';
 	}
 
 	$('#divChallengeHeaderDice').html(html);
+
+	// Apply borders to actual game dice canvases
+	ApplyChallengeDiceBorders();
+}
+
+/**
+ * Apply colored borders to game dice canvases for special challenge dice
+ */
+function ApplyChallengeDiceBorders() {
+	if( !gChallengeDiceInventory || gChallengeDiceInventory.length === 0 ) {
+		// Clear any existing borders
+		for( var i = 0; i < 6; i++ ) {
+			$('#dice' + i + 'Canvas').css('box-shadow', '3px 3px 4px #000');
+		}
+		return;
+	}
+
+	for( var i = 0; i < 6; i++ ) {
+		var die = null;
+		// Find die for this slot (0-indexed canvas, 1-indexed inventory)
+		for( var j = 0; j < gChallengeDiceInventory.length; j++ ) {
+			var slotNum = gChallengeDiceInventory[j].slot_number || gChallengeDiceInventory[j].dice_slot;
+			if( slotNum == (i + 1) ) {
+				die = gChallengeDiceInventory[j];
+				break;
+			}
+		}
+
+		var canvas = $('#dice' + i + 'Canvas');
+		if( !canvas.length ) continue;
+
+		var shortWord = 'STD';
+		var isSpecial = false;
+		var categoryColor = '#666';
+
+		if( die ) {
+			// Extract short_word
+			if( die.short_word ) {
+				shortWord = die.short_word;
+			} else if( die.effect_value ) {
+				try {
+					var effectVal = typeof die.effect_value === 'string'
+						? JSON.parse(die.effect_value)
+						: die.effect_value;
+					shortWord = effectVal.short_word || 'STD';
+				} catch(e) {}
+			}
+
+			isSpecial = (shortWord !== 'STD' && die.name !== 'Standard' && die.name !== 'Standard Die');
+			if( isSpecial && die.category ) {
+				categoryColor = gChallengeDiceColors[die.category] || '#4169E1';
+			}
+		}
+
+		if( isSpecial ) {
+			// Add colored glow/border for special dice
+			canvas.css('box-shadow', '0 0 8px 3px ' + categoryColor + ', 3px 3px 4px #000');
+		} else {
+			// Standard shadow for normal dice
+			canvas.css('box-shadow', '3px 3px 4px #000');
+		}
+	}
 }
 
 function ResumeGame( theGameId )
@@ -1222,8 +1315,8 @@ function PassTurn( ) {
 
 function FarkleGameRollReset() {
 	FarkleDiceReset();
-	FarkleGameUpdateState( GAME_STATE_ROLLING ); 
-	FarkleGameUpdateHook();
+	FarkleGameUpdateState( GAME_STATE_ROLLING );
+	farkleGetUpdate();  // Make fresh AJAX call instead of using potentially stale ajaxrequest data
 }
 
 function DisplayLastDiceScore()

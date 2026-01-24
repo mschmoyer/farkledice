@@ -26,16 +26,16 @@ define('EFFECT_MONEY_MODIFIER', 'money_modifier');
 function Challenge_GetRunForGame($gameId) {
     $dbh = db_connect();
 
-    // Check if this game is associated with a challenge run
-    $sql = "SELECT r.*, g.gameid
+    // Check if this game is associated with a challenge run using the stored challenge_run_id
+    $sql = "SELECT r.*
             FROM farkle_challenge_runs r
-            JOIN farkle_games g ON g.gameid = :gameid
-            WHERE r.playerid = (SELECT whostarted FROM farkle_games WHERE gameid = :gameid2)
-            AND r.status = 'active'
-            AND r.current_bot_num > 0";
+            JOIN farkle_games g ON g.challenge_run_id = r.run_id
+            WHERE g.gameid = :gameid
+            AND g.is_challenge_game = TRUE
+            AND r.status = 'active'";
 
     $stmt = $dbh->prepare($sql);
-    $stmt->execute([':gameid' => $gameId, ':gameid2' => $gameId]);
+    $stmt->execute([':gameid' => $gameId]);
     $run = $stmt->fetch(PDO::FETCH_ASSOC);
 
     return $run ?: null;
@@ -49,11 +49,11 @@ function Challenge_GetRunForGame($gameId) {
 function Challenge_GetPlayerDice($runId) {
     $dbh = db_connect();
 
-    $sql = "SELECT i.slot_number, i.dice_type_id, d.name, d.effect_type, d.effect_value, d.description
+    $sql = "SELECT i.dice_slot AS slot_number, i.dice_type_id, d.name, d.effect_type, d.effect_value, d.description
             FROM farkle_challenge_dice_inventory i
             JOIN farkle_challenge_dice_types d ON d.dice_type_id = i.dice_type_id
             WHERE i.run_id = :run_id
-            ORDER BY i.slot_number";
+            ORDER BY i.dice_slot";
 
     $stmt = $dbh->prepare($sql);
     $stmt->execute([':run_id' => $runId]);
@@ -406,15 +406,15 @@ function Challenge_UpdateMoney($runId, $amount) {
     $dbh = db_connect();
 
     $sql = "UPDATE farkle_challenge_runs
-            SET money = money + :amount
+            SET current_money = current_money + :amount
             WHERE run_id = :run_id
-            RETURNING money";
+            RETURNING current_money";
 
     $stmt = $dbh->prepare($sql);
     $stmt->execute([':amount' => $amount, ':run_id' => $runId]);
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    return $result ? $result['money'] : 0;
+    return $result ? $result['current_money'] : 0;
 }
 
 /**

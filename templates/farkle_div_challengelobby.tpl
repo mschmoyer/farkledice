@@ -40,6 +40,9 @@
 			<input type="button" class="mobileButton" buttoncolor="grey"
 				value="Abandon Run" onClick="ChallengeAbandonRun()"
 				style="width: 120px; font-size: 12px;">
+			<input type="button" class="mobileButton" buttoncolor="blue"
+				value="Start Over" onClick="ChallengeStartOver()"
+				style="width: 120px; font-size: 12px; margin-left: 5px;">
 		</div>
 	</div>
 

@@ -1026,7 +1026,7 @@ function FarklePass( $playerid, $gameid, $savedDice, $farkled = 0, $updateTime =
 
 				// Update total dice saved for the run
 				$dbh = db_connect();
-				$sql = "UPDATE farkle_challenge_runs SET dice_saved_total = dice_saved_total + :dice
+				$sql = "UPDATE farkle_challenge_runs SET total_dice_saved = total_dice_saved + :dice
 				        WHERE run_id = :run_id";
 				$stmt = $dbh->prepare($sql);
 				$stmt->execute([':dice' => $diceSavedThisRound, ':run_id' => $challengeRun['run_id']]);
@@ -1181,8 +1181,8 @@ function GameIsCompleted( $gameid, $maxTurns )
 	if( $playersDone >= $maxTurns )
 	{
 		// Select the playerid with the highest score in this game. 
-		$sql = "select a.playerid, a.playerscore, COALESCE(b.fullname, b.username) as username, 
-			(select max(roundscore) from farkle_rounds where playerid=a.playerid and gameid=a.gameid) as highestRound
+		$sql = "select a.playerid, a.playerscore, COALESCE(b.fullname, b.username) as username,
+			COALESCE((select max(roundscore) from farkle_rounds where playerid=a.playerid and gameid=a.gameid), 0) as highestRound
 			from farkle_games_players a, farkle_players b
 			where a.gameid=$gameid and a.playerid=b.playerid
 			order by playerscore DESC, highestRound desc";
@@ -1201,7 +1201,8 @@ function GameIsCompleted( $gameid, $maxTurns )
 				$i++;
 			}
 			
-			$tieOccurredStr = ". " . $wp[0]['username'] . " broke tie and won with a highest round score of " . $wp[0]['highestRound']; 
+			$highestRound = isset($wp[0]['highestRound']) ? $wp[0]['highestRound'] : 0;
+			$tieOccurredStr = ". " . $wp[0]['username'] . " broke tie and won with a highest round score of " . $highestRound; 
 			FarkleWinGame( $gameid, $wp[0]['playerid'], 
 				"Highest score in 10 rounds" . ( $tieOccurred ? $tieOccurredStr : "" ) );
 			
