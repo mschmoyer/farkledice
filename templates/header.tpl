@@ -41,8 +41,8 @@
 	<!-- Web App Manifest -->
 	<link rel="manifest" href="/manifest.json">
 
-	<link rel="stylesheet" type="text/css" href="/css/mobile.css?vers=1.1" />
-	<link rel="stylesheet" type="text/css" href="/css/farkle.css?vers=1.1" />
+	<link rel="stylesheet" type="text/css" href="/css/mobile.css?vers=1.2" />
+	<link rel="stylesheet" type="text/css" href="/css/farkle.css?vers=1.2" />
 	{*{if $mobilemode}<link rel="stylesheet" type="text/css" href="/css/mobile_farkle.css" />{/if}*}
 		
 	<script type="text/javascript" src="/js/bubble_util.js"></script>

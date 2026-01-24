@@ -4,7 +4,7 @@
 	<!-- NEW GAME SCREEN - CHOOSE GAME TYPE -->
 	<div id="divGameTypes" align="center">
 		<img src="/images/btn-playabot-new.png" width="290px" style="cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,0);" onClick="showBotGameModal()" ontouchstart=""><br/>
-		<img src="/images/btn-invitefriends-new.png" width="290px" style="cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,0);" onClick="sendRequestViaMultiFriendSelector()" ontouchstart=""><br/>
+		<img src="/images/btn-invitefriends-new.png" width="290px" style="cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,0);" onClick="ShowAddFriend()" ontouchstart=""><br/>
 		<img src="/images/btn-playfriends-new.png" width="290px" style="cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,0);" onClick="SelectPlayType(2,1)" ontouchstart=""><br/>
 		<img src="/images/btn-playrandom-new.png" width="290px" style="cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,0);" onClick="SelectPlayType(2,0)" ontouchstart=""><br/>
 		<img src="/images/btn-playsolo-new.png" width="290px" style="cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,0);" onClick="StartSoloGame()" ontouchstart=""><br/>
