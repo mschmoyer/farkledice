@@ -41,15 +41,21 @@ function Bot_InitializeTurnState($gameId, $playerId) {
 	$stmt = $dbh->prepare($sql);
 	$stmt->execute([':gameid' => $gameId, ':playerid' => $playerId]);
 
-	// Create new state
-	$sql = "INSERT INTO farkle_bot_game_state
-	        (gameid, playerid, current_step, dice_remaining, turn_score, created_at, updated_at)
-	        VALUES (:gameid, :playerid, 'rolling', 6, 0, NOW(), NOW())
-	        RETURNING stateid, gameid, playerid, current_step, dice_kept, turn_score,
-	                  dice_remaining, last_roll, last_message, created_at, updated_at";
-
+	// Get the player's current round
+	$sql = "SELECT playerround FROM farkle_games_players WHERE gameid = :gameid AND playerid = :playerid";
 	$stmt = $dbh->prepare($sql);
 	$stmt->execute([':gameid' => $gameId, ':playerid' => $playerId]);
+	$playerRound = $stmt->fetchColumn() ?: 1;
+
+	// Create new state with setnum and handnum for farkle_sets tracking
+	$sql = "INSERT INTO farkle_bot_game_state
+	        (gameid, playerid, current_step, dice_remaining, turn_score, setnum, handnum, roundnum, created_at, updated_at)
+	        VALUES (:gameid, :playerid, 'rolling', 6, 0, 0, 1, :roundnum, NOW(), NOW())
+	        RETURNING stateid, gameid, playerid, current_step, dice_kept, turn_score,
+	                  dice_remaining, last_roll, last_message, setnum, handnum, roundnum, created_at, updated_at";
+
+	$stmt = $dbh->prepare($sql);
+	$stmt->execute([':gameid' => $gameId, ':playerid' => $playerId, ':roundnum' => $playerRound]);
 
 	$state = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -69,7 +75,8 @@ function Bot_GetTurnState($gameId, $playerId) {
 	$dbh = db_connect();
 
 	$sql = "SELECT stateid, gameid, playerid, current_step, dice_kept, turn_score,
-	               dice_remaining, last_roll, last_message, created_at, updated_at
+	               dice_remaining, last_roll, last_message, setnum, handnum, roundnum,
+	               created_at, updated_at
 	        FROM farkle_bot_game_state
 	        WHERE gameid = :gameid AND playerid = :playerid
 	        ORDER BY created_at DESC LIMIT 1";
@@ -97,7 +104,7 @@ function Bot_UpdateTurnState($gameId, $playerId, $updates) {
 	$setClauses = ['updated_at = NOW()'];
 	$params = [':gameid' => $gameId, ':playerid' => $playerId];
 
-	$allowedFields = ['current_step', 'dice_kept', 'turn_score', 'dice_remaining', 'last_roll', 'last_message'];
+	$allowedFields = ['current_step', 'dice_kept', 'turn_score', 'dice_remaining', 'last_roll', 'last_message', 'setnum', 'handnum', 'roundnum'];
 
 	foreach ($updates as $field => $value) {
 		if (in_array($field, $allowedFields)) {
@@ -197,6 +204,7 @@ function Bot_ExecuteStep($gameId, $playerId) {
  * Step 1: Roll dice
  *
  * Rolls N dice (where N = dice_remaining) and transitions to choosing_keepers
+ * Also inserts a record into farkle_sets to track dice for activity log
  *
  * @param array $state Current state
  * @param array $gameData Game data
@@ -206,7 +214,7 @@ function Bot_ExecuteStep($gameId, $playerId) {
 function Bot_Step_Rolling($state, $gameData, $botPlayer) {
 	BaseUtil_Debug(__FUNCTION__ . ": Rolling " . $state['dice_remaining'] . " dice", 14);
 
-	$numDice = $state['dice_remaining'];
+	$numDice = intval($state['dice_remaining']);
 	$roll = [];
 
 	// Roll the dice
@@ -216,10 +224,41 @@ function Bot_Step_Rolling($state, $gameData, $botPlayer) {
 
 	BaseUtil_Debug(__FUNCTION__ . ": Rolled: " . implode(',', $roll), 14);
 
-	// Update state: store roll and transition to choosing_keepers
+	// Increment setnum for new roll
+	$newSetNum = intval($state['setnum'] ?? 0) + 1;
+	$handNum = intval($state['handnum'] ?? 1);
+	$roundNum = intval($state['roundnum'] ?? 1);
+
+	// Build dice array for farkle_sets (pad to 6 dice, 0 for already scored)
+	$diceForDb = [0, 0, 0, 0, 0, 0];
+	for ($i = 0; $i < count($roll); $i++) {
+		$diceForDb[$i] = $roll[$i];
+	}
+
+	// Insert into farkle_sets to track the roll
+	$dbh = db_connect();
+	$sql = "INSERT INTO farkle_sets (playerid, gameid, roundnum, handnum, setnum, d1, d2, d3, d4, d5, d6)
+	        VALUES (:playerid, :gameid, :roundnum, :handnum, :setnum, :d1, :d2, :d3, :d4, :d5, :d6)";
+	$stmt = $dbh->prepare($sql);
+	$stmt->execute([
+		':playerid' => $state['playerid'],
+		':gameid' => $state['gameid'],
+		':roundnum' => $roundNum,
+		':handnum' => $handNum,
+		':setnum' => $newSetNum,
+		':d1' => $diceForDb[0],
+		':d2' => $diceForDb[1],
+		':d3' => $diceForDb[2],
+		':d4' => $diceForDb[3],
+		':d5' => $diceForDb[4],
+		':d6' => $diceForDb[5]
+	]);
+
+	// Update state: store roll, increment setnum, and transition to choosing_keepers
 	$updates = [
 		'last_roll' => json_encode($roll),
-		'current_step' => 'choosing_keepers'
+		'current_step' => 'choosing_keepers',
+		'setnum' => $newSetNum
 	];
 
 	$newState = Bot_UpdateTurnState($state['gameid'], $state['playerid'], $updates);
@@ -237,6 +276,7 @@ function Bot_Step_Rolling($state, $gameData, $botPlayer) {
  * Uses Bot_MakeDecision() to select scoring dice
  * If no scoring dice → transition to farkled
  * If has scoring dice → update score and transition to deciding_roll
+ * Also updates farkle_sets with saved dice for activity log
  *
  * @param array $state Current state
  * @param array $gameData Game data
@@ -265,11 +305,27 @@ function Bot_Step_ChoosingKeepers($state, $gameData, $botPlayer) {
 
 	BaseUtil_Debug(__FUNCTION__ . ": Decision: " . print_r($decision, true), 14);
 
+	$setNum = intval($state['setnum'] ?? 1);
+	$handNum = intval($state['handnum'] ?? 1);
+	$roundNum = intval($state['roundnum'] ?? 1);
+
 	// Check for farkle
 	if ($decision['farkled']) {
 		// NOTE: Fallback to hardcoded messages disabled - AI should always provide chat_message
 		// If AI fails to provide a message, use empty string instead of falling back
 		$message = $decision['chat_message'] ?? '';
+
+		// Update farkle_sets with setscore=0 for farkle
+		$dbh = db_connect();
+		$sql = "UPDATE farkle_sets SET setscore = 0
+		        WHERE playerid = :playerid AND gameid = :gameid AND roundnum = :roundnum AND setnum = :setnum";
+		$stmt = $dbh->prepare($sql);
+		$stmt->execute([
+			':playerid' => $state['playerid'],
+			':gameid' => $state['gameid'],
+			':roundnum' => $roundNum,
+			':setnum' => $setNum
+		]);
 
 		// Transition to farkled state
 		$updates = [
@@ -295,13 +351,67 @@ function Bot_Step_ChoosingKeepers($state, $gameData, $botPlayer) {
 	// If AI fails to provide a message, use empty string instead of falling back
 	$message = $decision['chat_message'] ?? '';
 
+	// Build d1save-d6save values based on kept dice
+	// The roll array has the dice that were rolled, we need to mark which were kept
+	$keptDice = $keeperChoice['dice'] ?? [];
+	$setScore = $keeperChoice['points'] ?? 0;
+
+	// Create save array: match kept dice to positions in the roll
+	$dSave = [0, 0, 0, 0, 0, 0];
+	$keptCopy = $keptDice; // Copy to track which we've matched
+
+	for ($i = 0; $i < count($roll); $i++) {
+		$dieValue = $roll[$i];
+		$keptIndex = array_search($dieValue, $keptCopy);
+		if ($keptIndex !== false) {
+			// This die was kept
+			$dSave[$i] = $dieValue;
+			// Remove from copy so we don't double-match
+			unset($keptCopy[$keptIndex]);
+			$keptCopy = array_values($keptCopy);
+		} else {
+			// Die wasn't kept, mark as 0 (or 10 if it was previously scored)
+			$dSave[$i] = 0;
+		}
+	}
+
+	// Update farkle_sets with saved dice and score
+	$dbh = db_connect();
+	$sql = "UPDATE farkle_sets SET
+	        d1save = :d1save, d2save = :d2save, d3save = :d3save,
+	        d4save = :d4save, d5save = :d5save, d6save = :d6save,
+	        setscore = :setscore
+	        WHERE playerid = :playerid AND gameid = :gameid AND roundnum = :roundnum AND setnum = :setnum";
+	$stmt = $dbh->prepare($sql);
+	$stmt->execute([
+		':d1save' => $dSave[0],
+		':d2save' => $dSave[1],
+		':d3save' => $dSave[2],
+		':d4save' => $dSave[3],
+		':d5save' => $dSave[4],
+		':d6save' => $dSave[5],
+		':setscore' => $setScore,
+		':playerid' => $state['playerid'],
+		':gameid' => $state['gameid'],
+		':roundnum' => $roundNum,
+		':setnum' => $setNum
+	]);
+
+	// Check if rolling through (all 6 dice kept) - increment handnum
+	$newHandNum = $handNum;
+	if ($newDiceRemaining == 0 || $newDiceRemaining == 6) {
+		$newHandNum = $handNum + 1;
+		$newDiceRemaining = 6; // Reset to 6 dice for new hand
+	}
+
 	// Update state
 	$updates = [
 		'dice_kept' => json_encode($keeperChoice['dice']),
 		'turn_score' => $newTurnScore,
 		'dice_remaining' => $newDiceRemaining,
 		'current_step' => 'deciding_roll',
-		'last_message' => $message
+		'last_message' => $message,
+		'handnum' => $newHandNum
 	];
 
 	$newState = Bot_UpdateTurnState($state['gameid'], $state['playerid'], $updates);
