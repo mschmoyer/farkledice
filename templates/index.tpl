@@ -1,9 +1,9 @@
 
 {include file="header.tpl" title=Home}
 
-<script type="text/javascript" src="/js/ajax.js"></script>
-<script type="text/javascript" src="/js/geolocation.js"></script>
-<script type="text/javascript" src="index.js"></script>
+<script type="text/javascript" src="/js/ajax.js?v={$app_version}"></script>
+<script type="text/javascript" src="/js/geolocation.js?v={$app_version}"></script>
+<script type="text/javascript" src="index.js?v={$app_version}"></script>
 
 <style type="text/css">{literal}
 	.mobile_button

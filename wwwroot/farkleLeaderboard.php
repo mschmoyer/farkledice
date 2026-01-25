@@ -159,6 +159,13 @@ function GetLeaderBoard()
 		$_SESSION['farkle']['lb'][0][$i] = db_select_query( $sql, SQL_MULTI_ROW );
 	}
 
+	// Daily stat: best rounds (lbindex 6, stored at index 3)
+	$sql = "select username, playerid, playerlevel, first_int, lbrank
+		from farkle_lbdata
+		where lbindex=6 and lbrank <= $maxRows
+		order by lbrank";
+	$_SESSION['farkle']['lb'][0][3] = db_select_query( $sql, SQL_MULTI_ROW );
+
 	$maxRows = 25; 
 	for( $i=1; $i<4; $i++ )
 	{
@@ -280,7 +287,7 @@ function Leaderboard_RefreshDaily()
 {
 	$maxDataRows = 35; 
 	
-	$sql = "delete from farkle_lbdata where lbindex in (0,1,2)";
+	$sql = "delete from farkle_lbdata where lbindex in (0,1,2,6)";
 	$result = db_command($sql);	
 
 	// Update the day of week.
@@ -336,6 +343,18 @@ function Leaderboard_RefreshDaily()
 		join farkle_players p on p.playerid = sub.playerid
 		order by (sub.players_beaten::numeric / sub.games_played) desc, sub.win_pct desc
 		LIMIT $maxDataRows) t1";
+	$insert_sql = "insert into farkle_lbdata ($sql)";
+	$result = db_command($insert_sql);
+
+	// Today's best single rounds (highest round scores)
+	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
+		(select 6 as lbindex, a.playerid, COALESCE(a.fullname, a.username) as username, a.playerlevel,
+		r.roundscore as first_int, 0 as second_int, null as first_string, null as second_string
+		from farkle_rounds r
+		join farkle_players a on a.playerid = r.playerid
+		where DATE(r.rounddatetime) = CURRENT_DATE
+		and r.roundscore > 0
+		order by r.roundscore desc LIMIT $maxDataRows) t1";
 	$insert_sql = "insert into farkle_lbdata ($sql)";
 	$result = db_command($insert_sql);
 

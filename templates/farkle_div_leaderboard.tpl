@@ -58,6 +58,16 @@
 				<tbody></tbody>
 			</table>
 
+			<h3 style="margin: 15px 0 8px; 0">Best Rounds</h3>
+			<table class="pageWidth tabLeaderboard" id="tblLbTodayBestRounds" cellpadding="3px" cellspacing="0px" style="width: 98%">
+				<thead><tr header="">
+					<th style="text-align: left;">Rank</th>
+					<th style="text-align: left;">Player</th>
+					<th style="text-align: left;">Score</th>
+				</tr></thead>
+				<tbody></tbody>
+			</table>
+
 			<h3 style="margin: 15px 0 8px; 0">Most Farkles</h3>
 			<table class="pageWidth tabLeaderboard" id="tblLbTodayFarkles" cellpadding="3px" cellspacing="0px" style="width: 98%">
 				<thead><tr header="">

@@ -151,26 +151,26 @@
 
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-<script type="text/javascript" src="/js/util.js?vers=1.1"></script>
-<script type="text/javascript" src="/js/ajax.js?vers=1.0"></script>
-<script type="text/javascript" src="/js/md5.js?vers=1.0"></script>
+<script type="text/javascript" src="/js/util.js?v={$app_version}"></script>
+<script type="text/javascript" src="/js/ajax.js?v={$app_version}"></script>
+<script type="text/javascript" src="/js/md5.js?v={$app_version}"></script>
 
-<!-- Used for the Farkle-meter 
-<script type="text/javascript" src="/js/raphael.2.1.0.min.js?vers=1.0"></script>
-<script type="text/javascript" src="/js/justgage.1.0.1.min.js?vers=1.0"></script>-->
+<!-- Used for the Farkle-meter
+<script type="text/javascript" src="/js/raphael.2.1.0.min.js?v={$app_version}"></script>
+<script type="text/javascript" src="/js/justgage.1.0.1.min.js?v={$app_version}"></script>-->
 
-<script type="text/javascript" src="/js/farkleLogin.js?vers=1.1"></script>
-<script type="text/javascript" src="/js/farkleGame.js?vers=1.3"></script>
-<script type="text/javascript" src="/js/farklePage.js?vers=1.7"></script>
-<script type="text/javascript" src="/js/farkleLobby.js?vers=1.2"></script>
-<script type="text/javascript" src="/js/farkleFriends.js?vers=1.0"></script>
+<script type="text/javascript" src="/js/farkleLogin.js?v={$app_version}"></script>
+<script type="text/javascript" src="/js/farkleGame.js?v={$app_version}"></script>
+<script type="text/javascript" src="/js/farklePage.js?v={$app_version}"></script>
+<script type="text/javascript" src="/js/farkleLobby.js?v={$app_version}"></script>
+<script type="text/javascript" src="/js/farkleFriends.js?v={$app_version}"></script>
 
-<script type="text/javascript" src="/js/farkleGameLogic.js?vers=1.1"></script>
+<script type="text/javascript" src="/js/farkleGameLogic.js?v={$app_version}"></script>
 
-<script type="text/javascript" src="/js/farkleTournament.js?vers=1.0"></script>
-<script type="text/javascript" src="/js/farklePlayerInfo.js?vers=1.1"></script>
-<script type="text/javascript" src="/js/farkleLeaderboard.js?vers=1.1"></script>
-<script type="text/javascript" src="/js/farkleAdmin.js?vers=1.0"></script>
+<script type="text/javascript" src="/js/farkleTournament.js?v={$app_version}"></script>
+<script type="text/javascript" src="/js/farklePlayerInfo.js?v={$app_version}"></script>
+<script type="text/javascript" src="/js/farkleLeaderboard.js?v={$app_version}"></script>
+<script type="text/javascript" src="/js/farkleAdmin.js?v={$app_version}"></script>
 
 <script>{literal}
 $(document).ready(function()

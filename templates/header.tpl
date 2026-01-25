@@ -41,12 +41,12 @@
 	<!-- Web App Manifest -->
 	<link rel="manifest" href="/manifest.json">
 
-	<link rel="stylesheet" type="text/css" href="/css/mobile.css?vers=1.3" />
-	<link rel="stylesheet" type="text/css" href="/css/farkle.css?vers=1.3" />
+	<link rel="stylesheet" type="text/css" href="/css/mobile.css?v={$app_version}" />
+	<link rel="stylesheet" type="text/css" href="/css/farkle.css?v={$app_version}" />
 	{*{if $mobilemode}<link rel="stylesheet" type="text/css" href="/css/mobile_farkle.css" />{/if}*}
-		
-	<script type="text/javascript" src="/js/bubble_util.js"></script>
-	<script type="text/javascript" src="/js/farkle_bookmark_bubble.js"></script>
+
+	<script type="text/javascript" src="/js/bubble_util.js?v={$app_version}"></script>
+	<script type="text/javascript" src="/js/farkle_bookmark_bubble.js?v={$app_version}"></script>
 		
 </head>
 

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Admin - {$player.username|escape} | Farkle Ten</title>
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon"/>
-    <link rel="stylesheet" type="text/css" href="/css/mobile.css" />
+    <link rel="stylesheet" type="text/css" href="/css/mobile.css?v={$app_version}" />
     <style>
         body {
             font-family: Verdana, Lucida Grande, sans-serif;

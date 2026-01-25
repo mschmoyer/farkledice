@@ -130,7 +130,24 @@ function PopulateLeaderboard()
 				'<td>'+lbData[j].second_int+'</td>'+
 			'</tr>');
 	}
-	
+
+	// Today's best rounds (stored at g_lbData[0][3])
+	lbData = g_lbData[idx][3];
+	ConsoleDebug( 'Populating todays best rounds' );
+	$("#tblLbTodayBestRounds > tbody").empty();
+	if( lbData ) {
+		for( j=0; j < Math.min(lbData.length,maxRows); j++ )
+		{
+			lbPlayerid = lbData[j].playerid;
+			lbRow = $('#tblLbTodayBestRounds > tbody:last').append(
+				'<tr '+(lbPlayerid==playerid?'row3':(j%2==0?'row1':'row2'))+' playerid="' + lbPlayerid + '">'+
+					'<td>'+lbData[j].lbrank+'</td>'+
+					'<td>'+GetLevelHTML( lbData[j].playerlevel )+lbData[j].username+'</td>'+
+					'<td>'+lbData[j].first_int+'</td>'+
+				'</tr>');
+		}
+	}
+
 	idx++;
 	lbData = g_lbData[idx];
 	ConsoleDebug( 'Populating stats for most wins' );
