@@ -31,23 +31,10 @@
 
 {* The Game Card object *}
 <div id="defaultGameCard" class="gameCard mobileButton" style="display: none;">
-
-
-	<table width="100%" height="100%" cellpadding="0" cellspacing="1"> 
-
-	<tr>	
-		<td style="white-space: nowrap;" align="center">
-			<div id="lblGameCardPlayerstring" class="gameCardNameText"></div>
-		</td>
-	</tr>
-	
-	<tr>
-		<td align="center">
-			<span id="lblGameCardInfo" class="gameCardInfoText">Game in progress...</span>
-		</td>
-	</tr>
-	
-	</table>
+	<div style="display: flex; flex-direction: column; justify-content: center; height: 100%; text-align: center; overflow: hidden;">
+		<div id="lblGameCardPlayerstring" class="gameCardNameText" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
+		<div id="lblGameCardInfo" class="gameCardInfoText" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Game in progress...</div>
+	</div>
 	<img id="gameCardImage" src="/images/trophy.png" style="float: right; margin: -28px 0 0 0; display: none;">
 </div>
 

@@ -725,7 +725,7 @@ function DisplayGame( appendDivId, game, showWinLoss, refPlayer, refPlayerName, 
 				color='grey';
 			else
 				color='blue'; 
-			n.find('#lblGameCardInfo').html('Game finished!'); 			
+			n.find('#lblGameCardInfo').html('Game finished! (see results)'); 			
 		}
 	} else {	
 		if( refPlayerName != 0 &&game.finishedplayers == (game.maxturns-1) && game.playerround == 1 ) {
@@ -740,10 +740,11 @@ function DisplayGame( appendDivId, game, showWinLoss, refPlayer, refPlayerName, 
 			n.find('#lblGameCardInfo').html('Waiting on others...'); 		
 		} else if( game.finishedplayers == 0 && game.playerround == 1 ) {
 			color='darkorange'
-			n.find('#lblGameCardInfo').html('Nobody has rolled yet.'); 
+			n.find('#lblGameCardInfo').html("You've been challenged!"); 
 		} else {
 			color='orange'
-			n.find('#lblGameCardInfo').html('Game in progress...'); 
+			var roundInfo = (game.currentround && game.maxturns) ? ' ' + game.currentround + '/' + game.maxturns : '';
+			n.find('#lblGameCardInfo').html('Game in progress...' + roundInfo); 
 		}	
 	}
 	

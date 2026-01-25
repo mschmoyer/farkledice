@@ -54,7 +54,7 @@
 
 			<!-- Template for active friend card (hidden) -->
 			<div id="divActiveFriendTemplate" style="display: none;">
-				<div class="activeFriendOuter" style="width: 280px; margin: 2px 0; display: flex; align-items: stretch;">
+				<div class="activeFriendOuter" style="max-width: 250px; width: 100%; margin: 2px 0; display: flex; align-items: stretch;">
 					<div class="activeFriendCard friendDiv" style="flex: 1; margin: 0; cursor: pointer; display: flex; flex-direction: column; justify-content: center; padding: 4px 10px;">
 						<span class="activeFriendName shadowed" style="color: white; font-weight: bold;"></span>
 						<span class="activeFriendStatus" style="color: #ccc; font-size: 0.75em;"></span>
