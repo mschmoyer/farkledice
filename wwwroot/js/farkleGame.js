@@ -96,6 +96,16 @@ function FarkleResetGame( theGameId )
 		divBotChat.style.display = 'none';
 	}
 
+	// Clear activity log
+	var divActivityLogMessages = document.getElementById('divActivityLogMessages');
+	if( divActivityLogMessages ) {
+		divActivityLogMessages.innerHTML = '';
+	}
+	var divActivityLog = document.getElementById('divActivityLog');
+	if( divActivityLog ) {
+		divActivityLog.style.display = 'none';
+	}
+
 	$('#divGamePlayers').empty();
 	FarkleDiceReset();
 }
@@ -195,8 +205,9 @@ function GameUpdateEx( gameData ) {
 		$('#dbgGameId').html( gGameData.gameid );
 		
 		CheckForAchievement( gameData[4] );
-		// What is 5? 
+		// What is 5?
 		CheckForLevel( gameData[6] );
+		RenderActivityLog( gameData[7] );
 		
 		if( gGameData.winningplayer > 0 ) {
 			FarkleGameDisplayEnded();
@@ -919,6 +930,91 @@ function FarkleGamePlayerTag( p, scoreStr ) {
 	newTag.css('margin', '0 0 7px 0');
 		//.find('.playerAchScore')
 		//.append( "<br/><span class='playerCardRound'>"+( p.playerround==11 ? 'Done' : (p.playerround==1?'-':"<span style='color:white'>Rnd</span> "+p.playerround) )+"</span>" );
+}
+
+/**
+ * Render the activity log showing round results grouped by round
+ */
+function RenderActivityLog( activityData ) {
+	var divLog = document.getElementById('divActivityLog');
+	var divMessages = document.getElementById('divActivityLogMessages');
+
+	if( !divLog || !divMessages ) return;
+
+	// If no activity data or empty array, hide the log
+	if( !activityData || activityData.length === 0 ) {
+		divLog.style.display = 'none';
+		return;
+	}
+
+	// Show the activity log
+	divLog.style.display = 'block';
+
+	// Group entries by round number
+	var roundGroups = {};
+	for( var i = 0; i < activityData.length; i++ ) {
+		var entry = activityData[i];
+		var roundNum = entry.roundnum;
+		if( !roundGroups[roundNum] ) {
+			roundGroups[roundNum] = [];
+		}
+		roundGroups[roundNum].push(entry);
+	}
+
+	// Build the activity log HTML grouped by round
+	var html = '';
+	var roundNums = Object.keys(roundGroups).sort(function(a, b) { return parseInt(a) - parseInt(b); });
+
+	for( var r = 0; r < roundNums.length; r++ ) {
+		var roundNum = roundNums[r];
+		var entries = roundGroups[roundNum];
+
+		// Round header
+		html += '<div style="color: #96D3F2; font-weight: bold; margin-top: ' + (r > 0 ? '8px' : '0') + '; margin-bottom: 2px;">Round ' + roundNum + ':</div>';
+
+		// Player entries for this round
+		for( var i = 0; i < entries.length; i++ ) {
+			var entry = entries[i];
+			var displayName = (entry.playerid == playerid) ? 'You' : entry.username;
+			var scoreText = '';
+			var scoreColor = '';
+			var diceText = '';
+
+			if( parseInt(entry.roundscore) === 0 ) {
+				scoreText = 'Farkle!';
+				scoreColor = '#ff6666';  // Red for farkle
+			} else {
+				scoreText = '+' + addCommas(entry.roundscore);
+				scoreColor = '#7CFC00';  // Green for scores
+
+				// Build dice display if we have dice hands
+				if( entry.dicehands && entry.dicehands.length > 0 ) {
+					diceText = ' ';
+					for( var h = 0; h < entry.dicehands.length; h++ ) {
+						var hand = entry.dicehands[h];
+						// Add separator between hands (hot dice indicator)
+						if( h > 0 ) {
+							diceText += '<span style="color: #FFD700; margin: 0 4px;">→</span>';
+						}
+						for( var d = 0; d < hand.length; d++ ) {
+							diceText += '<span style="background: #333; border: 1px solid #666; border-radius: 3px; padding: 1px 4px; margin-left: 2px; font-size: 11px; color: #fff;">' + hand[d] + '</span>';
+						}
+					}
+				}
+			}
+
+			html += '<div style="margin-left: 10px; margin-bottom: 2px;">';
+			html += '<span style="color: #fff;">' + displayName + ':</span> ';
+			html += '<span style="color: ' + scoreColor + ';">' + scoreText + '</span>';
+			html += diceText;
+			html += '</div>';
+		}
+	}
+
+	divMessages.innerHTML = html;
+
+	// Auto-scroll to bottom
+	divMessages.scrollTop = divMessages.scrollHeight;
 }
 
 

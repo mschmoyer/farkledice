@@ -52,7 +52,13 @@
 		<div style="color: #96D3F2; font-weight: bold; margin-bottom: 8px; font-size: 13px; font-family: 'Courier New', Courier, monospace;">🤖 Bot Chat</div>
 		<div id="divBotChatMessages" style="font-family: 'Courier New', Courier, monospace; font-size: 12px; line-height: 1.5; max-height: 150px; overflow-y: auto; text-align: left; color: #96D3F2;"></div>
 	</div>
-	
+
+	<!-- Activity Log -->
+	<div id="divActivityLog" class="regularBox playerCardWidth" style="display: none; padding: 10px;">
+		<div style="color: #96D3F2; font-weight: bold; margin-bottom: 8px; font-size: 13px;">Game Log</div>
+		<div id="divActivityLogMessages" style="font-size: 12px; line-height: 1.6; max-height: 150px; overflow-y: auto; text-align: left;"></div>
+	</div>
+
 	<table class="diceFrameWidth">
 	<tr>
 		<td>	

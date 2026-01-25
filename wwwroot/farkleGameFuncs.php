@@ -665,7 +665,7 @@ function FarkleSendUpdate( $playerid, $gameid )
 		return Array( 'Error' => 'Could not get information about players in this game. Please contact admin@farkledice.com' );
 	}	
 	
-	return Array( $turnDataForReturning, $playerData, $setData, $diceOnTable, Ach_GetNewAchievement( $playerid ), $gameid, GetNewLevel( $playerid ) );
+	return Array( $turnDataForReturning, $playerData, $setData, $diceOnTable, Ach_GetNewAchievement( $playerid ), $gameid, GetNewLevel( $playerid ), GetGameActivityLog( $gameid ) );
 }
 
 
@@ -1341,7 +1341,70 @@ function GameModeToString( $gameMode )
 	return ( $gameMode == GAME_MODE_10ROUND ? '10-Round' : 'Standard' ); 
 }
 
-function NotifyOtherPlayersInGame( $gameid, $msg ) 
+/*
+	Func: GetGameActivityLog()
+	Desc: Gets the activity log for a game showing round results
+	Params:
+		$gameid		The game to get the log for
+	Returns:
+		Array of round results with player names, scores, and kept dice grouped by hand
+*/
+function GetGameActivityLog($gameid) {
+	$sql = "SELECT r.playerid, r.roundnum, r.roundscore,
+				   COALESCE(p.fullname, p.username) as username
+			FROM farkle_rounds r
+			JOIN farkle_players p ON r.playerid = p.playerid
+			WHERE r.gameid = $gameid
+			ORDER BY r.rounddatetime ASC";
+	$results = db_select_query($sql, SQL_MULTI_ROW);
+
+	if (!$results) return array();
+
+	// For each round result, get the dice that were kept (scored), grouped by hand
+	foreach ($results as &$entry) {
+		$playerid = $entry['playerid'];
+		$roundnum = $entry['roundnum'];
+
+		// Get all saved dice from all sets in this round, ordered by hand and set
+		$diceSql = "SELECT handnum, d1save, d2save, d3save, d4save, d5save, d6save
+					FROM farkle_sets
+					WHERE gameid = $gameid AND playerid = $playerid AND roundnum = $roundnum
+					AND setscore > 0
+					ORDER BY handnum ASC, setnum ASC";
+		$diceRows = db_select_query($diceSql, SQL_MULTI_ROW);
+
+		// Group dice by hand number
+		$hands = array();
+		if ($diceRows) {
+			foreach ($diceRows as $row) {
+				$handNum = intval($row['handnum']);
+				if (!isset($hands[$handNum])) {
+					$hands[$handNum] = array();
+				}
+				for ($i = 1; $i <= 6; $i++) {
+					$val = intval($row["d{$i}save"]);
+					// Only include actual dice values (1-6), not 0 or 10
+					if ($val >= 1 && $val <= 6) {
+						$hands[$handNum][] = $val;
+					}
+				}
+			}
+		}
+
+		// Sort dice within each hand (descending so higher values first)
+		foreach ($hands as &$handDice) {
+			rsort($handDice);
+		}
+
+		// Convert to indexed array of hands
+		ksort($hands);
+		$entry['dicehands'] = array_values($hands);
+	}
+
+	return $results;
+}
+
+function NotifyOtherPlayersInGame( $gameid, $msg )
 {
 	BaseUtil_Debug( __FUNCTION__ . ": entered. Gameid=$gameid, msg=$msg", 14 );
 	$didNotifySomebody = 0; 

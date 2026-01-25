@@ -183,6 +183,18 @@ CREATE TABLE IF NOT EXISTS farkle_tournament_participants (
   UNIQUE (tournamentid, playerid)
 );
 
+-- Create rounds table (round score tracking for activity log)
+CREATE TABLE IF NOT EXISTS farkle_rounds (
+  id SERIAL PRIMARY KEY,
+  playerid INTEGER NOT NULL,
+  gameid INTEGER NOT NULL,
+  roundnum INTEGER NOT NULL,
+  roundscore INTEGER DEFAULT 0,
+  rounddatetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_rounds_playerid_gameid ON farkle_rounds(playerid, gameid);
+
 -- Insert a test user (password is 'test123' - MD5 hashed with salt)
 INSERT INTO farkle_players (username, password, salt, email, level, xp)
 VALUES ('testuser', CONCAT(MD5('test123'), MD5('')), '', 'test@example.com', 1, 0)
