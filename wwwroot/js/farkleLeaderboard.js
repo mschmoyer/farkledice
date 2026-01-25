@@ -91,7 +91,7 @@ function PopulateLeaderboard()
 			'<tr '+(lbPlayerid==playerid?'row3':(j%2==0?'row1':'row2'))+' playerid="' + lbPlayerid + '">'+
 				'<td>'+lbData[j].lbrank+'</td>'+
 				'<td>'+GetLevelHTML( lbData[j].playerlevel )+lbData[j].username+'</td>'+
-				'<td align="center">'+lbData[j].first_int+'</td>'+
+				'<td>'+lbData[j].first_int+'</td>'+
 			'</tr>');
 	}
 	
@@ -106,13 +106,13 @@ function PopulateLeaderboard()
 			'<tr '+(lbPlayerid==playerid?'row3':(j%2==0?'row1':'row2'))+' playerid="' + lbPlayerid + '">'+
 				'<td>'+lbData[j].lbrank+'</td>'+
 				'<td>'+GetLevelHTML( lbData[j].playerlevel )+lbData[j].username+'</td>'+
-				'<td align="center">'+lbData[j].first_int+'</td>'+
+				'<td>'+lbData[j].first_int+'</td>'+
 			'</tr>');
 	}
 	
-	// Today's Most Wins
+	// Today's Best Win Ratio (first_int=players beaten, second_int=games, first_string=win%)
 	lbData = g_lbData[idx][2];
-	ConsoleDebug( 'Populating todays most wins' );
+	ConsoleDebug( 'Populating todays best win ratio' );
 	$("#tblLbTodayWins > tbody").empty();
 	for( j=0; j < Math.min(lbData.length,maxRows); j++ )
 	{
@@ -120,13 +120,14 @@ function PopulateLeaderboard()
 		{
 			$('#lbMVPName').html( GetLevelHTML( lbData[j].playerlevel )+lbData[j].username );
 		}
-	
+
 		lbPlayerid = lbData[j].playerid;
 		lbRow = $('#tblLbTodayWins > tbody:last').append(
 			'<tr '+(lbPlayerid==playerid?'row3':(j%2==0?'row1':'row2'))+' playerid="' + lbPlayerid + '">'+
 				'<td>'+lbData[j].lbrank+'</td>'+
 				'<td>'+GetLevelHTML( lbData[j].playerlevel )+lbData[j].username+'</td>'+
-				'<td align="center">'+lbData[j].first_int+'</td>'+
+				'<td>'+lbData[j].first_string+'</td>'+
+				'<td>'+lbData[j].second_int+'</td>'+
 			'</tr>');
 	}
 	
@@ -141,8 +142,8 @@ function PopulateLeaderboard()
 			'<tr '+(lbPlayerid==playerid?'row3':(j%2==0?'row1':'row2'))+' playerid="' + lbPlayerid + '">'+
 				'<td>'+lbData[j].lbrank+'</td>'+
 				'<td>'+GetLevelHTML( lbData[j].playerlevel )+lbData[j].username+'</td>'+
-				'<td align="center">'+lbData[j].first_int+'</td>'+
-				'<td align="center">'+lbData[j].first_string+'</td>'+
+				'<td>'+lbData[j].first_int+'</td>'+
+				'<td>'+lbData[j].first_string+'</td>'+
 			'</tr>');
 	}
 	
@@ -157,7 +158,7 @@ function PopulateLeaderboard()
 			'<tr '+(lbPlayerid==playerid?'row3':(j%2==0?'row1':'row2'))+' playerid="' + lbPlayerid + '">'+
 				'<td>'+lbData[j].lbrank+'</td>'+
 				'<td>'+GetLevelHTML( lbData[j].playerlevel )+lbData[j].username+'</td>'+
-				'<td align="center">'+addCommas(lbData[j].first_int)+'</td>'+
+				'<td>'+addCommas(lbData[j].first_int)+'</td>'+
 			'</tr>');
 	}
 	
@@ -192,7 +193,7 @@ function PopulateLeaderboard()
 			'<tr '+(lbPlayerid==playerid?'row3':(j%2==0?'row1':'row2'))+' playerid="' + lbPlayerid + '">'+
 				'<td>'+lbData[j].lbrank+'</td>'+
 				'<td>'+GetLevelHTML( lbData[j].playerlevel )+lbData[j].username+'</td>'+
-				'<td align="center">'+lbData[j].first_int+'</td>'+
+				'<td>'+lbData[j].first_int+'</td>'+
 			'</tr>');
 		// +'<td align="center">'+lbStars+'</td>'+
 	}

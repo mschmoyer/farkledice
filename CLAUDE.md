@@ -163,7 +163,7 @@ Without mkcert, the container auto-generates self-signed certs (browser will war
 **Quick Commands:**
 ```bash
 # Deploy changes
-git push heroku modernization/phase-1:main
+git push heroku main
 
 # View logs (real-time)
 heroku logs --tail -a farkledice

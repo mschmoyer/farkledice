@@ -100,13 +100,7 @@ The migration creates all core tables including:
 
 ### 1. Deploy Your Code
 
-Push your code to Heroku (assuming you're on the `modernization/phase-1` branch):
-
-```bash
-git push heroku modernization/phase-1:main
-```
-
-If you're on the `master` or `main` branch:
+Push your code to Heroku:
 
 ```bash
 git push heroku main

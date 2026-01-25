@@ -151,9 +151,9 @@ function GetLeaderBoard()
 	$maxRows = 3;
 	for( $i=0;$i<3;$i++)
 	{
-		// Highest game scores today
-		$sql = "select username, playerid, playerlevel, first_int, lbrank
-		from farkle_lbdata 
+		// Daily stats: high scores (0), farkles (1), win ratio (2)
+		$sql = "select username, playerid, playerlevel, first_int, second_int, first_string, lbrank
+		from farkle_lbdata
 		where lbindex=$i and lbrank <= $maxRows
 		order by lbrank";
 		$_SESSION['farkle']['lb'][0][$i] = db_select_query( $sql, SQL_MULTI_ROW );
@@ -289,45 +289,57 @@ function Leaderboard_RefreshDaily()
 
 	// Today Stats
 	// Highest game scores today
-	// PostgreSQL: No need for @rank user variable - use ROW_NUMBER() instead
 	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
 		(select 0 as lbindex, a.playerid, COALESCE(fullname, username) as username, playerlevel,
 		playerscore as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players a, farkle_games_players b
-		where a.playerid=b.playerid and EXTRACT(DAY FROM b.lastplayed) = EXTRACT(DAY FROM NOW()) and b.lastplayed > NOW() - interval '3' day
+		where a.playerid=b.playerid and DATE(b.lastplayed) = CURRENT_DATE
 		order by playerscore desc LIMIT $maxDataRows) t1";
 	$insert_sql = "insert into farkle_lbdata ($sql)";
 	$result = db_command($insert_sql);
 
-	// Top 5 "Farklers" today
-	// PostgreSQL: No need for @rank user variable - use ROW_NUMBER() instead
+	// Top farklers today (rounds with zero score)
 	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
 		(select 1 as lbindex, a.playerid, COALESCE(a.fullname, a.username) as username, a.playerlevel,
 		count(*) as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players a, farkle_games_players b, farkle_rounds c
-		where a.playerid=b.playerid and EXTRACT(DAY FROM b.lastplayed) = EXTRACT(DAY FROM NOW()) and b.lastplayed > NOW() - interval '3' day
+		where a.playerid=b.playerid and DATE(b.lastplayed) = CURRENT_DATE
 		and a.playerid=c.playerid and b.gameid=c.gameid and c.roundscore=0
 		group by a.username, a.playerid, a.fullname, a.playerlevel
 		order by first_int desc LIMIT $maxDataRows) t1";
 	$insert_sql = "insert into farkle_lbdata ($sql)";
 	$result = db_command($insert_sql);
 
-	// Today's Most Wins
-	// PostgreSQL: No need for @rank user variable - use ROW_NUMBER() instead
+	// Today's best win ratio (weighted by players beaten, min 3 games to qualify)
+	// first_int = players beaten, second_int = games played, first_string = win%
 	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
-		(select 2 as lbindex, a.playerid, COALESCE(a.fullname, a.username) as username, a.playerlevel,
-		count(*) as first_int, 0 as second_int, null as first_string, null as second_string
-		from farkle_players a, farkle_games c
-		where c.winningplayer=a.playerid
-		and EXTRACT(DAY FROM c.gamefinish) = EXTRACT(DAY FROM NOW())
-		and c.gamefinish > NOW() - interval '3' day
-		and c.gamewith in (".GAME_WITH_RANDOM.",".GAME_WITH_FRIENDS.")
-		group by a.username, a.playerid, a.fullname, a.playerlevel
-		order by first_int desc LIMIT $maxDataRows) t1";
+		(select 2 as lbindex, sub.playerid,
+			COALESCE(p.fullname, p.username) as username, p.playerlevel,
+			sub.players_beaten as first_int,
+			sub.games_played as second_int,
+			sub.win_pct || '%' as first_string,
+			null as second_string
+		from (
+			select gp.playerid,
+				SUM(CASE WHEN g.winningplayer = gp.playerid
+					THEN (SELECT COUNT(*) FROM farkle_games_players x WHERE x.gameid = g.gameid) - 1
+					ELSE 0 END) as players_beaten,
+				COUNT(*) as games_played,
+				ROUND(SUM(CASE WHEN g.winningplayer = gp.playerid THEN 1 ELSE 0 END)::numeric / COUNT(*) * 100) as win_pct
+			from farkle_games g
+			join farkle_games_players gp on g.gameid = gp.gameid
+			where DATE(g.gamefinish) = CURRENT_DATE
+			and g.gamewith in (".GAME_WITH_RANDOM.",".GAME_WITH_FRIENDS.")
+			group by gp.playerid
+			having COUNT(*) >= 3
+		) sub
+		join farkle_players p on p.playerid = sub.playerid
+		order by (sub.players_beaten::numeric / sub.games_played) desc, sub.win_pct desc
+		LIMIT $maxDataRows) t1";
 	$insert_sql = "insert into farkle_lbdata ($sql)";
-	$result = db_command($insert_sql);	
-	
-	// Give the MVP the achievement
+	$result = db_command($insert_sql);
+
+	// Give the MVP achievement to the top player
 	$sql = "select playerid from farkle_lbdata where lbindex=2 and lbrank=1";
 	$mvpPlayerid = db_select_query( $sql, SQL_SINGLE_VALUE );
 	if( $mvpPlayerid )
