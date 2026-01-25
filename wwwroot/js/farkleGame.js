@@ -318,7 +318,25 @@ function FarkleGameDisplayEnded() {
 
 
 function FarkleGameUpdateRoundScore() {
-	lblRoundInfoObj.innerHTML = gRoundScore + gTurnScore;
+	var totalScore = gRoundScore + gTurnScore;
+	lblRoundInfoObj.innerHTML = totalScore;
+	updateRoundScoreFireEffect(totalScore);
+}
+
+function updateRoundScoreFireEffect(score) {
+	// Remove all fire classes
+	lblRoundInfoObj.classList.remove('fire-low', 'fire-medium', 'fire-high', 'fire-super');
+
+	// Apply appropriate fire class based on score
+	if (score >= 1000) {
+		lblRoundInfoObj.classList.add('fire-super');
+	} else if (score >= 800) {
+		lblRoundInfoObj.classList.add('fire-high');
+	} else if (score >= 600) {
+		lblRoundInfoObj.classList.add('fire-medium');
+	} else if (score >= 400) {
+		lblRoundInfoObj.classList.add('fire-low');
+	}
 }
 
 function FarkleGameUpdateState( newGameState ) {
@@ -1110,7 +1128,7 @@ function FarkleGameRollHook()
 		ConsoleDebug( "After roll, roundscore="+gRoundScore+", turnScore="+gTurnScore ); 
 		
 		FarkleGameUpdateState( GAME_STATE_ROLLING );
-		lblRoundInfoObj.innerHTML = gRoundScore + gTurnScore;
+		FarkleGameUpdateRoundScore();
 		btnRollDiceObj.removeAttribute('disabled');
 		btnPassObj.removeAttribute('disabled');
 		
@@ -1227,6 +1245,7 @@ function FarkleGameFarkle() {
 
 	gRoundScore = 0;
 	gTurnScore = 0;
+	FarkleGameUpdateRoundScore(); // Clear fire effect
 	ConsoleDebug('Player farkled.');
 
 	// MAX: 4

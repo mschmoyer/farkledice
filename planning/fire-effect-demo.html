@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fire Effect Demo - Round Score</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            margin: 0;
+        }
+
+        h1 {
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #888;
+            margin-bottom: 40px;
+        }
+
+        /* Score Display Container */
+        .score-container {
+            position: relative;
+            margin: 60px 0;
+        }
+
+        /* The Round Score Label */
+        .round-score {
+            position: relative;
+            background: linear-gradient(145deg, #2d2d44, #1f1f33);
+            border: 2px solid #3d3d5c;
+            border-radius: 12px;
+            padding: 20px 40px;
+            min-width: 200px;
+            text-align: center;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        .round-score .label {
+            font-size: 14px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .round-score .value {
+            font-size: 48px;
+            font-weight: bold;
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+
+        /* ============================================
+           FIRE EFFECTS
+           ============================================ */
+
+        /* LOW FIRE: 400-599 - Subtle warm glow */
+        .fire-low .round-score {
+            border-color: #ff9500;
+            box-shadow:
+                0 0 10px rgba(255, 149, 0, 0.3),
+                0 0 20px rgba(255, 149, 0, 0.2),
+                inset 0 0 15px rgba(255, 149, 0, 0.1);
+            animation: fire-low-pulse 2s ease-in-out infinite;
+        }
+
+        .fire-low .value {
+            color: #ffb347;
+            text-shadow: 0 0 10px rgba(255, 149, 0, 0.5);
+        }
+
+        @keyframes fire-low-pulse {
+            0%, 100% {
+                box-shadow:
+                    0 0 10px rgba(255, 149, 0, 0.3),
+                    0 0 20px rgba(255, 149, 0, 0.2),
+                    inset 0 0 15px rgba(255, 149, 0, 0.1);
+            }
+            50% {
+                box-shadow:
+                    0 0 15px rgba(255, 149, 0, 0.4),
+                    0 0 30px rgba(255, 149, 0, 0.3),
+                    inset 0 0 20px rgba(255, 149, 0, 0.15);
+            }
+        }
+
+        /* MEDIUM FIRE: 600-799 - Brighter, faster pulse */
+        .fire-medium .round-score {
+            border-color: #ff6b00;
+            box-shadow:
+                0 0 15px rgba(255, 107, 0, 0.4),
+                0 0 30px rgba(255, 107, 0, 0.3),
+                0 0 45px rgba(255, 68, 0, 0.2),
+                inset 0 0 20px rgba(255, 107, 0, 0.15);
+            animation: fire-medium-pulse 1.2s ease-in-out infinite;
+        }
+
+        .fire-medium .value {
+            color: #ff8c42;
+            text-shadow: 0 0 15px rgba(255, 107, 0, 0.6);
+        }
+
+        @keyframes fire-medium-pulse {
+            0%, 100% {
+                box-shadow:
+                    0 0 15px rgba(255, 107, 0, 0.4),
+                    0 0 30px rgba(255, 107, 0, 0.3),
+                    0 0 45px rgba(255, 68, 0, 0.2),
+                    inset 0 0 20px rgba(255, 107, 0, 0.15);
+            }
+            50% {
+                box-shadow:
+                    0 0 20px rgba(255, 107, 0, 0.5),
+                    0 0 40px rgba(255, 107, 0, 0.4),
+                    0 0 60px rgba(255, 68, 0, 0.3),
+                    inset 0 0 25px rgba(255, 107, 0, 0.2);
+            }
+        }
+
+        /* HIGH FIRE: 800-999 - Red-orange, rapid pulse with flicker */
+        .fire-high .round-score {
+            border-color: #ff4400;
+            box-shadow:
+                0 0 20px rgba(255, 68, 0, 0.5),
+                0 0 40px rgba(255, 68, 0, 0.4),
+                0 0 60px rgba(255, 34, 0, 0.3),
+                0 0 80px rgba(255, 0, 0, 0.2),
+                inset 0 0 25px rgba(255, 68, 0, 0.2);
+            animation: fire-high-flicker 0.8s ease-in-out infinite;
+        }
+
+        .fire-high .value {
+            color: #ff6633;
+            text-shadow:
+                0 0 10px rgba(255, 68, 0, 0.8),
+                0 0 20px rgba(255, 34, 0, 0.5);
+            animation: text-flicker 0.1s ease-in-out infinite alternate;
+        }
+
+        @keyframes fire-high-flicker {
+            0%, 100% {
+                box-shadow:
+                    0 0 20px rgba(255, 68, 0, 0.5),
+                    0 0 40px rgba(255, 68, 0, 0.4),
+                    0 0 60px rgba(255, 34, 0, 0.3),
+                    0 0 80px rgba(255, 0, 0, 0.2),
+                    inset 0 0 25px rgba(255, 68, 0, 0.2);
+            }
+            25% {
+                box-shadow:
+                    0 0 25px rgba(255, 68, 0, 0.6),
+                    0 0 50px rgba(255, 68, 0, 0.5),
+                    0 0 70px rgba(255, 34, 0, 0.35),
+                    0 0 90px rgba(255, 0, 0, 0.25),
+                    inset 0 0 30px rgba(255, 68, 0, 0.25);
+            }
+            75% {
+                box-shadow:
+                    0 0 18px rgba(255, 68, 0, 0.45),
+                    0 0 35px rgba(255, 68, 0, 0.35),
+                    0 0 55px rgba(255, 34, 0, 0.25),
+                    0 0 75px rgba(255, 0, 0, 0.15),
+                    inset 0 0 22px rgba(255, 68, 0, 0.18);
+            }
+        }
+
+        @keyframes text-flicker {
+            from { opacity: 1; }
+            to { opacity: 0.95; }
+        }
+
+        /* SUPER HOT: 1000+ - Intense with white-hot core */
+        .fire-super .round-score {
+            border-color: #ffcc00;
+            background: linear-gradient(145deg, #3d2d1f, #2a1f15);
+            box-shadow:
+                0 0 25px rgba(255, 204, 0, 0.6),
+                0 0 50px rgba(255, 136, 0, 0.5),
+                0 0 75px rgba(255, 68, 0, 0.4),
+                0 0 100px rgba(255, 34, 0, 0.3),
+                0 0 125px rgba(255, 0, 0, 0.2),
+                inset 0 0 30px rgba(255, 170, 0, 0.3);
+            animation: fire-super-blaze 0.5s ease-in-out infinite;
+        }
+
+        .fire-super .value {
+            color: #fff;
+            text-shadow:
+                0 0 10px rgba(255, 255, 255, 0.8),
+                0 0 20px rgba(255, 204, 0, 0.8),
+                0 0 30px rgba(255, 136, 0, 0.6),
+                0 0 40px rgba(255, 68, 0, 0.4);
+            animation: text-blaze 0.15s ease-in-out infinite alternate;
+        }
+
+        .fire-super .label {
+            color: #ffcc99;
+        }
+
+        @keyframes fire-super-blaze {
+            0%, 100% {
+                box-shadow:
+                    0 0 25px rgba(255, 204, 0, 0.6),
+                    0 0 50px rgba(255, 136, 0, 0.5),
+                    0 0 75px rgba(255, 68, 0, 0.4),
+                    0 0 100px rgba(255, 34, 0, 0.3),
+                    0 0 125px rgba(255, 0, 0, 0.2),
+                    inset 0 0 30px rgba(255, 170, 0, 0.3);
+                transform: scale(1);
+            }
+            25% {
+                box-shadow:
+                    0 0 30px rgba(255, 204, 0, 0.7),
+                    0 0 60px rgba(255, 136, 0, 0.6),
+                    0 0 85px rgba(255, 68, 0, 0.45),
+                    0 0 110px rgba(255, 34, 0, 0.35),
+                    0 0 140px rgba(255, 0, 0, 0.25),
+                    inset 0 0 35px rgba(255, 170, 0, 0.35);
+                transform: scale(1.01);
+            }
+            50% {
+                box-shadow:
+                    0 0 28px rgba(255, 204, 0, 0.65),
+                    0 0 55px rgba(255, 136, 0, 0.55),
+                    0 0 80px rgba(255, 68, 0, 0.42),
+                    0 0 105px rgba(255, 34, 0, 0.32),
+                    0 0 130px rgba(255, 0, 0, 0.22),
+                    inset 0 0 32px rgba(255, 170, 0, 0.32);
+                transform: scale(1.005);
+            }
+            75% {
+                box-shadow:
+                    0 0 22px rgba(255, 204, 0, 0.55),
+                    0 0 45px rgba(255, 136, 0, 0.45),
+                    0 0 70px rgba(255, 68, 0, 0.35),
+                    0 0 95px rgba(255, 34, 0, 0.25),
+                    0 0 120px rgba(255, 0, 0, 0.18),
+                    inset 0 0 28px rgba(255, 170, 0, 0.28);
+                transform: scale(0.995);
+            }
+        }
+
+        @keyframes text-blaze {
+            from {
+                opacity: 1;
+                text-shadow:
+                    0 0 10px rgba(255, 255, 255, 0.8),
+                    0 0 20px rgba(255, 204, 0, 0.8),
+                    0 0 30px rgba(255, 136, 0, 0.6),
+                    0 0 40px rgba(255, 68, 0, 0.4);
+            }
+            to {
+                opacity: 0.97;
+                text-shadow:
+                    0 0 12px rgba(255, 255, 255, 0.9),
+                    0 0 25px rgba(255, 204, 0, 0.9),
+                    0 0 35px rgba(255, 136, 0, 0.7),
+                    0 0 45px rgba(255, 68, 0, 0.5);
+            }
+        }
+
+        /* ============================================
+           CONTROLS
+           ============================================ */
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #fff;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-none {
+            background: #3d3d5c;
+        }
+
+        .btn-low {
+            background: linear-gradient(135deg, #ff9500, #cc7700);
+        }
+
+        .btn-medium {
+            background: linear-gradient(135deg, #ff6b00, #cc5500);
+        }
+
+        .btn-high {
+            background: linear-gradient(135deg, #ff4400, #cc3300);
+        }
+
+        .btn-super {
+            background: linear-gradient(135deg, #ffcc00, #ff8800);
+            color: #222;
+        }
+
+        .btn.active {
+            outline: 3px solid #fff;
+            outline-offset: 2px;
+        }
+
+        .thresholds {
+            color: #666;
+            font-size: 13px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .thresholds span {
+            margin: 0 15px;
+        }
+
+        /* Slider control */
+        .slider-container {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .slider-container label {
+            color: #888;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .slider-container input[type="range"] {
+            width: 300px;
+            height: 8px;
+            -webkit-appearance: none;
+            background: linear-gradient(to right, #3d3d5c, #ff9500, #ff6b00, #ff4400, #ffcc00);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        .slider-value {
+            color: #fff;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fire Effect Demo</h1>
+    <p class="subtitle">Round Score visual feedback based on point thresholds</p>
+
+    <div class="controls">
+        <button class="btn btn-none active" onclick="setFire('none')">None (&lt;400)</button>
+        <button class="btn btn-low" onclick="setFire('low')">Low (400+)</button>
+        <button class="btn btn-medium" onclick="setFire('medium')">Medium (600+)</button>
+        <button class="btn btn-high" onclick="setFire('high')">High (800+)</button>
+        <button class="btn btn-super" onclick="setFire('super')">Super Hot (1000+)</button>
+    </div>
+
+    <div class="score-container" id="scoreContainer">
+        <div class="round-score">
+            <div class="label">Round Score</div>
+            <div class="value" id="scoreValue">0</div>
+        </div>
+    </div>
+
+    <div class="slider-container">
+        <label>Or drag to simulate score changes:</label>
+        <input type="range" min="0" max="1500" value="0" id="scoreSlider" oninput="updateFromSlider(this.value)">
+        <div class="slider-value">Score: <span id="sliderValue">0</span></div>
+    </div>
+
+    <div class="thresholds">
+        <span>No effect: 0-399</span>
+        <span>Low: 400-599</span>
+        <span>Medium: 600-799</span>
+        <span>High: 800-999</span>
+        <span>Super: 1000+</span>
+    </div>
+
+    <script>
+        function setFire(level) {
+            const container = document.getElementById('scoreContainer');
+            const buttons = document.querySelectorAll('.btn');
+
+            // Remove all fire classes
+            container.classList.remove('fire-low', 'fire-medium', 'fire-high', 'fire-super');
+
+            // Remove active from all buttons
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // Add the appropriate class
+            if (level !== 'none') {
+                container.classList.add('fire-' + level);
+            }
+
+            // Mark active button
+            const activeBtn = document.querySelector('.btn-' + level) || document.querySelector('.btn-none');
+            activeBtn.classList.add('active');
+
+            // Update score display
+            const scores = { none: 0, low: 450, medium: 700, high: 900, super: 1200 };
+            document.getElementById('scoreValue').textContent = scores[level];
+            document.getElementById('scoreSlider').value = scores[level];
+            document.getElementById('sliderValue').textContent = scores[level];
+        }
+
+        function updateFromSlider(value) {
+            const score = parseInt(value);
+            document.getElementById('scoreValue').textContent = score;
+            document.getElementById('sliderValue').textContent = score;
+
+            const container = document.getElementById('scoreContainer');
+            const buttons = document.querySelectorAll('.btn');
+
+            // Remove all classes
+            container.classList.remove('fire-low', 'fire-medium', 'fire-high', 'fire-super');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // Apply appropriate level
+            let level = 'none';
+            if (score >= 1000) {
+                level = 'super';
+                container.classList.add('fire-super');
+            } else if (score >= 800) {
+                level = 'high';
+                container.classList.add('fire-high');
+            } else if (score >= 600) {
+                level = 'medium';
+                container.classList.add('fire-medium');
+            } else if (score >= 400) {
+                level = 'low';
+                container.classList.add('fire-low');
+            }
+
+            const activeBtn = document.querySelector('.btn-' + level) || document.querySelector('.btn-none');
+            activeBtn.classList.add('active');
+        }
+    </script>
+</body>
+</html>

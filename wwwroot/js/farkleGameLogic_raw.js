@@ -229,10 +229,10 @@ function farkleSaveDice( dn, force ) {
 			dice[dn].saved = 0;
 		}
 	}
-	DrawDice( dice[dn] );	
-	var oldTurnScore = gTurnScore; 
-	gTurnScore = farkleScoreDice( 0 );	
-	lblRoundInfoObj.innerHTML = gRoundScore + gTurnScore;
+	DrawDice( dice[dn] );
+	var oldTurnScore = gTurnScore;
+	gTurnScore = farkleScoreDice( 0 );
+	FarkleGameUpdateRoundScore();
 }
 
 function StopRollingAnimation() {
