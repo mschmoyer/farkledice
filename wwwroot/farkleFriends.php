@@ -135,7 +135,7 @@ function GetGameFriends( $playerid, $force = false )
 		$sql = "select COALESCE(fullname,username) as username, a.playerid, a.playertitle, a.cardcolor, a.lastplayed
 				from farkle_players a, farkle_friends b
 				where a.playerid=b.friendid and b.sourceid=$playerid and
-				a.active=1 and b.removed=0
+				a.active=true and b.removed=false
 				order by lastplayed desc";
 		
 		$players = db_select_query( $sql, SQL_MULTI_ROW );
