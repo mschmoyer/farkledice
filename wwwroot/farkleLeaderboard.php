@@ -132,11 +132,13 @@ function GetLeaderBoard()
 	// Check to see if leaderboard data needs refreshing. 
 	Leaderboard_RefreshData();
 	
-	// Return cached data if it was recorded in the last 3 minutes. 
-	if( isset($_SESSION['farkle']['lb']) )
+	// Return cached data if it was recorded in the last 3 minutes.
+	if( isset($_SESSION['farkle']['lb']) && isset($_SESSION['farkle']['lbTimestamp']) )
 	{
-		if( (time() - $_SESSION['farkle']['lbTimestamp']) < 60*3 && !$g_leaderboardDirty ); // 3 minutes
+		if( (time() - $_SESSION['farkle']['lbTimestamp']) < 60*3 && !$g_leaderboardDirty ) // 3 minutes
+		{
 			return $_SESSION['farkle']['lb'];
+		}
 	}
 	
 	$g_leaderboardDirty = 0; // No longer dirty since we just gave you data. 
