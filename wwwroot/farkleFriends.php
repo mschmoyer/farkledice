@@ -194,6 +194,36 @@ function GetActiveFriends( $playerid )
 		return Array();
 	}
 
+	// For each active friend, check if they're in an active game
+	foreach( $players as &$player )
+	{
+		$friendId = $player['playerid'];
+
+		// Find any active game this friend is in (winningplayer = 0 means game in progress)
+		$gameSql = "SELECT g.gameid,
+					(SELECT COALESCE(p2.fullname, p2.username)
+					 FROM farkle_games_players gp2
+					 JOIN farkle_players p2 ON gp2.playerid = p2.playerid
+					 WHERE gp2.gameid = g.gameid AND gp2.playerid != $friendId
+					 LIMIT 1) as opponent
+					FROM farkle_games g
+					JOIN farkle_games_players gp ON g.gameid = gp.gameid
+					WHERE gp.playerid = $friendId AND g.winningplayer = 0
+					ORDER BY g.gamestart DESC
+					LIMIT 1";
+
+		$gameInfo = db_select_query( $gameSql, SQL_SINGLE_ROW );
+
+		if( $gameInfo && !empty($gameInfo['opponent']) )
+		{
+			$player['status'] = 'Playing: ' . $gameInfo['opponent'];
+		}
+		else
+		{
+			$player['status'] = 'In Lobby';
+		}
+	}
+
 	return $players;
 }
 

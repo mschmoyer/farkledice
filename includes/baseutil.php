@@ -13,7 +13,7 @@
 	// Major: Breaking changes or major milestones
 	// Minor: New features and significant changes
 	// Revision: Bug fixes and small tweaks
-	define('APP_VERSION', '2.3.0');
+	define('APP_VERSION', '2.3.1');
 
 	// Redirect apex domain to www subdomain (for custom domain setup)
 	if (isset($_SERVER['HTTP_HOST'])) {

@@ -178,6 +178,7 @@ function DoLobbyUpdateEx( inputData )
 				card.css('background-color', color);
 
 			card.find('.activeFriendName').text(friend.username);
+			card.find('.activeFriendStatus').text(friend.status || 'In Lobby');
 			card.attr('playerid', friend.playerid);
 			card.on('click', function(e) {
 				ShowPlayerInfo($(this).attr('playerid'));

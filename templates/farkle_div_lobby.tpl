@@ -54,9 +54,10 @@
 
 			<!-- Template for active friend card (hidden) -->
 			<div id="divActiveFriendTemplate" style="display: none;">
-				<div class="activeFriendOuter" style="width: 250px; margin: 2px 0; display: flex; align-items: stretch;">
-					<div class="activeFriendCard friendDiv" style="flex: 1; margin: 0; cursor: pointer; display: flex; align-items: center;">
-						<span class="activeFriendName shadowed" style="padding: 6px 10px; color: white;"></span>
+				<div class="activeFriendOuter" style="width: 280px; margin: 2px 0; display: flex; align-items: stretch;">
+					<div class="activeFriendCard friendDiv" style="flex: 1; margin: 0; cursor: pointer; display: flex; flex-direction: column; justify-content: center; padding: 4px 10px;">
+						<span class="activeFriendName shadowed" style="color: white; font-weight: bold;"></span>
+						<span class="activeFriendStatus" style="color: #ccc; font-size: 0.75em;"></span>
 					</div>
 					<input type="button" class="mobileButton activeFriendPlayBtn" buttoncolor="green" value="Play" style="margin: 0; border-radius: 0 8px 8px 0;">
 				</div>
