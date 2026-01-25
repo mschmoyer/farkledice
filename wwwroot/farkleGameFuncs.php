@@ -1348,8 +1348,21 @@ function GameModeToString( $gameMode )
 		$gameid		The game to get the log for
 	Returns:
 		Array of round results with player names, scores, and kept dice grouped by hand
+		Note: Opponent rounds ahead of the current player's round are hidden
 */
 function GetGameActivityLog($gameid) {
+	// Get the current player's round to filter opponent data
+	$currentPlayerRound = 999; // Default high so we show everything if not logged in
+	$myPlayerId = isset($_SESSION['playerid']) ? $_SESSION['playerid'] : 0;
+
+	if ($myPlayerId > 0) {
+		$roundSql = "SELECT playerround FROM farkle_games_players WHERE gameid = $gameid AND playerid = $myPlayerId";
+		$myRound = db_select_query($roundSql, SQL_SINGLE_VALUE);
+		if ($myRound) {
+			$currentPlayerRound = intval($myRound);
+		}
+	}
+
 	$sql = "SELECT r.playerid, r.roundnum, r.roundscore,
 				   COALESCE(p.fullname, p.username) as username
 			FROM farkle_rounds r
@@ -1360,10 +1373,17 @@ function GetGameActivityLog($gameid) {
 
 	if (!$results) return array();
 
-	// For each round result, get the dice that were kept (scored), grouped by hand
-	foreach ($results as &$entry) {
+	// Filter and process results
+	$filteredResults = array();
+
+	foreach ($results as $entry) {
 		$playerid = $entry['playerid'];
-		$roundnum = $entry['roundnum'];
+		$roundnum = intval($entry['roundnum']);
+
+		// Hide opponent rounds that are at or ahead of the current player's round
+		if ($playerid != $myPlayerId && $roundnum >= $currentPlayerRound) {
+			continue; // Skip this entry
+		}
 
 		// Get all saved dice from all sets in this round, ordered by hand and set
 		$diceSql = "SELECT handnum, d1save, d2save, d3save, d4save, d5save, d6save
@@ -1399,9 +1419,11 @@ function GetGameActivityLog($gameid) {
 		// Convert to indexed array of hands
 		ksort($hands);
 		$entry['dicehands'] = array_values($hands);
+
+		$filteredResults[] = $entry;
 	}
 
-	return $results;
+	return $filteredResults;
 }
 
 function NotifyOtherPlayersInGame( $gameid, $msg )
