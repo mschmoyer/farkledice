@@ -990,6 +990,8 @@ function RenderActivityLog( activityData ) {
 				// Build dice display if we have dice hands
 				if( entry.dicehands && entry.dicehands.length > 0 ) {
 					diceText = ' ';
+					// Unicode dice faces: ⚀⚁⚂⚃⚄⚅ (index 0-5 = dice 1-6)
+					var diceFaces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 					for( var h = 0; h < entry.dicehands.length; h++ ) {
 						var hand = entry.dicehands[h];
 						// Add separator between hands (hot dice indicator)
@@ -997,7 +999,9 @@ function RenderActivityLog( activityData ) {
 							diceText += '<span style="color: #FFD700; margin: 0 4px;">→</span>';
 						}
 						for( var d = 0; d < hand.length; d++ ) {
-							diceText += '<span style="background: #333; border: 1px solid #666; border-radius: 3px; padding: 1px 4px; margin-left: 2px; font-size: 11px; color: #fff;">' + hand[d] + '</span>';
+							var dieValue = hand[d];
+							var dieFace = diceFaces[dieValue - 1] || dieValue;
+							diceText += '<span style="font-size: 20px; margin-left: 1px;">' + dieFace + '</span>';
 						}
 					}
 				}
