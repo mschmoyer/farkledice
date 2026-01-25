@@ -290,17 +290,17 @@ function Leaderboard_RefreshDaily()
 	$sql = "delete from farkle_lbdata where lbindex in (0,1,2,6)";
 	$result = db_command($sql);	
 
-	// Update the day of week.
-	$sql = "update siteinfo set paramvalue=TO_CHAR(NOW(), 'Day, Mon DD') where paramid=3";
+	// Update the day of week (Central Time).
+	$sql = "update siteinfo set paramvalue=TO_CHAR(NOW() AT TIME ZONE 'America/Chicago', 'Day, Mon DD') where paramid=3";
 	$result = db_command($sql);
 
-	// Today Stats
+	// Today Stats (all date comparisons use Central Time)
 	// Highest game scores today
 	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
 		(select 0 as lbindex, a.playerid, COALESCE(fullname, username) as username, playerlevel,
 		playerscore as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players a, farkle_games_players b
-		where a.playerid=b.playerid and DATE(b.lastplayed) = CURRENT_DATE
+		where a.playerid=b.playerid and (b.lastplayed AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date
 		order by playerscore desc LIMIT $maxDataRows) t1";
 	$insert_sql = "insert into farkle_lbdata ($sql)";
 	$result = db_command($insert_sql);
@@ -310,7 +310,7 @@ function Leaderboard_RefreshDaily()
 		(select 1 as lbindex, a.playerid, COALESCE(a.fullname, a.username) as username, a.playerlevel,
 		count(*) as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players a, farkle_games_players b, farkle_rounds c
-		where a.playerid=b.playerid and DATE(b.lastplayed) = CURRENT_DATE
+		where a.playerid=b.playerid and (b.lastplayed AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date
 		and a.playerid=c.playerid and b.gameid=c.gameid and c.roundscore=0
 		group by a.username, a.playerid, a.fullname, a.playerlevel
 		order by first_int desc LIMIT $maxDataRows) t1";
@@ -335,7 +335,7 @@ function Leaderboard_RefreshDaily()
 				ROUND(SUM(CASE WHEN g.winningplayer = gp.playerid THEN 1 ELSE 0 END)::numeric / COUNT(*) * 100) as win_pct
 			from farkle_games g
 			join farkle_games_players gp on g.gameid = gp.gameid
-			where DATE(g.gamefinish) = CURRENT_DATE
+			where (g.gamefinish AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date
 			and g.gamewith in (".GAME_WITH_RANDOM.",".GAME_WITH_FRIENDS.")
 			group by gp.playerid
 			having COUNT(*) >= 3
@@ -352,7 +352,7 @@ function Leaderboard_RefreshDaily()
 		r.roundscore as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_rounds r
 		join farkle_players a on a.playerid = r.playerid
-		where DATE(r.rounddatetime) = CURRENT_DATE
+		where (r.rounddatetime AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date
 		and r.roundscore > 0
 		order by r.roundscore desc LIMIT $maxDataRows) t1";
 	$insert_sql = "insert into farkle_lbdata ($sql)";
