@@ -12,6 +12,25 @@ Farkle Ten is an online multiplayer dice game written in PHP and JavaScript. The
 
 Live site: https://www.farkledice.com
 
+## Versioning
+
+**IMPORTANT:** Always update the version when making changes to the codebase.
+
+The version is defined in `includes/baseutil.php` as `APP_VERSION` and displayed in the footer of every page.
+
+**Format:** `Major.Minor.Revision`
+
+- **Major:** Breaking changes or major milestones (e.g., complete redesign, major architecture change)
+- **Minor:** New features and significant changes (e.g., new game mode, new social feature)
+- **Revision:** Bug fixes and small tweaks (e.g., fix remove friend bug, UI adjustments)
+
+**Current Version:** Check `includes/baseutil.php` for the current `APP_VERSION` constant.
+
+**When to Update:**
+- Bump **revision** for bug fixes, minor UI changes, small improvements
+- Bump **minor** (and reset revision to 0) for new features, significant enhancements
+- Bump **major** (and reset minor/revision to 0) for breaking changes or major releases
+
 ## Local Development with Docker
 
 To run this application locally:

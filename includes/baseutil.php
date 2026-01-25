@@ -9,6 +9,12 @@
 
 */
 
+	// Application Version (Major.Minor.Revision)
+	// Major: Breaking changes or major milestones
+	// Minor: New features and significant changes
+	// Revision: Bug fixes and small tweaks
+	define('APP_VERSION', '2.1.2');
+
 	// Redirect apex domain to www subdomain (for custom domain setup)
 	if (isset($_SERVER['HTTP_HOST'])) {
 		$host = $_SERVER['HTTP_HOST'];
@@ -211,7 +217,10 @@
 	$smarty->assign('testserver', 0 );
 	// Commented out: This was causing session to start before custom handler could be registered
 	// $_SESSION['testserver'] will be set in BaseUtil_SessSet() after session starts properly
-	// $_SESSION['testserver'] = 0; 
+	// $_SESSION['testserver'] = 0;
+
+	// Pass app version to templates
+	$smarty->assign('app_version', APP_VERSION); 
 	
 	
 	// set the cache_lifetime for index.tpl to 1 hour
