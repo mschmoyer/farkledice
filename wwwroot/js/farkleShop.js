@@ -49,19 +49,19 @@ function ShowChallengeShop(runId, money, botNum, botName, inventory, isStart) {
 
 	// Show appropriate header based on context
 	if (isStart) {
-		// Start of challenge - show "CHALLENGE BEGUN!" header
+		// Start of challenge - show "GAUNTLET BEGUN!" header
 		$('#divShopVictoryHeader').hide();
 		$('#divShopStartHeader').show();
 		$('#shopStartBotNum').text(botNum);
 		$('#shopStartBotName').text(botName);
-		$('#shopStartMoney').text('$' + money);
+		$('#shopStartMoney').text(money);
 	} else {
 		// After victory - show "VICTORY!" header
 		$('#divShopStartHeader').hide();
 		$('#divShopVictoryHeader').show();
 		$('#shopBotNum').text(botNum);
 		$('#shopBotName').text(botName);
-		$('#shopMoney').text('$' + money);
+		$('#shopMoney').text(money);
 	}
 
 	// Reset state
@@ -120,19 +120,28 @@ function RenderShopDice() {
 		var canAfford = gShopMoney >= die.price;
 		var borderColor = gDiceColors[die.category] || '#666';
 		var opacity = canAfford ? '1' : '0.6';
-		var textColor = canAfford ? borderColor : '#666';
+
+		// Extract short_word for dice display
+		var info = ExtractDiceInfo(die);
 
 		html += '<div class="loginBox" style="margin: 5px; border: 2px solid ' + borderColor + '; opacity: ' + opacity + ';">';
-		html += '  <div style="font-size: 16px; font-weight: bold; color: ' + textColor + ';">' + die.name.toUpperCase() + '</div>';
+		html += '  <div class="shadowed" style="font-size: 20px; font-weight: bold; color: white;">' + die.name.toUpperCase() + '</div>';
 
-		// Dice image placeholder (using standard dice for now)
+		// Use dice square component
 		html += '  <div style="margin: 5px;">';
-		html += '    <img src="/images/diceFront1.png" width="50" height="50">';
+		html += CreateDiceSquare({
+			label: info.shortWord,
+			category: die.category,
+			isSpecial: true,
+			size: 'normal',
+			title: die.name,
+			pips: 6
+		});
 		html += '  </div>';
 
-		html += '  <p style="font-size: 14px; margin: 5px; color: white;">' + (die.effect || die.description || '') + '</p>';
+		html += '  <p style="font-size: 16px; margin: 5px; color: white;">' + (die.effect || die.description || '') + '</p>';
 
-		html += '  <div style="font-size: 16px; font-family: \'Courier New\', monospace; margin: 5px; color: white;">$' + die.price + '</div>';
+		html += '  <div class="shadowed" style="font-size: 24px; font-weight: 900; font-family: \'Courier New\', monospace; margin: 5px; color: #feca57;">$' + die.price + '</div>';
 
 		if (canAfford) {
 			html += '  <input type="button" class="mobileButton" buttoncolor="green" value="BUY" ';
@@ -169,43 +178,16 @@ function RenderShopInventory() {
 			}
 		}
 
-		var dieName = slot && slot.name ? slot.name : 'Standard';
-		var shortWord = 'STD';
-		var isSpecial = false;
-		var categoryColor = '#666';
+		var info = ExtractDiceInfo(slot);
 
-		// Extract short_word - check direct property first, then effect_value JSON
-		if (slot) {
-			if (slot.short_word) {
-				shortWord = slot.short_word;
-			} else if (slot.effect_value) {
-				try {
-					var effectVal = typeof slot.effect_value === 'string'
-						? JSON.parse(slot.effect_value)
-						: slot.effect_value;
-					shortWord = effectVal.short_word || 'STD';
-				} catch (e) {}
-			}
-
-			// Check if it's a special die (not standard)
-			isSpecial = (shortWord !== 'STD' && dieName !== 'Standard');
-
-			// Get category color for special dice
-			if (isSpecial && slot.category) {
-				categoryColor = gDiceColors[slot.category] || '#4169E1';
-			}
-		}
-
-		// Style differently for special dice
-		var borderStyle = isSpecial ? '2px solid ' + categoryColor : '1px solid #666';
-		var bgColor = isSpecial ? 'rgba(255,255,255,0.1)' : 'transparent';
-		var textColor = isSpecial ? categoryColor : '#999';
-
-		html += '<span style="display: inline-block; margin: 3px; padding: 3px; text-align: center; ';
-		html += 'border: ' + borderStyle + '; border-radius: 4px; background: ' + bgColor + ';">';
-		html += '  <img src="/images/diceFront1.png" width="28" height="28" title="' + dieName + '"><br/>';
-		html += '  <span style="font-size: 10px; font-weight: ' + (isSpecial ? 'bold' : 'normal') + '; color: ' + textColor + ';">' + shortWord + '</span>';
-		html += '</span>';
+		html += CreateDiceSquare({
+			label: info.shortWord,
+			category: info.category,
+			isSpecial: info.isSpecial,
+			size: 'small',
+			title: info.name,
+			pips: i + 1
+		});
 	}
 
 	$('#divShopDiceInventory').html(html);
@@ -253,41 +235,23 @@ function RenderSlotSelection() {
 			}
 		}
 
-		var dieName = slot && slot.name ? slot.name : 'Standard';
-		var shortWord = 'STD';
-		var isSpecial = false;
-		var categoryColor = '#666';
-
-		// Extract short_word
-		if (slot) {
-			if (slot.short_word) {
-				shortWord = slot.short_word;
-			} else if (slot.effect_value) {
-				try {
-					var effectVal = typeof slot.effect_value === 'string'
-						? JSON.parse(slot.effect_value)
-						: slot.effect_value;
-					shortWord = effectVal.short_word || 'STD';
-				} catch (e) {}
-			}
-
-			isSpecial = (shortWord !== 'STD' && dieName !== 'Standard');
-			if (isSpecial && slot.category) {
-				categoryColor = gDiceColors[slot.category] || '#4169E1';
-			}
-		}
-
+		var info = ExtractDiceInfo(slot);
 		var isSelected = (i === gSelectedSlot);
-		var borderColor = isSelected ? '#f7ef00' : (isSpecial ? categoryColor : '#ccc');
-		var borderWidth = isSelected ? '3px' : '2px';
-		var bgColor = isSpecial ? 'rgba(100,100,100,0.2)' : '#f0f0f0';
-		var textColor = isSpecial ? categoryColor : '#333';
+
+		// Selection styling
+		var selectionBorder = isSelected ? '3px solid #f7ef00' : '2px solid transparent';
+		var selectionBg = isSelected ? 'rgba(247, 239, 0, 0.1)' : 'transparent';
 
 		html += '<div class="diceSlot" onclick="SelectSlot(' + i + ')" ontouchstart="" ';
-		html += '  style="display: inline-block; margin: 5px; padding: 5px; background: ' + bgColor + '; ';
-		html += '  border: ' + borderWidth + ' solid ' + borderColor + '; border-radius: 4px; cursor: pointer;">';
-		html += '  <img src="/images/diceFront1.png" width="50" height="50" title="' + dieName + '"><br/>';
-		html += '  <span style="font-size: 12px; font-weight: ' + (isSpecial ? 'bold' : 'normal') + '; color: ' + textColor + ';">' + shortWord + '</span>';
+		html += '  style="padding: 8px; border: ' + selectionBorder + '; border-radius: 8px; cursor: pointer; background: ' + selectionBg + ';">';
+		html += CreateDiceSquare({
+			label: info.shortWord,
+			category: info.category,
+			isSpecial: info.isSpecial,
+			size: 'normal',
+			title: info.name,
+			pips: i + 1
+		});
 		html += '</div>';
 	}
 
@@ -347,8 +311,8 @@ function ConfirmPurchase() {
 				// Close modal and update UI
 				CloseSlotModal();
 				// Update both money spans (whichever is visible)
-				$('#shopMoney').text('$' + gShopMoney);
-				$('#shopStartMoney').text('$' + gShopMoney);
+				$('#shopMoney').text(gShopMoney);
+				$('#shopStartMoney').text(gShopMoney);
 				RenderShopInventory();
 				RenderShopDice();  // Re-render to update affordability
 

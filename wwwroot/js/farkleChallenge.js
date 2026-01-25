@@ -7,6 +7,144 @@
 var gChallengeStatus = null;
 var gChallengeRunId = 0;
 
+// Dice category colors
+var gDiceCategoryColors = {
+	'farkle_lovers': '#cc0000',      // red
+	'farkle_protection': '#1d8711',  // green
+	'face_changers': '#4169E1',      // blue
+	'score_boosters': '#FFA500'      // orange
+};
+
+/**
+ * Create a reusable dice square HTML element
+ * @param {object} options - Configuration options
+ * @param {string} options.label - Short label to display below dice (e.g., "LUCKY")
+ * @param {string} options.category - Dice category for coloring (e.g., "farkle_lovers")
+ * @param {boolean} options.isSpecial - Whether this is a special die
+ * @param {string} options.size - Size: "small", "normal", or "large"
+ * @param {string} options.title - Tooltip title for the dice
+ * @param {number} options.pips - Number of pips to show (1-6), defaults to slot number
+ * @returns {string} HTML string for the dice element
+ */
+function CreateDiceSquare(options) {
+	var label = options.label || '';
+	var category = options.category || '';
+	var isSpecial = options.isSpecial || false;
+	var size = options.size || 'normal';
+	var title = options.title || '';
+	var pips = options.pips || 1;
+
+	var color = isSpecial && category ? (gDiceCategoryColors[category] || '#4169E1') : '#999';
+
+	var sizeClass = '';
+	if (size === 'small') sizeClass = ' dice-small';
+	else if (size === 'large') sizeClass = ' dice-large';
+
+	var specialClass = isSpecial ? ' dice-special' : '';
+
+	var style = '';
+	if (isSpecial) {
+		style = ' style="--dice-glow-color: ' + color + '; --dice-border-color: ' + color + '; --dice-label-color: ' + color + ';"';
+	}
+
+	// Generate pip HTML based on dice value
+	var pipsHtml = GetDicePipsHtml(pips);
+
+	var html = '<div class="dice-container' + (isSpecial ? ' dice-special' : '') + '"' + style + '>';
+	html += '<div class="dice-square' + sizeClass + specialClass + '" title="' + title + '">' + pipsHtml + '</div>';
+	html += '<span class="dice-label">' + label + '</span>';
+	html += '</div>';
+
+	return html;
+}
+
+/**
+ * Get HTML for dice pips based on value
+ * @param {number} value - Dice value 1-6
+ * @returns {string} HTML for pip elements
+ */
+function GetDicePipsHtml(value) {
+	var pips = '';
+
+	switch (value) {
+		case 1:
+			pips = '<span class="dice-pip pip-center"></span>';
+			break;
+		case 2:
+			pips = '<span class="dice-pip pip-tl"></span>' +
+			       '<span class="dice-pip pip-br"></span>';
+			break;
+		case 3:
+			pips = '<span class="dice-pip pip-tl"></span>' +
+			       '<span class="dice-pip pip-center"></span>' +
+			       '<span class="dice-pip pip-br"></span>';
+			break;
+		case 4:
+			pips = '<span class="dice-pip pip-tl"></span>' +
+			       '<span class="dice-pip pip-tr"></span>' +
+			       '<span class="dice-pip pip-bl"></span>' +
+			       '<span class="dice-pip pip-br"></span>';
+			break;
+		case 5:
+			pips = '<span class="dice-pip pip-tl"></span>' +
+			       '<span class="dice-pip pip-tr"></span>' +
+			       '<span class="dice-pip pip-center"></span>' +
+			       '<span class="dice-pip pip-bl"></span>' +
+			       '<span class="dice-pip pip-br"></span>';
+			break;
+		case 6:
+			pips = '<span class="dice-pip pip-tl"></span>' +
+			       '<span class="dice-pip pip-tr"></span>' +
+			       '<span class="dice-pip pip-ml"></span>' +
+			       '<span class="dice-pip pip-mr"></span>' +
+			       '<span class="dice-pip pip-bl"></span>' +
+			       '<span class="dice-pip pip-br"></span>';
+			break;
+	}
+
+	return pips;
+}
+
+/**
+ * Extract dice info from inventory item
+ * @param {object} die - Dice inventory item
+ * @returns {object} Extracted info with shortWord, isSpecial, category
+ */
+function ExtractDiceInfo(die) {
+	var shortWord = '';
+	var isSpecial = false;
+	var category = die ? die.category : '';
+	var name = die ? die.name : 'Standard';
+
+	if (die) {
+		// Extract short_word from direct property or effect_value JSON
+		if (die.short_word) {
+			shortWord = die.short_word;
+		} else if (die.effect_value) {
+			try {
+				var effectVal = typeof die.effect_value === 'string'
+					? JSON.parse(die.effect_value)
+					: die.effect_value;
+				shortWord = effectVal.short_word || '';
+			} catch (e) {}
+		}
+
+		// Treat 'STD' as empty (standard dice should have no label)
+		if (shortWord === 'STD') {
+			shortWord = '';
+		}
+
+		isSpecial = (shortWord !== '' && name !== 'Standard' && name !== 'Standard Die');
+	}
+
+	return {
+		shortWord: shortWord,
+		isSpecial: isSpecial,
+		category: category,
+		name: name
+	};
+}
+
 /**
  * Show the challenge lobby
  */
@@ -58,6 +196,7 @@ function UpdateChallengeLobbyUI() {
 	if (gChallengeStatus.has_active_run) {
 		$('#divChallengeActiveRun').show();
 		$('#divChallengeNoRun').hide();
+		$('#challengeMoneyHeader').show();
 
 		var run = gChallengeStatus.active_run;
 		gChallengeRunId = run.run_id;
@@ -75,6 +214,7 @@ function UpdateChallengeLobbyUI() {
 	} else {
 		$('#divChallengeActiveRun').hide();
 		$('#divChallengeNoRun').show();
+		$('#challengeMoneyHeader').hide();
 		gChallengeRunId = 0;
 	}
 
@@ -88,14 +228,6 @@ function UpdateChallengeLobbyUI() {
 	// Render bot lineup
 	RenderBotLineup(gChallengeStatus.bot_lineup);
 }
-
-// Dice category colors (same as shop)
-var gChallengeDiceColors = {
-	'farkle_lovers': '#cc0000',      // red
-	'farkle_protection': '#1d8711',  // green
-	'face_changers': '#4169E1',      // blue
-	'score_boosters': '#FFA500'      // orange
-};
 
 /**
  * Render player's dice inventory in the lobby
@@ -114,40 +246,16 @@ function RenderChallengeDice(inventory) {
 			}
 		}
 
-		var dieName = die ? die.name : 'Standard';
-		var shortWord = 'STD';
-		var isSpecial = false;
-		var categoryColor = '#666';
+		var info = ExtractDiceInfo(die);
 
-		if (die) {
-			// Extract short_word from effect_value or direct property
-			if (die.short_word) {
-				shortWord = die.short_word;
-			} else if (die.effect_value) {
-				try {
-					var effectVal = typeof die.effect_value === 'string'
-						? JSON.parse(die.effect_value)
-						: die.effect_value;
-					shortWord = effectVal.short_word || 'STD';
-				} catch (e) {}
-			}
-
-			isSpecial = (shortWord !== 'STD' && dieName !== 'Standard');
-			if (isSpecial && die.category) {
-				categoryColor = gChallengeDiceColors[die.category] || '#4169E1';
-			}
-		}
-
-		// Style differently for special dice
-		var borderStyle = isSpecial ? '2px solid ' + categoryColor : '1px solid #666';
-		var bgColor = isSpecial ? 'rgba(255,255,255,0.1)' : 'transparent';
-		var textColor = isSpecial ? categoryColor : '#999';
-
-		html += '<span style="display: inline-block; margin: 3px; padding: 3px; text-align: center; ';
-		html += 'border: ' + borderStyle + '; border-radius: 4px; background: ' + bgColor + ';">';
-		html += '  <img src="/images/diceFront1.png" width="28" height="28" title="' + dieName + '"><br/>';
-		html += '  <span style="font-size: 10px; font-weight: ' + (isSpecial ? 'bold' : 'normal') + '; color: ' + textColor + ';">' + shortWord + '</span>';
-		html += '</span>';
+		html += CreateDiceSquare({
+			label: info.shortWord,
+			category: info.category,
+			isSpecial: info.isSpecial,
+			size: 'normal',
+			title: info.name,
+			pips: i + 1  // Slot 1-6 shows pips 1-6
+		});
 	}
 
 	$('#divChallengeRunDice').html(html);
@@ -157,6 +265,12 @@ function RenderChallengeDice(inventory) {
  * Render the bot lineup preview
  */
 function RenderBotLineup(bots) {
+	// Get current bot number if player has an active run
+	var currentBotNum = 0;
+	if (gChallengeStatus && gChallengeStatus.has_active_run && gChallengeStatus.active_run) {
+		currentBotNum = gChallengeStatus.active_run.current_bot_num || 0;
+	}
+
 	var html = '<table width="100%" style="color: white;">';
 
 	for (var i = 0; i < bots.length; i++) {
@@ -171,10 +285,20 @@ function RenderBotLineup(bots) {
 
 		var isHidden = (bot.bot_name === '???');
 		var opacity = isHidden ? '0.5' : '1';
+		var isCurrent = (bot.bot_number == currentBotNum);
+		var isDefeated = (currentBotNum > 0 && bot.bot_number < currentBotNum);
+
+		// Status indicator: checkmark for defeated, star for current, empty otherwise
+		var statusIcon = '';
+		if (isDefeated) {
+			statusIcon = '<span style="color: #1d8711;">✓</span> ';
+		} else if (isCurrent) {
+			statusIcon = '⭐ ';
+		}
 
 		html += '<tr style="opacity: ' + opacity + ';">';
-		html += '  <td style="width: 30px;">#' + bot.bot_number + '</td>';
-		html += '  <td>' + bot.bot_name + '</td>';
+		html += '  <td style="width: 40px;">' + statusIcon + '#' + bot.bot_number + '</td>';
+		html += '  <td>' + bot.bot_name + (isCurrent ? ' <span style="color: #feca57;">(current)</span>' : '') + '</td>';
 		html += '  <td style="color: ' + diffColor + ';">' + bot.difficulty + '</td>';
 		html += '  <td style="text-align: right;">' + (isHidden ? '???' : bot.target_score) + '</td>';
 		html += '</tr>';

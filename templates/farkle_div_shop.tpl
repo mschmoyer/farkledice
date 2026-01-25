@@ -10,29 +10,29 @@
 
 	<!-- Victory Header (shown after defeating a bot) -->
 	<div id="divShopVictoryHeader" class="regularBox" style="margin: 5px; display: none;">
-		<div class="shadowed" style="font-size: 20px;">VICTORY!</div>
+		<div style="display: flex; justify-content: center; align-items: center; position: relative;">
+			<span class="shadowed" style="font-size: 20px;">Victory!</span>
+			<span class="shadowed" style="position: absolute; right: 10px; font-size: 26px; font-weight: 900; font-family: 'Courier New', monospace; color: #feca57;">$<span id="shopMoney">0</span></span>
+		</div>
 		<p style="font-size: 14px; margin: 5px;">
 			You defeated Bot #<span id="shopBotNum">1</span> - <span id="shopBotName">Byte</span>
 		</p>
-		<div style="font-size: 16px; font-family: 'Courier New', monospace;">
-			Money: <span id="shopMoney">$0</span>
-		</div>
 	</div>
 
 	<!-- Start Header (shown at beginning of challenge run) -->
 	<div id="divShopStartHeader" class="regularBox" style="margin: 5px; display: none;">
-		<div class="shadowed" style="font-size: 20px;">CHALLENGE BEGUN!</div>
-		<p style="font-size: 14px; margin: 5px;">
-			Your first opponent: Bot #<span id="shopStartBotNum">1</span> - <span id="shopStartBotName">Byte</span>
-		</p>
-		<div style="font-size: 16px; font-family: 'Courier New', monospace;">
-			Money: <span id="shopStartMoney">$0</span>
+		<div style="display: flex; justify-content: center; align-items: center; position: relative;">
+			<span class="shadowed" style="font-size: 20px;">Gauntlet Begun!</span>
+			<span class="shadowed" style="position: absolute; right: 10px; font-size: 26px; font-weight: 900; font-family: 'Courier New', monospace; color: #feca57;">$<span id="shopStartMoney">0</span></span>
 		</div>
+		<p style="font-size: 14px; margin: 5px;">
+			Purchase dice before your next challenge!
+		</p>
 	</div>
 
 	<!-- Shop Header -->
 	<div class="regularBox" style="margin: 5px;">
-		<div class="shadowed" style="font-size: 16px;">DICE SHOP</div>
+		<div class="shadowed" style="font-size: 16px;">Dice Shop</div>
 		<p style="font-size: 14px; margin: 5px;">Choose a die (or skip to save money)</p>
 	</div>
 
@@ -43,26 +43,19 @@
 
 	<!-- Current Dice Inventory -->
 	<div class="regularBox" style="margin: 5px;">
-		<div style="font-size: 14px;">YOUR DICE:</div>
-		<div id="divShopDiceInventory" style="margin: 5px;">
+		<div style="font-size: 14px;">Your Dice:</div>
+		<div id="divShopDiceInventory" class="dice-grid" style="margin: 5px;">
 			<!-- 6 dice slots shown here -->
 		</div>
 	</div>
 
 	<!-- Navigation -->
 	<div style="margin: 10px;">
-		<input type="button" class="mobileButton" buttoncolor="orange"
-			value="SKIP" onClick="SkipShop()" style="width: 120px;">
-		<input type="button" class="mobileButton" buttoncolor="green"
-			value="CONTINUE" onClick="ContinueToNextBot()"
-			style="width: 150px; display: none;" id="btnContinueAfterPurchase">
-	</div>
-
-	<!-- Start Over option -->
-	<div style="margin: 10px;">
-		<input type="button" class="mobileButton" buttoncolor="grey"
-			value="Start Over" onClick="ChallengeStartOver()"
-			style="width: 120px; font-size: 12px;">
+		<input type="button" class="mobileButton"
+			value="Skip" onClick="SkipShop()" style="width: 120px;">
+		<input type="button" class="mobileButton"
+			value="Continue" onClick="ContinueToNextBot()"
+			style="width: 120px; display: none;" id="btnContinueAfterPurchase">
 	</div>
 
 </div>
@@ -77,8 +70,8 @@
 	<div class="bot-select-modal" style="margin: 50px auto; max-width: 90%;"
 		onclick="event.stopPropagation()" ontouchstart="">
 
-		<h2 style="color: #333; font-size: 20px; margin: 0 0 8px 0;">
-			SELECT DICE TO REPLACE
+		<h2 style="color: #333; font-size: 18px; margin: 0 0 8px 0;">
+			Select Dice to Replace
 		</h2>
 
 		<div style="color: #666; font-size: 14px; margin: 5px;">
@@ -92,7 +85,7 @@
 		</div>
 
 		<!-- Dice slots (clickable) -->
-		<div id="divSlotSelection" style="margin: 8px 0;">
+		<div id="divSlotSelection" class="dice-grid" style="margin: 8px 0;">
 			<!-- 6 slots populated by JavaScript -->
 		</div>
 
@@ -102,10 +95,10 @@
 		</div>
 
 		<div style="margin: 10px;">
-			<input type="button" class="mobileButton" buttoncolor="grey"
-				value="CANCEL" onClick="CloseSlotModal()" style="width: 110px;">
-			<input type="button" class="mobileButton" buttoncolor="yellow" disabled
-				value="CONFIRM" onClick="ConfirmPurchase()" id="btnConfirmPurchase"
+			<input type="button" class="mobileButton"
+				value="Cancel" onClick="CloseSlotModal()" style="width: 110px;">
+			<input type="button" class="mobileButton" disabled
+				value="Confirm" onClick="ConfirmPurchase()" id="btnConfirmPurchase"
 				style="width: 110px;">
 		</div>
 	</div>
