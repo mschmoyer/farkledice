@@ -34,7 +34,7 @@
 	<meta name="apple-mobile-web-app-status-bar-style" content="default">
 
 	<!-- Icons -->
-	<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+	<link rel="icon" type="image/png" href="/images/site-icon-192.png">
 	<link rel="icon" type="image/png" sizes="512x512" href="/images/site-icon-512.png">
 	<link rel="apple-touch-icon" href="/images/site-icon-180.png">
 

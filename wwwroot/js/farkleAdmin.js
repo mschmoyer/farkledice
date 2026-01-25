@@ -1,6 +1,5 @@
 
 function ShowAdmin( )
 {
-	HideAllWindows();	
-	divAdminObj.show();
+	window.location.href = '/admin/adminDashboard.php';
 }

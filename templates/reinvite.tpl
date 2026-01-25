@@ -4,7 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Reset Password | Farkle Ten</title>
-    <link rel="icon" href="/images/favicon.ico" type="image/x-icon"/>
+    <link rel="icon" type="image/png" href="/images/site-icon-192.png">
     <style>
         * {
             box-sizing: border-box;

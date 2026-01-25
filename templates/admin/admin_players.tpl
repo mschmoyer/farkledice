@@ -4,7 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Admin - Players | Farkle Ten</title>
-    <link rel="icon" href="/images/favicon.ico" type="image/x-icon"/>
+    <link rel="icon" type="image/png" href="/images/site-icon-192.png">
     <link rel="stylesheet" type="text/css" href="/css/mobile.css?v={$app_version}" />
     <link rel="stylesheet" type="text/css" href="/css/farkle.css?v={$app_version}" />
     <style>
@@ -276,7 +276,10 @@
                 <h1 class="admin-title">Player Management</h1>
                 <div class="admin-subtitle">Total Players: {$totalPlayers}</div>
             </div>
-            <a href="/farkle.php" class="back-link">&larr; Back to Lobby</a>
+            <div style="display: flex; gap: 10px;">
+                <input type="button" class="mobileButton" value="Dashboard" onclick="window.location.href='adminDashboard.php'">
+                <input type="button" class="mobileButton" buttoncolor="red" value="Back" onclick="window.location.href='/farkle.php'">
+            </div>
         </div>
 
         <div class="search-form">
