@@ -162,8 +162,8 @@ function LoginGenerateSession( $playerid, $remember=1, $device='web' )
 		return 0; 
 	}
 
-	// Create a sessionid 
-	$sessionid = uniqid();
+	// Create a cryptographically secure session ID
+	$sessionid = bin2hex(random_bytes(32));
 	$agentString = ( !empty($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : "unrecognized" );
 	
 	if( isset($_SESSION['ios_app']) ) {

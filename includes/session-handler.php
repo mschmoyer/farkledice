@@ -18,8 +18,8 @@ class DatabaseSessionHandler implements SessionHandlerInterface
 	public function __construct($dbh)
 	{
 		$this->dbh = $dbh;
-		// Get session max lifetime from php.ini or use 1 hour default
-		$this->maxlifetime = ini_get('session.gc_maxlifetime') ?: 3600;
+		// Get session max lifetime from php.ini or use 7 day default
+		$this->maxlifetime = ini_get('session.gc_maxlifetime') ?: 604800;
 	}
 
 	/**

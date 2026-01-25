@@ -187,14 +187,24 @@ function FinishStaleGames( $test=0 )
 // Cleanup stale farkle_set data
 function CleanupTables()
 {
-	BaseUtil_Debug( __FUNCTION__ . ": Cleaning up farkle sets for completed games.", 7 );	
-	
+	BaseUtil_Debug( __FUNCTION__ . ": Cleaning up farkle sets for completed games.", 7 );
+
 	$sql = "delete from farkle_sets where gameid in (select gameid from farkle_games where winningplayer > 0)";
 	$result = db_command($sql);
-	
+
 	// Cleanup stale farkle_round data
-	$sql = "delete from farkle_rounds where gameid in 
+	$sql = "delete from farkle_rounds where gameid in
 		(select gameid from farkle_games where winningplayer > 0 and gamefinish < NOW()-interval '31' day)";
+	$result = db_command($sql);
+
+	// Cleanup expired sessions (older than 30 days)
+	BaseUtil_Debug( __FUNCTION__ . ": Cleaning up expired sessions.", 7 );
+	$sql = "DELETE FROM farkle_sessions WHERE last_access < NOW() - INTERVAL '30 days'";
+	$result = db_command($sql);
+
+	// Cleanup stale device records (not used in 90 days)
+	BaseUtil_Debug( __FUNCTION__ . ": Cleaning up stale device records.", 7 );
+	$sql = "DELETE FROM farkle_players_devices WHERE lastused < NOW() - INTERVAL '90 days'";
 	$result = db_command($sql);
 }
 

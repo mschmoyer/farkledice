@@ -13,7 +13,7 @@
 	// Major: Breaking changes or major milestones
 	// Minor: New features and significant changes
 	// Revision: Bug fixes and small tweaks
-	define('APP_VERSION', '2.3.8');
+	define('APP_VERSION', '2.3.9');
 
 	// Redirect apex domain to www subdomain (for custom domain setup)
 	if (isset($_SERVER['HTTP_HOST'])) {
@@ -75,6 +75,12 @@
 			// This ensures sessions are stored in the database for Heroku compatibility
 			session_name( $sessName );
 
+			// Extend session lifetime to 7 days (default PHP is only 24 minutes)
+			// This prevents users from being logged out frequently
+			ini_set('session.gc_maxlifetime', 604800);  // 7 days in seconds
+			ini_set('session.gc_probability', 1);
+			ini_set('session.gc_divisor', 100);
+
 			// Only use secure cookies when actually on HTTPS
 			$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
 			           || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
@@ -82,6 +88,7 @@
 			ini_set('session.cookie_httponly', '1');
 			ini_set('session.cookie_samesite', 'Lax');
 			ini_set('session.cookie_path', '/');  // Ensure cookie works across all paths including /admin/
+			ini_set('session.cookie_lifetime', 604800);  // Cookie also lasts 7 days
 
 			if (!session_id()) {
 				session_start();
