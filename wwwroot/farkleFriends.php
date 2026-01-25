@@ -64,7 +64,7 @@ function AddFriend( $playerid, $identstring, $ident )
 	
 		if( $removed == 1 )
 		{
-			$sql = "update farkle_friends set removed=false where sourceid=$playerid and friendid=$friendid";
+			$sql = "update farkle_friends set removed=0 where sourceid=$playerid and friendid=$friendid";
 			$rc = db_command($sql);
 		}
 		else if( $removed == 0 )
@@ -102,11 +102,11 @@ function RemoveFriend( $playerid, $friendid )
 
 	if( $friendExists )
 	{
-		$sql = "update farkle_friends set removed=true where sourceid=$playerid and friendid=$friendid";
+		$sql = "update farkle_friends set removed=1 where sourceid=$playerid and friendid=$friendid";
 	}
 	else
 	{
-		$sql = "insert into farkle_friends (sourceid, friendid, removed) values ($playerid, $friendid, true )";
+		$sql = "insert into farkle_friends (sourceid, friendid, removed) values ($playerid, $friendid, 1)";
 	}
 	db_command($sql);
 	
@@ -132,10 +132,11 @@ function GetGameFriends( $playerid, $force = false )
 	//{
 		BaseUtil_Debug( __FUNCTION__ . " No friend data cached. Adding friend data.", 7 );
 
+		// Use numeric comparison for compatibility with smallint columns
 		$sql = "select COALESCE(fullname,username) as username, a.playerid, a.playertitle, a.cardcolor, a.lastplayed
 				from farkle_players a, farkle_friends b
 				where a.playerid=b.friendid and b.sourceid=$playerid and
-				a.active=true and b.removed=false
+				a.active=1 and b.removed=0
 				order by lastplayed desc";
 		
 		$players = db_select_query( $sql, SQL_MULTI_ROW );
