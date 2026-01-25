@@ -45,6 +45,22 @@
 					<p>After that jump right into the action by choosing <b>New Game</b>. Then, select <b>random game</b> to find a game with a random opponent! The great part about Farkle Ten is you do not have to wait for your opponent to play!</p>
 				</div>
 			</div>
+
+			<!-- Active Friends Section -->
+			<div id="divActiveFriendsSection" style="display: none; margin-top: 12px;">
+				<div id="activeFriendsLabel" align="left" style="margin-left: 12px; font-size: .8em;">Active Friends:</div>
+				<div id="divActiveFriends" style="margin: 0px;"></div>
+			</div>
+
+			<!-- Template for active friend card (hidden) -->
+			<div id="divActiveFriendTemplate" style="display: none;">
+				<div class="activeFriendOuter" style="width: 250px; margin: 2px 0; display: flex; align-items: stretch;">
+					<div class="activeFriendCard friendDiv" style="flex: 1; margin: 0; cursor: pointer; display: flex; align-items: center;">
+						<span class="activeFriendName shadowed" style="padding: 6px 10px; color: white;"></span>
+					</div>
+					<input type="button" class="mobileButton activeFriendPlayBtn" buttoncolor="green" value="Play" style="margin: 0; border-radius: 0 8px 8px 0;">
+				</div>
+			</div>
 		</td>
 		
 		<td width="20%" valign="top">

@@ -176,4 +176,24 @@ function GetFriends( $playerid )
 }
 */
 
+function GetActiveFriends( $playerid )
+{
+	// Use numeric comparison for compatibility with both smallint (local) and boolean (prod)
+	$sql = "select COALESCE(fullname,username) as username, a.playerid, a.playertitle, a.cardcolor
+			from farkle_players a, farkle_friends b
+			where a.playerid=b.friendid and b.sourceid=$playerid and
+			a.active=1 and b.removed=0 and
+			a.lastplayed > NOW() - interval '10 minutes'
+			order by a.lastplayed desc";
+
+	$players = db_select_query( $sql, SQL_MULTI_ROW );
+
+	if( !$players || count($players) == 0 )
+	{
+		return Array();
+	}
+
+	return $players;
+}
+
 ?>

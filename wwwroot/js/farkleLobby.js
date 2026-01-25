@@ -151,7 +151,7 @@ function DoLobbyUpdateEx( inputData )
 	CheckForLevel( data[3] );
 	
 	var tButton = $('#btnLobbyTournament');
-	if( data[4].tournamentid ) {		
+	if( data[4].tournamentid ) {
 		tButton.attr('src', '/images/tournaments/'+data[4].lobbyImage);
 		tButton.off('click');
 		tButton.on('click', function() { ShowTournamentEx( data[4].tournamentid ) } );
@@ -159,7 +159,42 @@ function DoLobbyUpdateEx( inputData )
 	} else {
 		tButton.off('click').hide();
 	}
-	
+
+	// Active Friends section
+	if( data[5] && data[5].length > 0 ) {
+		$('#divActiveFriendsSection').show();
+		$('#divActiveFriends').empty();
+
+		for( var i = 0; i < data[5].length; i++ ) {
+			var friend = data[5][i];
+			var outerDiv = $('#divActiveFriendTemplate .activeFriendOuter').clone();
+			outerDiv.attr('id', 'objActiveFriend' + friend.playerid);
+
+			var card = outerDiv.find('.activeFriendCard');
+			var color = friend.cardcolor || 'green';
+			if( color.match && color.match(/.png/gi) )
+				card.css('background-image', "url('/images/playericons/" + color + "')");
+			else
+				card.css('background-color', color);
+
+			card.find('.activeFriendName').text(friend.username);
+			card.attr('playerid', friend.playerid);
+			card.on('click', function(e) {
+				ShowPlayerInfo($(this).attr('playerid'));
+			});
+
+			var playBtn = outerDiv.find('.activeFriendPlayBtn');
+			playBtn.attr('playerid', friend.playerid);
+			playBtn.on('click', function(e) {
+				StartGameAgainstPlayer($(this).attr('playerid'));
+			});
+
+			outerDiv.appendTo('#divActiveFriends');
+		}
+	} else {
+		$('#divActiveFriendsSection').hide();
+	}
+
 	if( $('#m_doublexp').val() > 0 ) {
 		$('#lblDoubleXP').fadeIn();
 	} else {

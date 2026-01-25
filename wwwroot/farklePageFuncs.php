@@ -9,7 +9,8 @@ require_once('../includes/baseutil.php');
 require_once('dbutil.php');
 require_once('farkleAchievements.php');
 require_once('farkleLevel.php');
-require_once('farkleUtil.php'); 
+require_once('farkleUtil.php');
+require_once('farkleFriends.php'); 
 
 define( 'GAME_TITLE', 'Farkle Ten' );
 
@@ -154,11 +155,12 @@ function GetLobbyInfo( )
 		Ach_AwardAchievement( $_SESSION['playerid'], ACH_HOLIDAY );
 	}
 	
-	return Array( 	GetPlayerInfo( $playerid ), 
-					GetGames( $playerid, 0, 30, 0), 
-					Ach_GetNewAchievement( $playerid ), 
+	return Array( 	GetPlayerInfo( $playerid ),
+					GetGames( $playerid, 0, 30, 0),
+					Ach_GetNewAchievement( $playerid ),
 					GetNewLevel( $playerid ),
-					GetActiveTournaments() );
+					GetActiveTournaments(),
+					GetActiveFriends( $playerid ) );
 }
 
 function GetGames( $playerid, $completed, $limit = 20, $skipSolo = 0 )
