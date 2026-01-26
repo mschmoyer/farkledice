@@ -935,7 +935,9 @@ function Bot_CompleteTurn($gameId, $playerId, $finalScore) {
  */
 function Bot_GetGameData($gameId) {
 	$sql = "SELECT g.gameid, g.currentround, g.currentturn, g.gamemode, g.maxturns,
-	               g.bot_play_mode
+	               g.bot_play_mode,
+	               COALESCE(g.max_round, " . LAST_ROUND . ") as max_round,
+	               COALESCE(g.is_overtime, false) as is_overtime
 	        FROM farkle_games g
 	        WHERE g.gameid = :gameid";
 
@@ -970,7 +972,8 @@ function Bot_GetGameData($gameId) {
 		$game['opponent_score'] = $players[1]['playerscore'] ?? 0;
 	}
 
-	$game['total_rounds'] = 10; // Standard 10-round game
+	// Use dynamic max_round for total rounds (supports overtime)
+	$game['total_rounds'] = (int)$game['max_round'];
 
 	return $game;
 }

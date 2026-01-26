@@ -180,23 +180,25 @@ function GetGames( $playerid, $completed, $limit = 20, $skipSolo = 0 )
 	else
 	{
 		// We want completed and unfinished games. We want to put completed games on top.
+		// Uses COALESCE(max_round, 10) to support overtime games (max_round > 10)
 		$winPlayerClause = " (winningplayer=0 or (winningplayer>0 and a.winacknowledged=false)) and a.playerturn < 999 ";
 		$orderByClause = " b.winningplayer desc,
-						((select count(*) from farkle_games_players where gameid=b.gameid and playerround>=11 and b.gamemode=2)=b.maxturns-1 AND a.playerround>1 AND a.playerround < 11) desc,
-						((select count(*) from farkle_games_players where gameid=b.gameid and playerround>=11 and b.gamemode=2)=b.maxturns-1 AND a.playerround=1) desc,
-						(a.playerround>1 and a.playerround < 11 and (select count(*) from farkle_games_players where gameid=b.gameid and playerround>=11 and b.gamemode=2) < b.maxturns) desc,
-						(a.playerround<11) desc,
+						((select count(*) from farkle_games_players where gameid=b.gameid and playerround > COALESCE(b.max_round, 10) and b.gamemode=2)=b.maxturns-1 AND a.playerround>1 AND a.playerround <= COALESCE(b.max_round, 10)) desc,
+						((select count(*) from farkle_games_players where gameid=b.gameid and playerround > COALESCE(b.max_round, 10) and b.gamemode=2)=b.maxturns-1 AND a.playerround=1) desc,
+						(a.playerround>1 and a.playerround <= COALESCE(b.max_round, 10) and (select count(*) from farkle_games_players where gameid=b.gameid and playerround > COALESCE(b.max_round, 10) and b.gamemode=2) < b.maxturns) desc,
+						(a.playerround <= COALESCE(b.max_round, 10)) desc,
 						b.gamestart asc ";
 	}
-	
+
 	$skipSql = "";
 	if( $skipSolo ) $skipSql = " and b.maxturns > 1 ";
-	
+
 	$sql = "select * from (
 		select a.gameid, b.currentturn, b.maxturns, b.winningplayer, a.playerturn, a.playerround, b.gamemode,
 		TO_CHAR(b.gamefinish,'Mon-DD-YYYY HH:MI AM') as gamefinish, b.playerstring,
-		((a.playerturn=b.currentturn and b.gamemode=1) or (a.playerround<11 and b.gamemode=2)) as yourturn,
-		(select count(*) from farkle_games_players where gameid=b.gameid and playerround>=11 and b.gamemode=2) as finishedplayers
+		COALESCE(b.max_round, 10) as max_round, COALESCE(b.is_overtime, false) as is_overtime,
+		((a.playerturn=b.currentturn and b.gamemode=1) or (a.playerround <= COALESCE(b.max_round, 10) and b.gamemode=2)) as yourturn,
+		(select count(*) from farkle_games_players where gameid=b.gameid and playerround > COALESCE(b.max_round, 10) and b.gamemode=2) as finishedplayers
 		from farkle_games_players a, farkle_games b
 		where playerid='$playerid' and a.gameid=b.gameid $skipSql
 		and $winPlayerClause

@@ -96,7 +96,9 @@ CREATE TABLE IF NOT EXISTS farkle_games (
   gameexpire TIMESTAMP DEFAULT NULL,
   playerstring VARCHAR(255) DEFAULT NULL,
   gamefinish TIMESTAMP DEFAULT NULL,
-  winningreason VARCHAR(255) DEFAULT NULL
+  winningreason VARCHAR(255) DEFAULT NULL,
+  max_round INTEGER DEFAULT 10,
+  is_overtime BOOLEAN DEFAULT FALSE
 );
 
 CREATE INDEX IF NOT EXISTS idx_whostarted ON farkle_games(whostarted);

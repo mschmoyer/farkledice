@@ -26,7 +26,9 @@ define( 'GAME_WITH_SOLO',			2);		// Single player (no wins or Xp granted)
 define( 'GAME_MODE_STANDARD', 		1); 	// Standard Farkle to 10,000 points.
 define( 'GAME_MODE_10ROUND', 		2); 	// 10 Rounds - highest score wins.
 
-define( 'LAST_ROUND', 				10); 	// Last round in a 10-round style game. 
+define( 'LAST_ROUND', 				10); 	// Last round in a 10-round style game.
+define( 'MAX_OVERTIME_ROUNDS',		5);		// Max overtime rounds allowed (sudden death)
+define( 'ABSOLUTE_MAX_ROUND',		15);	// Hard cap: LAST_ROUND + MAX_OVERTIME_ROUNDS
 
 define( 'MAX_GAMES_AGAINST_PLAYER', 12); 	// Max number of unfinished games a player can start against another player
 define( 'MAX_UNFINISHED_GAMES',		20); 	// Max number of unfinished games a players can start without playing the rest
@@ -315,7 +317,68 @@ function GetFarkleGameName( $gameid, $gameWith, $thePlayers, $maxTurns=2 )
 		$gameName = "Farkle Game";
 	}
 	
-	return $gameName; 
+	return $gameName;
+}
+
+/*
+	Func: GetGameMaxRound()
+	Desc: Returns the max round for a game (handles overtime games).
+	Params:
+		$gameid		Game to get max round for
+	Returns:
+		Max round number (10 normally, 11-15 during overtime)
+*/
+function GetGameMaxRound($gameid)
+{
+	$sql = "SELECT COALESCE(max_round, " . LAST_ROUND . ") FROM farkle_games WHERE gameid=$gameid";
+	$maxRound = db_select_query($sql, SQL_SINGLE_VALUE);
+	return empty($maxRound) ? LAST_ROUND : (int)$maxRound;
+}
+
+/*
+	Func: IsGameInOvertime()
+	Desc: Checks if a game is in overtime mode.
+	Params:
+		$gameid		Game to check
+	Returns:
+		Boolean - true if game is in overtime
+*/
+function IsGameInOvertime($gameid)
+{
+	$sql = "SELECT COALESCE(is_overtime, false) FROM farkle_games WHERE gameid=$gameid";
+	$isOvertime = db_select_query($sql, SQL_SINGLE_VALUE);
+	return $isOvertime == 't' || $isOvertime === true;
+}
+
+/*
+	Func: TriggerOvertime()
+	Desc: Triggers overtime for a game by incrementing max_round and setting is_overtime flag.
+	Params:
+		$gameid		Game to put into overtime
+	Returns:
+		New max round number
+*/
+function TriggerOvertime($gameid)
+{
+	$currentMaxRound = GetGameMaxRound($gameid);
+	$newMaxRound = $currentMaxRound + 1;
+
+	// Don't exceed the absolute max
+	if ($newMaxRound > ABSOLUTE_MAX_ROUND) {
+		BaseUtil_Debug(__FUNCTION__ . ": Game $gameid already at max overtime rounds. Cannot trigger more.", 1);
+		return $currentMaxRound;
+	}
+
+	$sql = "UPDATE farkle_games SET max_round = $newMaxRound, is_overtime = true WHERE gameid = $gameid";
+	db_command($sql);
+
+	// Reset all players who were "done" back to the new round
+	$sql = "UPDATE farkle_games_players SET playerround = $newMaxRound WHERE gameid = $gameid AND playerround > " . LAST_ROUND;
+	db_command($sql);
+
+	BaseUtil_Debug(__FUNCTION__ . ": Game $gameid entered overtime. New max round: $newMaxRound", 1);
+
+	return $newMaxRound;
 }
 
 /*
@@ -553,13 +616,15 @@ function FarkleSendUpdate( $playerid, $gameid )
 		return Array( 'Error' => 'Game not found.' );
 	}
 	
-	// Get the current and max turn
+	// Get the current and max turn (includes overtime support fields)
 	$sql = "select a.currentturn, a.currentround, a.maxturns, a.winningplayer, a.mintostart,
 		a.pointstowin, a.gameid, a.gamemode, a.gamewith, b.playerround,
 		TO_CHAR(a.gameexpire, 'Mon DD @ HH12:00 AM') as gameexpire,
 		TO_CHAR(a.gamefinish, 'Mon DD @ HH12:00 AM') as gamefinish,
-		(select playerid from farkle_games_players where playerturn=currentturn and gameid=a.gameid) as currentplayer, 
-		lastturn, titleredeemed, b.winacknowledged
+		(select playerid from farkle_games_players where playerturn=currentturn and gameid=a.gameid) as currentplayer,
+		lastturn, titleredeemed, b.winacknowledged,
+		COALESCE(a.max_round, " . LAST_ROUND . ") as max_round,
+		COALESCE(a.is_overtime, false) as is_overtime
 		from farkle_games a, farkle_games_players b
 		where a.gameid=$gameid and a.gameid=b.gameid and b.playerid=$playerid";
 		
@@ -575,10 +640,12 @@ function FarkleSendUpdate( $playerid, $gameid )
 	$currentRound = $turnData['gamemode'] == GAME_MODE_STANDARD ? $turnData['currentround'] : $turnData['playerround'];
 	BaseUtil_Debug( __FUNCTION__ . ": 1CurrentRound = $currentRound, GameMode=" . $turnData['gamemode'], 1 );
 	
-	// This is a boundary condition for a 10-round game that reports a round higher than the max. 
-	if( $turnData['gamemode'] == GAME_MODE_10ROUND && (int)$currentRound >= (LAST_ROUND+1) )
+	// This is a boundary condition for a 10-round game that reports a round higher than the max.
+	// Use dynamic max_round to support overtime
+	$gameMaxRound = GetGameMaxRound($gameid);
+	if( $turnData['gamemode'] == GAME_MODE_10ROUND && (int)$currentRound > $gameMaxRound )
 	{
-		$currentRound = LAST_ROUND;
+		$currentRound = $gameMaxRound;
 	}
 	
 	BaseUtil_Debug( __FUNCTION__ . ": CurrentRound = $currentRound", 1 );
@@ -909,11 +976,13 @@ function FarklePass( $playerid, $gameid, $savedDice, $farkled = 0, $updateTime =
 	$currentRound = $gameData['gamemode'] == GAME_MODE_STANDARD ? $gameData['currentround'] : $gameData['playerround'];
 	$playerScore = $gameData['playerscore'];
 	
-	// Bail if player is not suppose to be here. 
-	if( $gameData['gamemode'] == GAME_MODE_10ROUND && $currentRound > LAST_ROUND ) 
+	// Bail if player is not suppose to be here.
+	// Use dynamic max_round to support overtime
+	$gameMaxRound = GetGameMaxRound($gameid);
+	if( $gameData['gamemode'] == GAME_MODE_10ROUND && $currentRound > $gameMaxRound )
 	{
-		// This probably occurs from spam clicking on the last round. 
-		BaseUtil_Debug( __FUNCTION__ . ": Game $gameid already finished. Player $playerid cannot roll. Rejecting save.", 1 );
+		// This probably occurs from spam clicking on the last round.
+		BaseUtil_Debug( __FUNCTION__ . ": Game $gameid already finished (max_round=$gameMaxRound). Player $playerid cannot roll. Rejecting save.", 1 );
 		
 		// Since we're stopping it here, the player did nothing to warrant an error message. Simply send them a game update again. 
 		return FarkleSendUpdate( $playerid, $gameid );
@@ -1019,15 +1088,19 @@ function FarklePass( $playerid, $gameid, $savedDice, $farkled = 0, $updateTime =
 			where gameid=$gameid and playerid=$playerid";
 	$result = db_command($sql);
 	
-	if( $currentRound >= LAST_ROUND )
+	if( $currentRound >= $gameMaxRound )
 	{
-		// This player has finished a 10 round game
-		GivePlayerXP( $playerid, PLAYERLEVEL_FINISH_XP + (1 * ($gameData['maxturns'] - 2)) );
+		// This player has finished their rounds (including any overtime rounds)
+		// XP is given based on standard 10 rounds - overtime doesn't give extra XP
+		if( $currentRound == LAST_ROUND || !IsGameInOvertime($gameid) )
+		{
+			GivePlayerXP( $playerid, PLAYERLEVEL_FINISH_XP + (1 * ($gameData['maxturns'] - 2)) );
+		}
 
 		Ach_CheckPerfectGame( $playerid, $gameid );
 
-		// Check if the game is finished.
-		GameIsCompleted( $gameid, $gameData['maxturns']); // Don't award "game finish XP"
+		// Check if the game is finished (handles overtime tie detection)
+		GameIsCompleted( $gameid, $gameData['maxturns']);
 	}
 
 	// For bot games in interactive mode (player turns only), advance to next player's turn
@@ -1061,55 +1134,106 @@ function FarklePass( $playerid, $gameid, $savedDice, $farkled = 0, $updateTime =
 	return FarkleSendUpdate( $playerid, $gameid );
 }
 
-//10-Round only. 
+//10-Round only. Supports overtime rounds for tie-breaking.
 function GameIsCompleted( $gameid, $maxTurns )
 {
 	$highestScore = 0;
 	$tieOccurred = 0;
 	$i = 0;
-	$gameFinished = 0; 
-	
-	// Are all players done? 
-	$sql = "select count(*) from farkle_games_players where playerround > ".LAST_ROUND." and gameid=$gameid";
+	$gameFinished = 0;
+
+	// Get the current max round for this game (handles overtime)
+	$gameMaxRound = GetGameMaxRound($gameid);
+
+	// Are all players done with current max round?
+	$sql = "select count(*) from farkle_games_players where playerround > $gameMaxRound and gameid=$gameid";
 	$playersDone = db_select_query( $sql, SQL_SINGLE_VALUE );
-	
-	BaseUtil_Debug( __FUNCTION__ . ": Game $gameid. Players done: $playersDone", 1 );
-	
+
+	BaseUtil_Debug( __FUNCTION__ . ": Game $gameid. Players done: $playersDone, Max round: $gameMaxRound", 1 );
+
 	if( $playersDone >= $maxTurns )
 	{
-		// Select the playerid with the highest score in this game. 
-		$sql = "select a.playerid, a.playerscore, COALESCE(b.fullname, b.username) as username, 
+		// Select the playerid with the highest score in this game.
+		$sql = "select a.playerid, a.playerscore, COALESCE(b.fullname, b.username) as username,
 			(select max(roundscore) from farkle_rounds where playerid=a.playerid and gameid=a.gameid) as highestRound
 			from farkle_games_players a, farkle_players b
 			where a.gameid=$gameid and a.playerid=b.playerid
 			order by playerscore DESC, highestRound desc";
 		$wp = db_select_query( $sql, SQL_MULTI_ROW );
-		
-		if( $wp ) 
-		{			
+
+		if( $wp )
+		{
 			$winningPlayer = $wp[0]['playerid'];
-			
+			$topScore = (int)$wp[0]['playerscore'];
+
+			// Count players tied for the lead
+			$tiedPlayers = 0;
 			foreach( $wp as $w )
-			{						
-				if( $w['playerscore'] == $highestScore ) $tieOccurred = 1;
+			{
+				if( (int)$w['playerscore'] == $topScore ) $tiedPlayers++;
 				if( $w['playerscore'] >= $highestScore ) $highestScore = $w['playerscore'];
-				
+
 				Ach_Check10RoundScore( $w['playerid'], $w['playerscore'] );
 				$i++;
 			}
-			
-			$tieOccurredStr = ". " . $wp[0]['username'] . " broke tie and won with a highest round score of " . $wp[0]['highestRound']; 
-			FarkleWinGame( $gameid, $wp[0]['playerid'], 
-				"Highest score in 10 rounds" . ( $tieOccurred ? $tieOccurredStr : "" ) );
-			
+
+			$tieOccurred = ($tiedPlayers > 1);
+
+			// If there's a tie and we haven't exceeded max overtime rounds, trigger overtime
+			if( $tieOccurred && $gameMaxRound < ABSOLUTE_MAX_ROUND )
+			{
+				$overtimeRound = $gameMaxRound - LAST_ROUND + 1;
+				BaseUtil_Debug( __FUNCTION__ . ": Game $gameid - Tie detected! Top $tiedPlayers players tied at $topScore. Triggering overtime round $overtimeRound.", 1 );
+
+				// Trigger overtime - this will increment max_round and reset tied players
+				TriggerOvertime($gameid);
+
+				// Notify players about overtime
+				NotifyOtherPlayersInGame( $gameid, "It's a tie! Sudden death overtime round starting!" );
+
+				// Game is NOT finished - continue playing
+				return 0;
+			}
+
+			// No tie OR max overtime reached - determine winner
+			$winReason = "";
+			if( IsGameInOvertime($gameid) )
+			{
+				$overtimeRounds = $gameMaxRound - LAST_ROUND;
+				if( $tieOccurred )
+				{
+					// Tie at max overtime - use highest single round as tiebreaker
+					$winReason = "Highest score after $overtimeRounds overtime round(s). " .
+						$wp[0]['username'] . " won tiebreaker with highest single round score of " . $wp[0]['highestRound'];
+				}
+				else
+				{
+					$winReason = "Highest score after $overtimeRounds overtime round(s)";
+				}
+			}
+			else
+			{
+				if( $tieOccurred )
+				{
+					$winReason = "Highest score in 10 rounds. " . $wp[0]['username'] .
+						" broke tie with highest single round score of " . $wp[0]['highestRound'];
+				}
+				else
+				{
+					$winReason = "Highest score in 10 rounds";
+				}
+			}
+
+			FarkleWinGame( $gameid, $wp[0]['playerid'], $winReason );
+
 			// Check the winning player's number of wins for an achievement
 			if( $maxTurns > 1 )
 			{
 				Ach_CheckHighestDifferential( $wp[0]['playerid'], $wp[0]['playerscore'], $wp[1]['playerscore'] );
 			}
-			
+
 			NotifyOtherPlayersInGame( $gameid, "A game you were playing has finished." );
-			
+
 			$gameFinished = 1;
 		}
 		else
@@ -1118,7 +1242,7 @@ function GameIsCompleted( $gameid, $maxTurns )
 		}
 	}
 
-	return $gameFinished; 
+	return $gameFinished;
 }
 
 function FarkleWinGame( $gameid, $winnerid, $reason = "", $sendEmail=1, $achieves=1, $checkTournamentRound=1 )

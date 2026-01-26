@@ -57,6 +57,34 @@ var gBotPlayerIds = [];  // Array of bot player IDs in current game
 var BOT_STEP_DELAY_MS = 1200;  // Delay between bot steps for animation 
 
 var LAST_ROUND = 10;
+var MAX_OVERTIME_ROUNDS = 5;
+var ABSOLUTE_MAX_ROUND = 15;
+
+// Helper function to get the current max round for the game (supports overtime)
+function getGameMaxRound() {
+	if( gGameData && gGameData.max_round ) {
+		return parseInt(gGameData.max_round);
+	}
+	return LAST_ROUND;
+}
+
+// Helper function to check if game is in overtime
+function isGameInOvertime() {
+	if( !gGameData ) return false;
+	// Handle various boolean representations from PHP/PostgreSQL
+	var ot = gGameData.is_overtime;
+	return ot === true || ot === 't' || ot === 'true' || ot === '1' || ot === 1;
+}
+
+// Helper function to get the overtime round number (1, 2, 3, etc.)
+function getOvertimeRoundNumber() {
+	if( !isGameInOvertime() || !gGamePlayerData || g_myPlayerIndex < 0 ) return 0;
+	var playerRound = parseInt(gGamePlayerData[g_myPlayerIndex].playerround);
+	if( playerRound > LAST_ROUND ) {
+		return playerRound - LAST_ROUND;
+	}
+	return 0;
+}
 
 var PLAYERLEVEL_FINISH_XP = 5; 
 var PLAYERLEVEL_WIN_XP = 5; 
@@ -227,7 +255,7 @@ function FarkleGameActiveMode() {
 	$('#btnRollDice').show();
 	$('#btnPass').show();
 
-	if( gGamePlayerData[g_myPlayerIndex].playerround <= LAST_ROUND ) {
+	if( gGamePlayerData[g_myPlayerIndex].playerround <= getGameMaxRound() ) {
 
 		gGameAjaxStatus = 0;
 		gRoundScore = parseInt(gGamePlayerData[g_myPlayerIndex].roundscore);
@@ -378,10 +406,24 @@ function FarkleGameUpdateState( newGameState ) {
 			strInfo = "Your roll --";
 		}
 
-		if( gGameData.currentround == LAST_ROUND )
-			strInfo += ' <span style="color: yellow;">Last round!</span>';
-		else if( g_myPlayerIndex > -1 )
-			strInfo += ' Round: <span style="color: #96D3F2;">' + gGamePlayerData[g_myPlayerIndex].playerround + '</span> of <span style="color: #96D3F2;">'+LAST_ROUND+'</span>';
+		var maxRound = getGameMaxRound();
+		var playerRound = g_myPlayerIndex > -1 ? parseInt(gGamePlayerData[g_myPlayerIndex].playerround) : 1;
+
+		if( g_myPlayerIndex > -1 ) {
+			if( isGameInOvertime() ) {
+				// Show overtime round info
+				var overtimeRound = playerRound > LAST_ROUND ? playerRound - LAST_ROUND : 1;
+				if( playerRound == maxRound ) {
+					strInfo += ' <span style="color: #FFD700;">Final Overtime Round!</span>';
+				} else {
+					strInfo += ' <span style="color: #FFD700;">Overtime Round ' + overtimeRound + '</span>';
+				}
+			} else if( playerRound == maxRound ) {
+				strInfo += ' <span style="color: yellow;">Last round!</span>';
+			} else {
+				strInfo += ' Round: <span style="color: #96D3F2;">' + playerRound + '</span> of <span style="color: #96D3F2;">' + LAST_ROUND + '</span>';
+			}
+		}
 	}
 	
 	ConsoleDebug( "Game state is now "+gGameState ); 
@@ -566,8 +608,8 @@ function Bot_CheckAndStartTurn() {
 	console.log('Bot_CheckAndStartTurn: currentTurnPlayer.is_bot =', currentTurnPlayer.is_bot);
 	console.log('Bot_CheckAndStartTurn: currentTurnPlayer.playerround =', currentTurnPlayer.playerround);
 
-	// Check if current player is a bot and hasn't finished their rounds
-	if( currentTurnPlayer.is_bot && currentTurnPlayer.playerround <= LAST_ROUND ) {
+	// Check if current player is a bot and hasn't finished their rounds (supports overtime)
+	if( currentTurnPlayer.is_bot && currentTurnPlayer.playerround <= getGameMaxRound() ) {
 		ConsoleDebug( "Bot_CheckAndStartTurn: It's bot " + currentTurnPlayer.username + "'s turn (round " + currentTurnPlayer.playerround + ")" );
 		Bot_StartTurn( currentTurnPlayer );
 	}
@@ -1162,12 +1204,16 @@ function PassTurn( ) {
 	
 	
 	
-	// On the player's last roll, show xp gain
-	if( gGamePlayerData[g_myPlayerIndex].playerround == LAST_ROUND ) {
-		if( gGameData.maxturns > 1 ) 
+	// On the player's last roll, show xp gain (only for standard round 10, not overtime)
+	var playerRound = parseInt(gGamePlayerData[g_myPlayerIndex].playerround);
+	if( playerRound == LAST_ROUND && !isGameInOvertime() ) {
+		if( gGameData.maxturns > 1 )
 			ShowXPGain( 5 + (gGameData.maxturns-2) );
 		else
-			ShowXPGain( 3 ); 
+			ShowXPGain( 3 );
+	} else if( playerRound == getGameMaxRound() ) {
+		// Final overtime round - just show completion, XP already awarded at round 10
+		// No additional XP for overtime rounds
 	} else {	
 		if( (diceScore+gRoundScore) >= 750 )
 			ShowXPGain( 1 );
@@ -1247,6 +1293,16 @@ function FarkleGameFarkle() {
 	gTurnScore = 0;
 	FarkleGameUpdateRoundScore(); // Clear fire effect
 	ConsoleDebug('Player farkled.');
+
+	// Display the dice that caused the farkle (stored in gFarkleDice from the server response)
+	// This fixes the bug where dice weren't shown after hot dice + farkle
+	if( gFarkleDice ) {
+		for( var i = 0; i <= MAX_DICE; i++ ) {
+			if( gFarkleDice[i] > 0 && gFarkleDice[i] < 7 ) {
+				farkleUpdateDice( i, gFarkleDice[i], 0 );
+			}
+		}
+	}
 
 	// MAX: 4
 	//var randomnumber=Math.floor(Math.random()*1) + 1;

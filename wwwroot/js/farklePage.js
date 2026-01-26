@@ -727,25 +727,41 @@ function DisplayGame( appendDivId, game, showWinLoss, refPlayer, refPlayerName, 
 				color='blue'; 
 			n.find('#lblGameCardInfo').html('Game finished! (see results)'); 			
 		}
-	} else {	
-		if( refPlayerName != 0 &&game.finishedplayers == (game.maxturns-1) && game.playerround == 1 ) {
-			// Everybody has played except you. 
+	} else {
+		// Check if game is in overtime
+		var isOvertime = game.is_overtime === true || game.is_overtime === 't' || game.is_overtime === 'true';
+		var maxRound = game.max_round ? parseInt(game.max_round) : 10;
+
+		if( isOvertime ) {
+			// Overtime game handling
+			if( game.playerround <= maxRound ) {
+				// Your turn in overtime
+				color = 'darkorange';
+				var overtimeRound = game.playerround > 10 ? game.playerround - 10 : 1;
+				n.find('#lblGameCardInfo').html('<span style="color:#FFD700;">Overtime Round ' + overtimeRound + '!</span>');
+			} else {
+				// Waiting on others in overtime
+				color = 'grey';
+				n.find('#lblGameCardInfo').html('Overtime - Waiting...');
+			}
+		} else if( refPlayerName != 0 && game.finishedplayers == (game.maxturns-1) && game.playerround == 1 ) {
+			// Everybody has played except you.
 			color='orange';
-			n.find('#lblGameCardInfo').html('Waiting on you.'); 
-		} else if( refPlayerName == 0 || game.finishedplayers < game.maxturns && game.playerround == 11 ) {
+			n.find('#lblGameCardInfo').html('Waiting on you.');
+		} else if( refPlayerName == 0 || game.finishedplayers < game.maxturns && game.playerround > maxRound ) {
 			if( refPlayerName == 0 )
 				color='blue';
 			else
-				color='grey'; 
-			n.find('#lblGameCardInfo').html('Waiting on others...'); 		
+				color='grey';
+			n.find('#lblGameCardInfo').html('Waiting on others...');
 		} else if( game.finishedplayers == 0 && game.playerround == 1 ) {
 			color='darkorange'
-			n.find('#lblGameCardInfo').html("You've been challenged!"); 
+			n.find('#lblGameCardInfo').html("You've been challenged!");
 		} else {
 			color='orange'
 			var roundInfo = (game.currentround && game.maxturns) ? ' ' + game.currentround + '/' + game.maxturns : '';
-			n.find('#lblGameCardInfo').html('Game in progress...' + roundInfo); 
-		}	
+			n.find('#lblGameCardInfo').html('Game in progress...' + roundInfo);
+		}
 	}
 	
 	if( customText ) {
