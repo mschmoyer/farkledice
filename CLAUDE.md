@@ -160,9 +160,11 @@ Without mkcert, the container auto-generates self-signed certs (browser will war
 
 **App:** `farkledice` | **URL:** https://farkledice-03baf34d5c97.herokuapp.com/
 
+**Automatic Deploys:** Enabled via Heroku GitHub integration. Merging to `main` automatically deploys to production.
+
 **Quick Commands:**
 ```bash
-# Deploy changes
+# Manual deploy (if needed)
 git push heroku main
 
 # View logs (real-time)
