@@ -209,11 +209,35 @@ Use the orchestrator for structured feature development:
 The orchestrator will:
 - Extract and confirm requirements
 - Break down into granular tasks
+- Create Claude Code Tasks for terminal visibility
 - Spawn coder agents one at a time
 - Verify each task in Docker
 - Ensure all requirements are satisfied
 
-See `planning/README.md` for details.
+See `planning/README.md` for details on planning artifacts and file structure.
+
+### Task Persistence Across Sessions
+
+For long-running features, use a named task list to persist progress:
+
+```bash
+# Start Claude Code with a named task list
+CLAUDE_CODE_TASK_LIST_ID=farkledice claude
+
+# Tasks are stored in ~/.claude/tasks/farkledice/
+# Press Ctrl+T to toggle task visibility in terminal
+```
+
+This allows you to:
+- Resume work in a new session without losing context
+- See task progress in the terminal UI
+- Coordinate between main sessions and subagents
+
+**Two tracking systems work together:**
+| System | Purpose | Location |
+|--------|---------|----------|
+| Claude Code Tasks | Real-time progress | `~/.claude/tasks/` |
+| JSON Feature Files | Auditable history | `planning/features/` |
 
 ## Pull Requests
 
