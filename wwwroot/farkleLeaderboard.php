@@ -245,7 +245,7 @@ function Leaderboard_RefreshData( $force = false )
 	// Wins/Losses / Win/Loss Ratio for players with more than 10 games played
 	// PostgreSQL: No need for @rank user variable - use ROW_NUMBER() instead
 	$sql = "select t1.*, ROW_NUMBER() OVER () AS lbrank from
-		(select 3 as lbindex, playerid, COALESCE(fullname, username) as username, playerlevel,
+		(select 3 as lbindex, playerid, username, playerlevel,
 		wins as first_int, losses as second_int, TO_CHAR(COALESCE(wins::numeric/NULLIF(losses,0), 1),'FM999999990.00') as first_string,
 		null as second_string
 		from farkle_players
@@ -257,7 +257,7 @@ function Leaderboard_RefreshData( $force = false )
 	// Highest round
 	// PostgreSQL: No need for @rank user variable - use ROW_NUMBER() instead
 	$sql = "select t1.*, ROW_NUMBER() OVER () AS lbrank from
-		(select 4 as lbindex, playerid, COALESCE(fullname, username) as username, playerlevel,
+		(select 4 as lbindex, playerid, username, playerlevel,
 		highest10Round as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players
 		where highest10Round IS NOT NULL
@@ -269,11 +269,11 @@ function Leaderboard_RefreshData( $force = false )
 	// Achievement Points
 	// PostgreSQL: No need for @rank user variable - use ROW_NUMBER() instead
 	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
-		(select 5 as lbindex, a.playerid, COALESCE(fullname, username) as username, a.playerlevel,
+		(select 5 as lbindex, a.playerid, a.username, a.playerlevel,
 		sum(worth) as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players a, farkle_achievements_players b, farkle_achievements c
 		where a.playerid=b.playerid and b.achievementid=c.achievementid
-		group by a.playerid, a.username, a.fullname, a.playerlevel
+		group by a.playerid, a.username, a.playerlevel
 		order by first_int desc $limitClause) t1";
 	$insert_sql = "insert into farkle_lbdata ($sql)";
 	$result = db_command($insert_sql);	
@@ -297,7 +297,7 @@ function Leaderboard_RefreshDaily()
 	// Today Stats (all date comparisons use Central Time)
 	// Highest game scores today
 	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
-		(select 0 as lbindex, a.playerid, COALESCE(fullname, username) as username, playerlevel,
+		(select 0 as lbindex, a.playerid, a.username, a.playerlevel,
 		playerscore as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players a, farkle_games_players b
 		where a.playerid=b.playerid and (b.lastplayed AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date
@@ -307,12 +307,12 @@ function Leaderboard_RefreshDaily()
 
 	// Top farklers today (rounds with zero score)
 	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
-		(select 1 as lbindex, a.playerid, COALESCE(a.fullname, a.username) as username, a.playerlevel,
+		(select 1 as lbindex, a.playerid, a.username, a.playerlevel,
 		count(*) as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_players a, farkle_games_players b, farkle_rounds c
 		where a.playerid=b.playerid and (b.lastplayed AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date
 		and a.playerid=c.playerid and b.gameid=c.gameid and c.roundscore=0
-		group by a.username, a.playerid, a.fullname, a.playerlevel
+		group by a.username, a.playerid, a.playerlevel
 		order by first_int desc LIMIT $maxDataRows) t1";
 	$insert_sql = "insert into farkle_lbdata ($sql)";
 	$result = db_command($insert_sql);
@@ -321,7 +321,7 @@ function Leaderboard_RefreshDaily()
 	// first_int = players beaten, second_int = games played, first_string = win%
 	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
 		(select 2 as lbindex, sub.playerid,
-			COALESCE(p.fullname, p.username) as username, p.playerlevel,
+			p.username, p.playerlevel,
 			sub.players_beaten as first_int,
 			sub.games_played as second_int,
 			sub.win_pct || '%' as first_string,
@@ -348,7 +348,7 @@ function Leaderboard_RefreshDaily()
 
 	// Today's best single rounds (highest round scores)
 	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
-		(select 6 as lbindex, a.playerid, COALESCE(a.fullname, a.username) as username, a.playerlevel,
+		(select 6 as lbindex, a.playerid, a.username, a.playerlevel,
 		r.roundscore as first_int, 0 as second_int, null as first_string, null as second_string
 		from farkle_rounds r
 		join farkle_players a on a.playerid = r.playerid

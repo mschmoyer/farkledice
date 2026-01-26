@@ -273,7 +273,7 @@ function GetFarkleGameName( $gameid, $gameWith, $thePlayers, $maxTurns=2 )
 	
 	// Get names of players (the starting player first)
 
-	$sql = "select distinct COALESCE(fullname, username) as username, playerid 
+	$sql = "select distinct username, playerid
 				from farkle_players where playerid in ($players)";
 	$pNameData = db_select_query( $sql, SQL_MULTI_ROW );
 
@@ -715,7 +715,7 @@ function FarkleSendUpdate( $playerid, $gameid )
 		$rollingScore = "COALESCE((select sum(roundscore) from farkle_rounds where playerid=a.playerid and gameid=$gameid and roundnum<$currentRound),0) as rollingscore, ";
 	
 	// Get information about the players
-	$sql = "select COALESCE(fullname,username) as username, a.playerid, a.playerround,
+	$sql = "select b.username, a.playerid, a.playerround,
 		a.playerscore, b.cardcolor, b.playerlevel,
 		a.lastxpgain, a.lastroundscore, $rollingScore
 		COALESCE((select COALESCE(sum(setscore),0) from farkle_sets where playerid=a.playerid and gameid=$gameid and roundnum=$currentRound),0) as roundscore,
@@ -1154,7 +1154,7 @@ function GameIsCompleted( $gameid, $maxTurns )
 	if( $playersDone >= $maxTurns )
 	{
 		// Select the playerid with the highest score in this game.
-		$sql = "select a.playerid, a.playerscore, COALESCE(b.fullname, b.username) as username,
+		$sql = "select a.playerid, a.playerscore, b.username,
 			(select max(roundscore) from farkle_rounds where playerid=a.playerid and gameid=a.gameid) as highestRound
 			from farkle_games_players a, farkle_players b
 			where a.gameid=$gameid and a.playerid=b.playerid
@@ -1488,7 +1488,7 @@ function GetGameActivityLog($gameid) {
 	}
 
 	$sql = "SELECT r.playerid, r.roundnum, r.roundscore,
-				   COALESCE(p.fullname, p.username) as username
+				   p.username
 			FROM farkle_rounds r
 			JOIN farkle_players p ON r.playerid = p.playerid
 			WHERE r.gameid = $gameid

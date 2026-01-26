@@ -20,8 +20,8 @@ class Player {
 	function withID( $playerId ) {
 		$instance = new self();
 		// Total points
-		$sql = "select 
-			COALESCE(fullname, username) as username, email, sendhourlyemails, random_selectable, playerid, playertitle, cardcolor,
+		$sql = "select
+			username, email, sendhourlyemails, random_selectable, playerid, playertitle, cardcolor,
 			(select sum(worth) 
 				from farkle_achievements a, farkle_achievements_players b 
 				where a.achievementid=b.achievementid and b.playerid='$playerid') as achscore,

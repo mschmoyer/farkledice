@@ -330,16 +330,16 @@ function GenerateTournamentRound( $tid )
 		// players with more losses at the top and thus players with the least losses have a higher
 		// chance to get a bye round. 
 		$sql = "SELECT * FROM (
-			select (select count(*) from farkle_tournaments_games where tournamentid=$tid and byeplayerid=d.playerid) as byes, 
-				a.playerid, COALESCE(a.fullname, a.username) as username, d.seednum, d.losses, a.email
+			select (select count(*) from farkle_tournaments_games where tournamentid=$tid and byeplayerid=d.playerid) as byes,
+				a.playerid, a.username, d.seednum, d.losses, a.email
 				from farkle_players a, farkle_tournaments_games c, farkle_tournaments_players d
-				where 
+				where
 					d.losses < $lossesTillDone and
-					d.tournamentid=$tid and 
+					d.tournamentid=$tid and
 					a.playerid=d.playerid
 			UNION
-			select (select count(*) from farkle_tournaments_games where tournamentid=$tid and byeplayerid=b.playerid) as byes, 
-				b.playerid, COALESCE(b.fullname, b.username) as username, c.seednum, c.losses, b.email
+			select (select count(*) from farkle_tournaments_games where tournamentid=$tid and byeplayerid=b.playerid) as byes,
+				b.playerid, b.username, c.seednum, c.losses, b.email
 				from farkle_tournaments_games a, farkle_players b, farkle_tournaments_players c
 				where a.byeplayerid > 0 and a.gameid=0 and a.tournamentid=$tid and a.roundnum=$lastRound and
 				a.byeplayerid=b.playerid and 
@@ -438,8 +438,8 @@ function TournamentFinish( $tid, $winningplayer )
 	$rc = db_command($sql);
 	
 	// Information on the winning player
-	$sql = "select COALESCE(a.fullname, a.username) as username, b.roundnum, b.achievementid
-		from farkle_players a, farkle_tournaments b 
+	$sql = "select a.username, b.roundnum, b.achievementid
+		from farkle_players a, farkle_tournaments b
 		where a.playerid=$winningplayer and b.tournamentid=$tid";
 	$w = db_select_query( $sql, SQL_SINGLE_ROW );
 	$un = ucwords(strtolower($w['username']));
@@ -482,13 +482,13 @@ function GetTournamentStatus( $tid, $playerid )
 	//if( $tInfo['roundnum'] > 0 && $tInfo['winningplayer'] == 0 )
 	if( $tInfo['roundnum'] > 0 )
 	{
-		$innerPiece = "select a.roundnum, b.winningplayer, a.gameid, b.gamemode, b.currentturn, b.playerstring, 
-				c.playerid as p1id, 
-				COALESCE(c.fullname, c.username) as p1u, 
+		$innerPiece = "select a.roundnum, b.winningplayer, a.gameid, b.gamemode, b.currentturn, b.playerstring,
+				c.playerid as p1id,
+				c.username as p1u,
 				d.playerround as p1rnd,
 				d.playerscore as firstplayerscore,
-				e.playerid as p2id, 
-				COALESCE(e.fullname, e.username) as p2u, 
+				e.playerid as p2id,
+				e.username as p2u, 
 				f.playerround as p2rnd,
 				f.playerscore as secondplayerscore,
 				(c.playerid=$playerid || e.playerid=$playerid) as yourplayer
@@ -506,9 +506,9 @@ function GetTournamentStatus( $tid, $playerid )
 				e.playerid=f.playerid and f.playerturn=2 and f.gameid=b.gameid
 			";
 		$innerPiece .= " UNION ";
-		$innerPiece .= "select a.roundnum, a.byeplayerid as winningplayer, 0 as gameid, 0 asgamemode, 0 as currentturn, 
-				CONCAT(COALESCE(fullname, username),' - Bye Round') as playerstring,
-				a.byeplayerid as p1id, COALESCE(c.fullname, c.username) as p1u, 0 as p1s, 0 as p1rnd, 
+		$innerPiece .= "select a.roundnum, a.byeplayerid as winningplayer, 0 as gameid, 0 asgamemode, 0 as currentturn,
+				CONCAT(c.username,' - Bye Round') as playerstring,
+				a.byeplayerid as p1id, c.username as p1u, 0 as p1s, 0 as p1rnd, 
 				'0' as p2id, 'bye' as p2u, 0 as p2s, 0 as p2rnd,
 				 (c.playerid=$playerid) as yourplayer
 			from farkle_tournaments_games a, farkle_players c
@@ -518,7 +518,7 @@ function GetTournamentStatus( $tid, $playerid )
 		$gameInfo = db_select_query( $sql, SQL_MULTI_ROW );
 	}
 
-	$sql = "select COALESCE(a.fullname, a.username) as username, a.playerid, a.playertitle, a.cardcolor, a.playerlevel,
+	$sql = "select a.username, a.playerid, a.playertitle, a.cardcolor, a.playerlevel,
 		b.seednum
 		from farkle_players a, farkle_tournaments_players b
 		where a.playerid=b.playerid and b.tournamentid=$tid

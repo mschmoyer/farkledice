@@ -68,6 +68,7 @@
 	
 	<div class="playerInfoContainer" id="divPlayerInfoItem3" align="center" style="margin: 0px;">
 
+		{* Display Name feature removed - now using username everywhere
 		<div style="margin-bottom: 15px;">
 			<label style="font-weight: bold;">Display Name:</label><br/>
 			<input type="text" id="displayname" maxlength="30" style="width: 200px; padding: 5px;"
@@ -79,6 +80,7 @@
 			</div>
 		</div>
 		<hr style="margin: 15px 0; border: 0; border-top: 1px solid #ddd;" />
+		*}
 
 		<table style="margin: 3px;" cellpadding="3px">
 

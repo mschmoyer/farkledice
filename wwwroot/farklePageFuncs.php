@@ -92,12 +92,12 @@ function GetStats( $playerid, $recordInSession = 1 )
 		$_SESSION['farkle']['lastknownscreen'] = 'playerinfo';
 		$_SESSION['farkle']['lastplayerinfoid'] = $playerid;
 	}
-	$usernameSql = "select COALESCE(fullname, username) as username from farkle_players where playerid='$playerid'";
+	$usernameSql = "select username from farkle_players where playerid='$playerid'";
 	$friendSql = "select 1 from farkle_friends where sourceid='" . $_SESSION['playerid'] . "' and friendid=$playerid";
 	
 	// Total points
 	$sql = "select
-		COALESCE(fullname, username) as username, fullname, email, sendhourlyemails, random_selectable, playerid, playertitle, cardcolor, cardbg,
+		username, email, sendhourlyemails, random_selectable, playerid, playertitle, cardcolor, cardbg,
 		(select sum(worth)
 			from farkle_achievements a, farkle_achievements_players b
 			where a.achievementid=b.achievementid and b.playerid='$playerid') as achscore,
@@ -126,7 +126,7 @@ function GetStats( $playerid, $recordInSession = 1 )
 
 function GetPlayerInfo( $playerid )
 {
-	$sql = "select COALESCE(fullname, username) as username, playertitle, cardcolor, cardbg,
+	$sql = "select username, playertitle, cardcolor, cardbg,
 			playerlevel, xp, xp_to_level,
 			(select sum(worth)
 				from farkle_achievements a, farkle_achievements_players b
@@ -251,7 +251,7 @@ function Player_GetTitleChoices( $level )
 }
 
 // Options from the player info "Options" screen.
-function SaveOptions( $email, $sendHourlyEmails=1, $random_selectable=1, $displayname='' )
+function SaveOptions( $email, $sendHourlyEmails=1, $random_selectable=1 )
 {
 	if (!filter_var($email, FILTER_VALIDATE_EMAIL))
 	{
@@ -265,33 +265,11 @@ function SaveOptions( $email, $sendHourlyEmails=1, $random_selectable=1, $displa
 		return "Invalid email notification setting.";
 	}
 
-	// Validate and process display name
-	$displayname = trim($displayname);
-	if (empty($displayname)) {
-		$displayname = null; // Will fall back to username via COALESCE
-	} else {
-		// Check max length (30 characters)
-		if (mb_strlen($displayname) > 30) {
-			return "Display name must be 30 characters or less.";
-		}
-		// Check for invalid/dangerous characters
-		if (preg_match('/[<>&"\\\\\/;:]/', $displayname)) {
-			return "Display name contains invalid characters.";
-		}
-	}
-
-	// Build the query with parameterized display name
 	// PostgreSQL needs boolean values cast properly
 	$randomSelectableBool = ($random_selectable == 1) ? 'true' : 'false';
 
-	if ($displayname === null) {
-		$sql = "update farkle_players set email='$email', sendhourlyemails=$sendHourlyEmails, random_selectable=$randomSelectableBool, fullname=NULL
-			where playerid={$_SESSION['playerid']}";
-	} else {
-		$escapedDisplayname = addslashes($displayname);
-		$sql = "update farkle_players set email='$email', sendhourlyemails=$sendHourlyEmails, random_selectable=$randomSelectableBool, fullname='$escapedDisplayname'
-			where playerid={$_SESSION['playerid']}";
-	}
+	$sql = "update farkle_players set email='$email', sendhourlyemails=$sendHourlyEmails, random_selectable=$randomSelectableBool
+		where playerid={$_SESSION['playerid']}";
 	$result = db_command($sql);
 
 	return "Options saved.";
@@ -326,7 +304,7 @@ function GameWinningEmail( $gameid, $winnerid, $reason )
 	BaseUtil_Debug( "GameWinningEmail: entered.", 7 );	
 	
 	// Select all the losers of the game
-	$sql = "select email, COALESCE(a.fullname, a.username) as username, c.playerscore as score
+	$sql = "select email, a.username, c.playerscore as score
 		from farkle_players a, farkle_games b, farkle_games_players c
 		where b.gameid=$gameid and c.gameid=b.gameid and a.playerid=c.playerid
 		order by score desc";

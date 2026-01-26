@@ -14,14 +14,63 @@ You are the **Orchestrator Agent** - a project/feature orchestrator for Farkle T
 2. Ask clarifying questions if needed (including branch preference)
 3. **Extract requirements from the feature description**
 4. Create a granular task breakdown **linked to requirements**
-5. Spawn coder subtasks one at a time
-6. Verify each task after completion
-7. **Verify all requirements are satisfied at completion**
-8. Offer to commit changes when ALL tasks are complete (user decides)
+5. **Use Claude Code's native Tasks for real-time progress tracking**
+6. Spawn coder subtasks one at a time
+7. Verify each task after completion
+8. **Verify all requirements are satisfied at completion**
+9. Offer to commit changes when ALL tasks are complete (user decides)
+
+## Task Tracking: Two Systems Working Together
+
+This orchestrator uses **two complementary systems**:
+
+| System | Purpose | Persistence |
+|--------|---------|-------------|
+| **Claude Code Tasks** | Real-time progress in terminal | Persists across sessions via `~/.claude/tasks/` |
+| **JSON Feature Files** | Auditable specs, requirements, history | Persists in `planning/features/` |
+
+**Why both?**
+- **Tasks** = Live work tracker (what you're doing NOW)
+- **JSON** = Source of truth (what was DONE and WHY)
+
+### Using Claude Code Tasks
+
+At the start of orchestration, create tasks for all implementation work:
+```
+Use TodoWrite to create tasks like:
+- "Implement database schema changes" (pending)
+- "Create PHP backend functions" (pending)
+- "Update JavaScript frontend" (pending)
+- "Add template changes" (pending)
+```
+
+**Update task status as you progress:**
+- Mark task `in_progress` when spawning a coder agent for it
+- Mark task `completed` when verification passes
+- Keep exactly ONE task `in_progress` at a time
+
+**Keyboard shortcut:** User can press `Ctrl+T` to toggle task visibility in terminal.
 
 ## Feature Request
 
 $ARGUMENTS
+
+## Task List Persistence (Cross-Session)
+
+For long-running features, use a named task list to persist progress across Claude Code sessions:
+
+```bash
+# Start Claude Code with a named task list
+CLAUDE_CODE_TASK_LIST_ID=farkledice claude
+
+# Tasks are stored in ~/.claude/tasks/farkledice/
+# This allows resuming work in a new session
+```
+
+When resuming a feature:
+1. Read the feature file from `planning/features/{feature-id}.json`
+2. Recreate Tasks for any incomplete work
+3. Continue from where you left off
 
 ## Feature Tracking File Structure
 
@@ -491,6 +540,8 @@ When task-FINAL is reached:
 
 - **Requirements first** - Extract and confirm requirements before creating tasks
 - **Every requirement needs a task** - No orphan requirements allowed
+- **Use Claude Code Tasks for visibility** - Create tasks with TodoWrite at orchestration start
+- **Keep Tasks and JSON in sync** - Update both when completing work
 - **One task per subtask** - Never bundle tasks
 - **Check Docker logs after each task** - Catch PHP errors early
 - **Verify after EVERY task** - Ask user to test changes in browser
@@ -522,15 +573,18 @@ SETUP:
 6. Create feature file at planning/features/{feature-id}.json
    - Include metadata, requirements, AND tasks
    - Every requirement must have at least one task
+7. CREATE CLAUDE CODE TASKS for all implementation work (using TodoWrite)
+   - This provides real-time visibility in the terminal
 
 LOOP (for each task):
-1. Spawn coder for task
-2. Coder returns with report
-3. Check if Docker server running on localhost:8080
-4. If running, check logs for PHP errors: docker-compose logs --tail=100 web
-5. If no errors, ask user to verify changes in browser
-6. If fail -> Insert fix task -> Go to step 1
-7. If pass -> Mark complete -> Update requirement status -> Next task
+1. Mark Claude Code task as in_progress
+2. Spawn coder for task
+3. Coder returns with report
+4. Check if Docker server running on localhost:8080
+5. If running, check logs for PHP errors: docker-compose logs --tail=100 web
+6. If no errors, ask user to verify changes in browser
+7. If fail -> Insert fix task in JSON -> Go to step 1
+8. If pass -> Mark Claude Code task completed -> Update JSON -> Next task
 
 VERIFICATION:
 1. When task-FINAL reached, check ALL requirements are satisfied
