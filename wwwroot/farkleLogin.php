@@ -98,7 +98,7 @@ function UserLoginSafe( $sessionid, $remember=1 )
 	BaseUtil_Debug( __FUNCTION__ . " entered.", 7 );
 	
 	// Attempt to find the selected session id 
-	$sql = "select COALESCE(fullname,username) as username, a.playerid as playerid, adminlevel, b.agentString
+	$sql = "select a.username, a.playerid as playerid, adminlevel, b.agentString
 		from farkle_players a, farkle_players_devices b
 		where a.playerid=b.playerid and b.sessionid='$sessionid'";			
 	$pInfo = db_select_query( $sql, SQL_SINGLE_ROW );
@@ -192,7 +192,7 @@ function UserLogin( $user, $pass, $remember=1 )
 {
 	BaseUtil_Debug( __FUNCTION__ . " entered.", 7 );
 		
-	$sql = "select COALESCE(fullname,username) as username, playerid, adminlevel, sessionid
+	$sql = "select username, playerid, adminlevel, sessionid
 		from farkle_players
 		where (MD5(username)='$user' OR MD5(LOWER(email))='$user') and password=CONCAT('$pass',MD5(salt))";	
 		

@@ -14,7 +14,7 @@ function AddFriend( $playerid, $identstring, $ident )
 	{
 		$theIdent = strtolower(db_escape_string($identstring));
 		$sql = "select min(playerid) from farkle_players
-			where lower(username)='$theIdent' or lower(fullname)='$theIdent'";
+			where lower(username)='$theIdent'";
 			
 		$friendid = db_select_query( $sql, SQL_SINGLE_VALUE );
 		if( empty($friendid) )
@@ -133,7 +133,7 @@ function GetGameFriends( $playerid, $force = false )
 		BaseUtil_Debug( __FUNCTION__ . " No friend data cached. Adding friend data.", 7 );
 
 		// Use numeric comparison for compatibility with smallint columns
-		$sql = "select COALESCE(fullname,username) as username, a.playerid, a.playertitle, a.cardcolor, a.lastplayed
+		$sql = "select a.username, a.playerid, a.playertitle, a.cardcolor, a.lastplayed
 				from farkle_players a, farkle_friends b
 				where a.playerid=b.friendid and b.sourceid=$playerid and
 				a.active=1 and b.removed=0
@@ -163,7 +163,7 @@ function GetGameFriends( $playerid, $force = false )
 function GetFriends( $playerid )
 {
 
-	$sql = "select COALESCE(a.fullname, a.username) as username, a.playerid, a.playertitle, a.cardbg,
+	$sql = "select a.username, a.playerid, a.playertitle, a.cardbg,
 		(select count(*) from farkle_games c, farkle_games_players d
 			where c.gameid=d.gameid and d.playerid=b.friendid and c.winningplayer=$playerid) as winsagainst,
 		(select count(*) from farkle_games e, farkle_games_players f, farkle_games_players g
@@ -180,7 +180,7 @@ function GetFriends( $playerid )
 function GetActiveFriends( $playerid )
 {
 	// Use numeric comparison for compatibility with both smallint (local) and boolean (prod)
-	$sql = "select COALESCE(fullname,username) as username, a.playerid, a.playertitle, a.cardcolor
+	$sql = "select a.username, a.playerid, a.playertitle, a.cardcolor
 			from farkle_players a, farkle_friends b
 			where a.playerid=b.friendid and b.sourceid=$playerid and
 			a.active=1 and b.removed=0 and
@@ -201,7 +201,7 @@ function GetActiveFriends( $playerid )
 
 		// Find any active game this friend is in (winningplayer = 0 means game in progress)
 		$gameSql = "SELECT g.gameid,
-					(SELECT COALESCE(p2.fullname, p2.username)
+					(SELECT p2.username
 					 FROM farkle_games_players gp2
 					 JOIN farkle_players p2 ON gp2.playerid = p2.playerid
 					 WHERE gp2.gameid = g.gameid AND gp2.playerid != $friendId

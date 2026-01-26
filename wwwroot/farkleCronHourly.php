@@ -25,7 +25,7 @@
 	function EmailMyGames()
 	{
 		// Get all games for all players that have not been played yet.
-		$sql = "select b.playerid, COALESCE(c.fullname, c.username) as username, c.email, a.gameid, a.playerstring,
+		$sql = "select b.playerid, c.username, c.email, a.gameid, a.playerstring,
 			TO_CHAR(a.gamestart, 'Mon DD @ HH12:00 AM') as gamestart
 			from farkle_games a, farkle_games_players b, farkle_players c
 			where a.gameid=b.gameid and c.playerid=b.playerid and a.winningplayer=0 and a.whostarted != c.playerid

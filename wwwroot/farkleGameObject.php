@@ -45,7 +45,7 @@ class FarkleGameInfo {
 	
 	// This is an associative array based on PlayerId
 	function GetPlayerData() {
-		$sql = "select a.*, b.username, b.fullname, b.email
+		$sql = "select a.*, b.username, b.email
 			from farkle_games_players a, farkle_players b
 			where gameid=$this->gameid and a.playerid=b.playerid";
 		$pd = db_select_query( $sql, SQL_MULTI_ROW );

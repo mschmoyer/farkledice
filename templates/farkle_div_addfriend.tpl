@@ -33,8 +33,7 @@
 			<img id="friendPageFriendImage">
 			
 			<div id="friendNameDiv">
-				<span id="friendName" style="padding: 6px 0 0 10px; float: left; color: white;" class="shadowed"
-					onClick="ShowPlayerInfo( this.attributes['playerid'].value );"></span>
+				<span id="friendName" style="padding: 6px 0 0 10px; float: left; color: white;" class="shadowed"></span>
 			</div>
 			
 		</div>

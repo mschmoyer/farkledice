@@ -134,7 +134,6 @@ function PopulatePlayerInfo()
 	$('#lblFarkles').html(playerInfo[0].farkles);	
 	
 	$('#txtUserEmail').val(playerInfo[0].email);
-	$('#displayname').val(playerInfo[0].fullname || '');
 
 	$('#chkEmailMe').attr('checked', (playerInfo[0].sendhourlyemails=='1' ? true : false ) );
 	$('#chkRandomSelectable').attr('checked', (playerInfo[0].random_selectable=='1' ? true : false ) );
@@ -328,10 +327,6 @@ function SaveOptions()
 	}
 	// Email address
 	var params = '&email=' + email;
-
-	// Display name
-	var displayname = document.getElementById('displayname').value;
-	params += '&displayname=' + encodeURIComponent(displayname);
 
 	// Send Hourly Emails Checked
 	params += '&sendhourlyemails=' + ( $('#chkEmailMe').is(":checked") ? '1' : '0' );
