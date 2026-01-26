@@ -191,19 +191,23 @@ function LoginGenerateSession( $playerid, $remember=1, $device='web' )
 function UserLogin( $user, $pass, $remember=1 )
 {
 	BaseUtil_Debug( __FUNCTION__ . " entered.", 7 );
-		
+
 	$sql = "select COALESCE(fullname,username) as username, playerid, adminlevel, sessionid
 		from farkle_players
-		where (MD5(username)='$user' OR MD5(LOWER(email))='$user') and password=CONCAT('$pass',MD5(salt))";	
-		
+		where (MD5(username)='$user' OR MD5(LOWER(email))='$user') and password=CONCAT('$pass',MD5(salt))";
+
 	$pInfo = db_select_query( $sql, SQL_SINGLE_ROW );
 	if( $pInfo )
 	{
 		LoginGenerateSession( $pInfo['playerid'] );
 		LoginSuccess( $pInfo, $remember );
+		// Return the NEW session ID for iOS/API clients
+		if( isset($_SESSION['farklesession']) ) {
+			$pInfo['sessionid'] = $_SESSION['farklesession'];
+		}
 		return $pInfo;
 	}
-	
+
 	return Array('Error' => 'Username or password incorrect.');
 }
 

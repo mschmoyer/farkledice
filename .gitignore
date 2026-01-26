@@ -31,6 +31,11 @@ configs/siteconfig.ini
 .env*
 !.env.example
 
+# APNs push notification keys (NEVER commit these!)
+configs/AuthKey_*.p8
+configs/apns_config.ini
+*.p8
+
 # Dependencies
 vendor/
 node_modules/

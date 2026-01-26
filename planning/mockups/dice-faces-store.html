@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farkle - Dice Face Store Mockup</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Navigation between screens */
+        .screen-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .screen-nav button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            background: #2d3748;
+            color: #a0aec0;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .screen-nav button.active {
+            background: #4a5568;
+            color: #fff;
+        }
+
+        .screen-nav button:hover {
+            background: #4a5568;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #2d3748;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .coin-balance {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .coin-icon {
+            font-size: 18px;
+        }
+
+        /* Store Categories */
+        .category {
+            margin-bottom: 28px;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .category-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .category-line {
+            flex: 1;
+            height: 1px;
+            background: #2d3748;
+        }
+
+        /* Store Items Grid */
+        .store-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .store-item {
+            background: linear-gradient(145deg, #2d3748 0%, #1a202c 100%);
+            border-radius: 16px;
+            padding: 16px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .store-item:hover {
+            transform: translateY(-4px);
+            border-color: #4a5568;
+        }
+
+        .store-item.selected {
+            border-color: #48bb78;
+            background: linear-gradient(145deg, #2f4a3d 0%, #1a2e25 100%);
+        }
+
+        .item-preview {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 10px;
+            background: #fff;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 18px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .item-preview.multiplier {
+            color: #e53e3e;
+        }
+
+        .item-preview.bonus {
+            color: #d69e2e;
+        }
+
+        .item-preview.value-swap {
+            color: #3182ce;
+        }
+
+        .item-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .item-desc {
+            font-size: 11px;
+            color: #718096;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+
+        .item-price {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #1a1a2e;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #f6ad55;
+        }
+
+        /* Buy Button */
+        .buy-section {
+            margin-top: 24px;
+            padding: 20px;
+            background: linear-gradient(145deg, #2d3748 0%, #1a202c 100%);
+            border-radius: 16px;
+        }
+
+        .selected-item-preview {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .selected-item-preview .item-preview {
+            margin: 0;
+            width: 48px;
+            height: 48px;
+            font-size: 16px;
+        }
+
+        .selected-item-info h3 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .selected-item-info p {
+            font-size: 13px;
+            color: #a0aec0;
+        }
+
+        .buy-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .buy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+        }
+
+        /* ============================================ */
+        /* DICE PLACEMENT SCREEN */
+        /* ============================================ */
+
+        .placement-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .placement-header h1 {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .placement-header p {
+            color: #a0aec0;
+            font-size: 14px;
+        }
+
+        .purchased-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #2f4a3d 0%, #1a2e25 100%);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 2px solid #48bb78;
+        }
+
+        .purchased-item .item-preview {
+            margin: 0;
+            width: 44px;
+            height: 44px;
+            font-size: 15px;
+        }
+
+        .purchased-item span {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #2d3748;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #718096;
+        }
+
+        .step.active {
+            background: #3182ce;
+            color: #fff;
+        }
+
+        .step.completed {
+            background: #48bb78;
+            color: #fff;
+        }
+
+        .step-number {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* Dice Selection */
+        .dice-selection {
+            margin-bottom: 28px;
+        }
+
+        .dice-selection h3 {
+            font-size: 14px;
+            color: #a0aec0;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .dice-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .selectable-die {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(145deg, #e2e8f0 0%, #cbd5e0 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 3px solid transparent;
+            position: relative;
+        }
+
+        .selectable-die:hover {
+            transform: scale(1.08);
+        }
+
+        .selectable-die.selected {
+            border-color: #3182ce;
+            box-shadow: 0 0 20px rgba(49, 130, 206, 0.5);
+        }
+
+        .die-number {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 20px;
+            height: 20px;
+            background: #3182ce;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .die-dot {
+            width: 8px;
+            height: 8px;
+            background: #1a202c;
+            border-radius: 50%;
+        }
+
+        /* Face Selection */
+        .face-selection {
+            margin-bottom: 24px;
+        }
+
+        .face-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+
+        .selectable-face {
+            aspect-ratio: 1;
+            background: linear-gradient(145deg, #e2e8f0 0%, #cbd5e0 100%);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 3px solid transparent;
+            position: relative;
+        }
+
+        .selectable-face:hover {
+            transform: scale(1.05);
+        }
+
+        .selectable-face.selected {
+            border-color: #48bb78;
+            box-shadow: 0 0 20px rgba(72, 187, 120, 0.5);
+        }
+
+        .selectable-face.has-modifier {
+            background: linear-gradient(145deg, #fef3c7 0%, #fcd34d 100%);
+        }
+
+        .face-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #1a202c;
+        }
+
+        .face-current-mod {
+            position: absolute;
+            bottom: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #e53e3e;
+        }
+
+        .face-label {
+            font-size: 11px;
+            color: #4a5568;
+            margin-top: 2px;
+        }
+
+        /* Confirm Button */
+        .confirm-section {
+            background: linear-gradient(145deg, #2d3748 0%, #1a202c 100%);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .placement-preview {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .preview-die {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(145deg, #fff 0%, #e2e8f0 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .preview-die .face-value {
+            font-size: 32px;
+        }
+
+        .preview-die .modifier-overlay {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            font-size: 14px;
+            font-weight: 800;
+            color: #e53e3e;
+            text-shadow: 1px 1px 0 #fff;
+        }
+
+        .preview-arrow {
+            font-size: 24px;
+            color: #48bb78;
+        }
+
+        .confirm-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .confirm-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+        }
+
+        .confirm-btn:disabled {
+            background: #4a5568;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .warning-text {
+            text-align: center;
+            font-size: 12px;
+            color: #f6ad55;
+            margin-top: 12px;
+        }
+
+        /* ============================================ */
+        /* GAMEPLAY SCREEN */
+        /* ============================================ */
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .player-score {
+            text-align: center;
+        }
+
+        .player-score .name {
+            font-size: 12px;
+            color: #a0aec0;
+            margin-bottom: 4px;
+        }
+
+        .player-score .score {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .player-score.you .score {
+            color: #48bb78;
+        }
+
+        .player-score.opponent .score {
+            color: #fc8181;
+        }
+
+        .vs-badge {
+            background: #2d3748;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #718096;
+        }
+
+        .turn-info {
+            text-align: center;
+            background: linear-gradient(135deg, #2f4a3d 0%, #1a2e25 100%);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #48bb78;
+        }
+
+        .turn-info .label {
+            font-size: 12px;
+            color: #68d391;
+            margin-bottom: 4px;
+        }
+
+        .turn-info .turn-score {
+            font-size: 32px;
+            font-weight: 800;
+            color: #48bb78;
+        }
+
+        /* Game Dice Area */
+        .dice-area {
+            background: linear-gradient(145deg, #234e3a 0%, #1a3a2a 100%);
+            border-radius: 20px;
+            padding: 24px 16px;
+            margin-bottom: 20px;
+            border: 3px solid #2d5a42;
+        }
+
+        .dice-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .game-die {
+            width: 58px;
+            height: 58px;
+            background: linear-gradient(145deg, #fff 0%, #e8e8e8 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .game-die:hover {
+            transform: scale(1.08);
+        }
+
+        .game-die.selected {
+            box-shadow: 0 0 0 4px #48bb78, 0 4px 12px rgba(0,0,0,0.3);
+            transform: translateY(-4px);
+        }
+
+        .game-die.scoring {
+            background: linear-gradient(145deg, #c6f6d5 0%, #9ae6b4 100%);
+        }
+
+        .game-die .pip-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 3px;
+            width: 36px;
+            height: 36px;
+        }
+
+        .game-die .pip {
+            width: 10px;
+            height: 10px;
+            background: #1a202c;
+            border-radius: 50%;
+        }
+
+        .game-die .pip.hidden {
+            visibility: hidden;
+        }
+
+        /* Modifier overlay on dice */
+        .die-modifier {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 2px 4px;
+            border-radius: 4px;
+            line-height: 1;
+        }
+
+        .die-modifier.multiplier {
+            color: #fff;
+            background: #e53e3e;
+        }
+
+        .die-modifier.bonus {
+            color: #1a202c;
+            background: #f6e05e;
+        }
+
+        /* Scoring indicator */
+        .scoring-badge {
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #48bb78;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
+        }
+
+        /* Game Actions */
+        .game-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .game-btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .game-btn.roll {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: #fff;
+        }
+
+        .game-btn.bank {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: #fff;
+        }
+
+        .game-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* ============================================ */
+        /* DIE INSPECTOR MODAL */
+        /* ============================================ */
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.visible {
+            display: flex;
+        }
+
+        .inspector-modal {
+            background: linear-gradient(145deg, #2d3748 0%, #1a202c 100%);
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 320px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .inspector-die {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(145deg, #fff 0%, #e8e8e8 100%);
+            border-radius: 16px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .inspector-die .pip-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 6px;
+            width: 60px;
+            height: 60px;
+        }
+
+        .inspector-die .pip {
+            width: 16px;
+            height: 16px;
+            background: #1a202c;
+            border-radius: 50%;
+        }
+
+        .inspector-die .die-modifier {
+            top: 6px;
+            right: 6px;
+            font-size: 18px;
+            padding: 4px 8px;
+        }
+
+        .inspector-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .inspector-effect {
+            background: linear-gradient(135deg, #2f4a3d 0%, #1a2e25 100%);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .effect-label {
+            font-size: 12px;
+            color: #68d391;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .effect-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: #48bb78;
+        }
+
+        .effect-description {
+            font-size: 13px;
+            color: #a0aec0;
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+
+        .inspector-breakdown {
+            text-align: left;
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 13px;
+        }
+
+        .breakdown-row:not(:last-child) {
+            border-bottom: 1px solid #2d3748;
+        }
+
+        .breakdown-row .label {
+            color: #a0aec0;
+        }
+
+        .breakdown-row .value {
+            font-weight: 600;
+        }
+
+        .breakdown-row.total {
+            color: #48bb78;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: #4a5568;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: #5a6578;
+        }
+
+        /* ============================================ */
+        /* GAMEPLAY SCREEN 2 - DIFFERENT SCENARIO */
+        /* ============================================ */
+
+        .modifier-triggered {
+            background: linear-gradient(135deg, #744210 0%, #5a3510 100%);
+            border: 2px solid #f6ad55;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modifier-triggered .icon {
+            font-size: 24px;
+        }
+
+        .modifier-triggered .text {
+            flex: 1;
+        }
+
+        .modifier-triggered .title {
+            font-weight: 700;
+            font-size: 14px;
+            color: #fbd38d;
+        }
+
+        .modifier-triggered .desc {
+            font-size: 12px;
+            color: #f6ad55;
+        }
+
+        /* Tap hint */
+        .tap-hint {
+            text-align: center;
+            font-size: 11px;
+            color: #718096;
+            margin-top: 12px;
+        }
+
+        .tap-hint span {
+            background: #2d3748;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Screen Navigation -->
+        <div class="screen-nav">
+            <button class="active" onclick="showScreen('store')">Store</button>
+            <button onclick="showScreen('placement')">Place Modifier</button>
+            <button onclick="showScreen('game1')">Gameplay 1</button>
+            <button onclick="showScreen('game2')">Gameplay 2</button>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SCREEN 1: STORE -->
+        <!-- ============================================ -->
+        <div id="store" class="screen active">
+            <div class="header">
+                <h1>Dice Shop</h1>
+                <div class="coin-balance">
+                    <span class="coin-icon">&#x1FA99;</span>
+                    <span>2,450</span>
+                </div>
+            </div>
+
+            <!-- Multipliers -->
+            <div class="category">
+                <div class="category-header">
+                    <h2>Multipliers</h2>
+                    <div class="category-line"></div>
+                </div>
+                <div class="store-grid">
+                    <div class="store-item" onclick="selectItem(this, 'x2')">
+                        <div class="item-preview multiplier">x2</div>
+                        <div class="item-name">Double</div>
+                        <div class="item-desc">2x score when this face scores</div>
+                        <div class="item-price">
+                            <span>&#x1FA99;</span> 500
+                        </div>
+                    </div>
+                    <div class="store-item selected" onclick="selectItem(this, 'x3')">
+                        <div class="item-preview multiplier">x3</div>
+                        <div class="item-name">Triple</div>
+                        <div class="item-desc">3x score when this face scores</div>
+                        <div class="item-price">
+                            <span>&#x1FA99;</span> 1,500
+                        </div>
+                    </div>
+                    <div class="store-item" onclick="selectItem(this, 'x5')">
+                        <div class="item-preview multiplier">x5</div>
+                        <div class="item-name">Mega</div>
+                        <div class="item-desc">5x score when this face scores</div>
+                        <div class="item-price">
+                            <span>&#x1FA99;</span> 5,000
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bonus Points -->
+            <div class="category">
+                <div class="category-header">
+                    <h2>Bonus Points</h2>
+                    <div class="category-line"></div>
+                </div>
+                <div class="store-grid">
+                    <div class="store-item" onclick="selectItem(this, '+50')">
+                        <div class="item-preview bonus">+50</div>
+                        <div class="item-name">Small</div>
+                        <div class="item-desc">+50 pts when this face scores</div>
+                        <div class="item-price">
+                            <span>&#x1FA99;</span> 200
+                        </div>
+                    </div>
+                    <div class="store-item" onclick="selectItem(this, '+100')">
+                        <div class="item-preview bonus">+100</div>
+                        <div class="item-name">Medium</div>
+                        <div class="item-desc">+100 pts when this face scores</div>
+                        <div class="item-price">
+                            <span>&#x1FA99;</span> 600
+                        </div>
+                    </div>
+                    <div class="store-item" onclick="selectItem(this, '+250')">
+                        <div class="item-preview bonus">+250</div>
+                        <div class="item-name">Large</div>
+                        <div class="item-desc">+250 pts when this face scores</div>
+                        <div class="item-price">
+                            <span>&#x1FA99;</span> 2,000
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Value Swaps -->
+            <div class="category">
+                <div class="category-header">
+                    <h2>Value Swaps</h2>
+                    <div class="category-line"></div>
+                </div>
+                <div class="store-grid">
+                    <div class="store-item" onclick="selectItem(this, '->1')">
+                        <div class="item-preview value-swap">&#x2192;1</div>
+                        <div class="item-name">Act as 1</div>
+                        <div class="item-desc">This face counts as rolling a 1</div>
+                        <div class="item-price">
+                            <span>&#x1FA99;</span> 1,000
+                        </div>
+                    </div>
+                    <div class="store-item" onclick="selectItem(this, '->5')">
+                        <div class="item-preview value-swap">&#x2192;5</div>
+                        <div class="item-name">Act as 5</div>
+                        <div class="item-desc">This face counts as rolling a 5</div>
+                        <div class="item-price">
+                            <span>&#x1FA99;</span> 400
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buy Section -->
+            <div class="buy-section">
+                <div class="selected-item-preview">
+                    <div class="item-preview multiplier">x3</div>
+                    <div class="selected-item-info">
+                        <h3>Triple Multiplier</h3>
+                        <p>3x score when this face scores</p>
+                    </div>
+                </div>
+                <button class="buy-btn">
+                    <span>&#x1FA99;</span> Buy for 1,500
+                </button>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SCREEN 2: DICE FACE PLACEMENT -->
+        <!-- ============================================ -->
+        <div id="placement" class="screen">
+            <div class="placement-header">
+                <h1>Apply Modifier</h1>
+                <p>Choose where to place your new modifier</p>
+            </div>
+
+            <div class="purchased-item">
+                <div class="item-preview multiplier">x2</div>
+                <span>x2 Multiplier purchased!</span>
+            </div>
+
+            <div class="step-indicator">
+                <div class="step completed">
+                    <span class="step-number">&#x2713;</span>
+                    <span>Select Die</span>
+                </div>
+                <div class="step active">
+                    <span class="step-number">2</span>
+                    <span>Select Face</span>
+                </div>
+            </div>
+
+            <!-- Die Selection -->
+            <div class="dice-selection">
+                <h3>Your 6 Dice</h3>
+                <div class="dice-row">
+                    <div class="selectable-die selected">
+                        <div class="die-dot"></div>
+                        <span class="die-number">1</span>
+                    </div>
+                    <div class="selectable-die">
+                        <div class="die-dot"></div>
+                        <span class="die-number">2</span>
+                    </div>
+                    <div class="selectable-die">
+                        <div class="die-dot"></div>
+                        <span class="die-number">3</span>
+                    </div>
+                    <div class="selectable-die">
+                        <div class="die-dot"></div>
+                        <span class="die-number">4</span>
+                    </div>
+                    <div class="selectable-die">
+                        <div class="die-dot"></div>
+                        <span class="die-number">5</span>
+                    </div>
+                    <div class="selectable-die">
+                        <div class="die-dot"></div>
+                        <span class="die-number">6</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Face Selection -->
+            <div class="face-selection">
+                <h3>Die #1 Faces - Tap to Apply</h3>
+                <div class="face-grid">
+                    <div class="selectable-face selected">
+                        <span class="face-value">1</span>
+                        <span class="face-label">100 pts</span>
+                    </div>
+                    <div class="selectable-face">
+                        <span class="face-value">2</span>
+                        <span class="face-label">0 pts</span>
+                    </div>
+                    <div class="selectable-face has-modifier">
+                        <span class="face-value">3</span>
+                        <span class="face-label">0 pts</span>
+                        <span class="face-current-mod">+50</span>
+                    </div>
+                    <div class="selectable-face">
+                        <span class="face-value">4</span>
+                        <span class="face-label">0 pts</span>
+                    </div>
+                    <div class="selectable-face">
+                        <span class="face-value">5</span>
+                        <span class="face-label">50 pts</span>
+                    </div>
+                    <div class="selectable-face">
+                        <span class="face-value">6</span>
+                        <span class="face-label">0 pts</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirm -->
+            <div class="confirm-section">
+                <div class="placement-preview">
+                    <div class="preview-die">
+                        <span class="face-value">1</span>
+                    </div>
+                    <span class="preview-arrow">&#x2192;</span>
+                    <div class="preview-die">
+                        <span class="face-value">1</span>
+                        <span class="modifier-overlay">x2</span>
+                    </div>
+                </div>
+                <button class="confirm-btn">
+                    Apply x2 to Die #1, Face 1
+                </button>
+                <p class="warning-text">
+                    &#x26A0; This will use your x2 modifier permanently
+                </p>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SCREEN 3: GAMEPLAY EXAMPLE 1 -->
+        <!-- ============================================ -->
+        <div id="game1" class="screen">
+            <div class="game-header">
+                <div class="player-score you">
+                    <div class="name">You</div>
+                    <div class="score">2,850</div>
+                </div>
+                <div class="vs-badge">Round 5</div>
+                <div class="player-score opponent">
+                    <div class="name">BotMaster</div>
+                    <div class="score">3,100</div>
+                </div>
+            </div>
+
+            <div class="turn-info">
+                <div class="label">Turn Score</div>
+                <div class="turn-score">450</div>
+            </div>
+
+            <div class="dice-area">
+                <div class="dice-grid">
+                    <!-- Die 1: Shows 1 with x2 modifier (scoring) -->
+                    <div class="game-die scoring selected" onclick="showInspector('multiplier')">
+                        <div class="pip-container">
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                        </div>
+                        <span class="die-modifier multiplier">x2</span>
+                        <span class="scoring-badge">200 pts!</span>
+                    </div>
+
+                    <!-- Die 2: Shows 5 (scoring, no modifier) -->
+                    <div class="game-die scoring selected">
+                        <div class="pip-container">
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                        </div>
+                        <span class="scoring-badge">50 pts</span>
+                    </div>
+
+                    <!-- Die 3: Shows 5 with +100 bonus (scoring) -->
+                    <div class="game-die scoring selected" onclick="showInspector('bonus')">
+                        <div class="pip-container">
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                        </div>
+                        <span class="die-modifier bonus">+100</span>
+                        <span class="scoring-badge">150 pts!</span>
+                    </div>
+
+                    <!-- Die 4: Shows 3 (not scoring) -->
+                    <div class="game-die">
+                        <div class="pip-container">
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                        </div>
+                    </div>
+
+                    <!-- Die 5: Shows 4 (not scoring) -->
+                    <div class="game-die">
+                        <div class="pip-container">
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                        </div>
+                    </div>
+
+                    <!-- Die 6: Shows 2 (not scoring) -->
+                    <div class="game-die">
+                        <div class="pip-container">
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                        </div>
+                    </div>
+                </div>
+                <p class="tap-hint"><span>Tap any die to see its effects</span></p>
+            </div>
+
+            <div class="game-actions">
+                <button class="game-btn roll">Roll 3 Dice</button>
+                <button class="game-btn bank">Bank 450</button>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SCREEN 4: GAMEPLAY EXAMPLE 2 (Modifier Triggered) -->
+        <!-- ============================================ -->
+        <div id="game2" class="screen">
+            <div class="game-header">
+                <div class="player-score you">
+                    <div class="name">You</div>
+                    <div class="score">4,200</div>
+                </div>
+                <div class="vs-badge">Round 7</div>
+                <div class="player-score opponent">
+                    <div class="name">LuckyDice</div>
+                    <div class="score">4,050</div>
+                </div>
+            </div>
+
+            <div class="modifier-triggered">
+                <span class="icon">&#x2728;</span>
+                <div class="text">
+                    <div class="title">x3 Multiplier Activated!</div>
+                    <div class="desc">Your 1 scored 300 points instead of 100</div>
+                </div>
+            </div>
+
+            <div class="turn-info">
+                <div class="label">Turn Score</div>
+                <div class="turn-score">650</div>
+            </div>
+
+            <div class="dice-area">
+                <div class="dice-grid">
+                    <!-- Die 1: Shows 1 with x3 modifier (scoring, highlighted) -->
+                    <div class="game-die scoring selected" onclick="showInspector('multiplier3')" style="box-shadow: 0 0 20px rgba(246, 173, 85, 0.8), 0 0 0 4px #48bb78;">
+                        <div class="pip-container">
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                        </div>
+                        <span class="die-modifier multiplier">x3</span>
+                        <span class="scoring-badge" style="background: #f6ad55; color: #1a202c;">300 pts!</span>
+                    </div>
+
+                    <!-- Die 2: Shows 1 (scoring, no modifier) -->
+                    <div class="game-die scoring selected">
+                        <div class="pip-container">
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                        </div>
+                        <span class="scoring-badge">100 pts</span>
+                    </div>
+
+                    <!-- Die 3: Shows 5 (scoring) -->
+                    <div class="game-die scoring selected">
+                        <div class="pip-container">
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                        </div>
+                        <span class="scoring-badge">50 pts</span>
+                    </div>
+
+                    <!-- Die 4: Shows 5 (scoring) -->
+                    <div class="game-die scoring selected">
+                        <div class="pip-container">
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                        </div>
+                        <span class="scoring-badge">50 pts</span>
+                    </div>
+
+                    <!-- Die 5: Shows 5 (scoring) -->
+                    <div class="game-die scoring selected">
+                        <div class="pip-container">
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                        </div>
+                        <span class="scoring-badge">50 pts</span>
+                    </div>
+
+                    <!-- Die 6: Shows 6 (not scoring) -->
+                    <div class="game-die">
+                        <div class="pip-container">
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                        </div>
+                    </div>
+                </div>
+                <p class="tap-hint"><span>Tap any die to see its effects</span></p>
+            </div>
+
+            <div class="game-actions">
+                <button class="game-btn roll">Roll 1 Die</button>
+                <button class="game-btn bank">Bank 650</button>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- DIE INSPECTOR MODAL -->
+        <!-- ============================================ -->
+        <div class="modal-overlay" id="inspectorModal" onclick="hideInspector(event)">
+            <div class="inspector-modal" onclick="event.stopPropagation()">
+                <!-- Multiplier Example -->
+                <div id="inspector-multiplier">
+                    <div class="inspector-die">
+                        <div class="pip-container">
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                        </div>
+                        <span class="die-modifier multiplier">x2</span>
+                    </div>
+
+                    <h2 class="inspector-title">Die #1 - Face 1</h2>
+
+                    <div class="inspector-effect">
+                        <div class="effect-label">Active Modifier</div>
+                        <div class="effect-value">x2 Multiplier</div>
+                        <p class="effect-description">
+                            When this die shows a 1, the score is doubled!
+                        </p>
+                    </div>
+
+                    <div class="inspector-breakdown">
+                        <div class="breakdown-row">
+                            <span class="label">Base score (1)</span>
+                            <span class="value">100 pts</span>
+                        </div>
+                        <div class="breakdown-row">
+                            <span class="label">x2 Multiplier</span>
+                            <span class="value">x 2</span>
+                        </div>
+                        <div class="breakdown-row total">
+                            <span class="label">Total</span>
+                            <span class="value">200 pts</span>
+                        </div>
+                    </div>
+
+                    <button class="close-btn" onclick="hideInspector()">Got it</button>
+                </div>
+
+                <!-- Bonus Example (hidden by default) -->
+                <div id="inspector-bonus" style="display: none;">
+                    <div class="inspector-die">
+                        <div class="pip-container">
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                        </div>
+                        <span class="die-modifier bonus">+100</span>
+                    </div>
+
+                    <h2 class="inspector-title">Die #3 - Face 5</h2>
+
+                    <div class="inspector-effect">
+                        <div class="effect-label">Active Modifier</div>
+                        <div class="effect-value">+100 Bonus</div>
+                        <p class="effect-description">
+                            When this die shows a 5, you get +100 bonus points!
+                        </p>
+                    </div>
+
+                    <div class="inspector-breakdown">
+                        <div class="breakdown-row">
+                            <span class="label">Base score (5)</span>
+                            <span class="value">50 pts</span>
+                        </div>
+                        <div class="breakdown-row">
+                            <span class="label">+100 Bonus</span>
+                            <span class="value">+ 100</span>
+                        </div>
+                        <div class="breakdown-row total">
+                            <span class="label">Total</span>
+                            <span class="value">150 pts</span>
+                        </div>
+                    </div>
+
+                    <button class="close-btn" onclick="hideInspector()">Got it</button>
+                </div>
+
+                <!-- x3 Multiplier Example -->
+                <div id="inspector-multiplier3" style="display: none;">
+                    <div class="inspector-die" style="box-shadow: 0 0 30px rgba(246, 173, 85, 0.6), 0 8px 24px rgba(0,0,0,0.3);">
+                        <div class="pip-container">
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                            <div class="pip hidden"></div>
+                        </div>
+                        <span class="die-modifier multiplier">x3</span>
+                    </div>
+
+                    <h2 class="inspector-title">Die #1 - Face 1</h2>
+
+                    <div class="inspector-effect" style="background: linear-gradient(135deg, #744210 0%, #5a3510 100%); border: 1px solid #f6ad55;">
+                        <div class="effect-label" style="color: #fbd38d;">Modifier Triggered!</div>
+                        <div class="effect-value" style="color: #f6ad55;">x3 Multiplier</div>
+                        <p class="effect-description">
+                            This modifier just activated! Your 1 scored triple points!
+                        </p>
+                    </div>
+
+                    <div class="inspector-breakdown">
+                        <div class="breakdown-row">
+                            <span class="label">Base score (1)</span>
+                            <span class="value">100 pts</span>
+                        </div>
+                        <div class="breakdown-row">
+                            <span class="label">x3 Multiplier</span>
+                            <span class="value">x 3</span>
+                        </div>
+                        <div class="breakdown-row total">
+                            <span class="label">Total</span>
+                            <span class="value">300 pts</span>
+                        </div>
+                    </div>
+
+                    <button class="close-btn" onclick="hideInspector()">Awesome!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showScreen(screenId) {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.screen-nav button').forEach(b => b.classList.remove('active'));
+
+            // Show selected screen
+            document.getElementById(screenId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function selectItem(element, itemType) {
+            document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        function showInspector(type) {
+            // Hide all inspector content
+            document.getElementById('inspector-multiplier').style.display = 'none';
+            document.getElementById('inspector-bonus').style.display = 'none';
+            document.getElementById('inspector-multiplier3').style.display = 'none';
+
+            // Show the relevant one
+            if (type === 'multiplier') {
+                document.getElementById('inspector-multiplier').style.display = 'block';
+            } else if (type === 'bonus') {
+                document.getElementById('inspector-bonus').style.display = 'block';
+            } else if (type === 'multiplier3') {
+                document.getElementById('inspector-multiplier3').style.display = 'block';
+            }
+
+            document.getElementById('inspectorModal').classList.add('visible');
+        }
+
+        function hideInspector(event) {
+            if (!event || event.target === document.getElementById('inspectorModal')) {
+                document.getElementById('inspectorModal').classList.remove('visible');
+            }
+        }
+    </script>
+</body>
+</html>
