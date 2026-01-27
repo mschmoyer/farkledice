@@ -12,13 +12,18 @@ services:
       - ./docker/ssl:/etc/apache2/ssl
       - ./logs:/var/www/html/logs
     environment:
-      - APACHE_DOCUMENT_ROOT=/var/www/html/wwwroot
+      - APACHE_DOCUMENT_ROOT=/var/www/html/public
       - DB_HOST=db
       - DB_NAME=farkle_db
       - DB_USER=farkle_user
       - DB_PASS=farkle_pass
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - CLAUDE_LOGGING=${CLAUDE_LOGGING:-false}
+      # Symfony environment variables
+      - APP_ENV=${APP_ENV:-dev}
+      - APP_DEBUG=${APP_DEBUG:-1}
+      - APP_SECRET=${APP_SECRET:-change_this_in_production}
+      - DATABASE_URL=postgresql://farkle_user:farkle_pass@db:5432/farkle_db?serverVersion=16
     depends_on:
       - db
     networks:

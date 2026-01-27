@@ -1,0 +1,27 @@
+framework:
+    secret: '%env(APP_SECRET)%'
+
+    # Session configuration - share with legacy app
+    session:
+        handler_id: null  # Use PHP's default handler initially
+        cookie_secure: auto
+        cookie_samesite: lax
+        name: FarkleOnline
+        gc_maxlifetime: 604800  # 7 days (match legacy)
+        cookie_lifetime: 604800
+
+    # Enable HTTP caching
+    http_cache: true
+
+    # PHP errors handling
+    php_errors:
+        log: true
+
+when@dev:
+    framework:
+        profiler:
+            collect_serializer_data: false
+
+when@prod:
+    framework:
+        http_cache: true

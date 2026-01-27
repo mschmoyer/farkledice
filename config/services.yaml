@@ -1,0 +1,38 @@
+parameters:
+    project_dir: '%kernel.project_dir%'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    # Legacy fallback controller needs project directory
+    App\Controller\LegacyFallbackController:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    # Legacy bridge services
+    App\Service\Legacy\LegacyDatabaseBridge:
+        public: true
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    App\Service\Legacy\LegacySessionBridge:
+        public: true
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    App\Service\Legacy\BaseUtilBridge:
+        public: true
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    App\Service\Legacy\SmartyBridge:
+        public: true
