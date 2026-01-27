@@ -1,11 +1,11 @@
 FROM php:8.3-apache
 
-# Install PostgreSQL extension
+# Install PostgreSQL extension and opcache
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     git \
     unzip \
-    && docker-php-ext-install pdo pdo_pgsql \
+    && docker-php-ext-install pdo pdo_pgsql opcache \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
@@ -23,8 +23,8 @@ COPY . /var/www/html/
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Set up Apache to point to wwwroot as document root
-ENV APACHE_DOCUMENT_ROOT /var/www/html/wwwroot
+# Set up Apache to point to public as document root (Symfony entry point)
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
@@ -32,12 +32,14 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 RUN mkdir -p /var/www/backbone/templates_c \
     /var/www/backbone/cache \
     /var/www/configs \
-    /var/www/html/logs
+    /var/www/html/logs \
+    /var/www/html/var/cache \
+    /var/www/html/var/log
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www/backbone /var/www/configs /var/www/html/logs
+RUN chown -R www-data:www-data /var/www/backbone /var/www/configs /var/www/html/logs /var/www/html/var
 RUN chmod -R 755 /var/www/backbone /var/www/configs
-RUN chmod -R 777 /var/www/backbone/templates_c /var/www/backbone/cache /var/www/html/logs
+RUN chmod -R 777 /var/www/backbone/templates_c /var/www/backbone/cache /var/www/html/logs /var/www/html/var
 
 # Install Smarty from Composer to backbone directory
 RUN mkdir -p /var/www/backbone/libs && \

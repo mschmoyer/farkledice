@@ -28,8 +28,13 @@ configs/siteconfig.ini
 # Sensitive configuration
 *.ini
 !docker/siteconfig.ini
-.env*
-!.env.example
+.env.local
+.env.local.php
+.env.*.local
+
+# Symfony
+/var/
+/public/bundles/
 
 # Dependencies
 vendor/
