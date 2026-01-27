@@ -318,21 +318,20 @@ function Leaderboard_RefreshDaily()
 	$result = db_command($insert_sql);
 
 	// Today's best win ratio (weighted by players beaten, min 3 games to qualify)
-	// first_int = players beaten, second_int = games played, first_string = win%
+	// first_int = players beaten, second_int = games played, first_string = "ratio (X beaten)"
 	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
 		(select 2 as lbindex, sub.playerid,
 			p.username, p.playerlevel,
 			sub.players_beaten as first_int,
 			sub.games_played as second_int,
-			sub.win_pct || '%' as first_string,
+			ROUND(sub.players_beaten::numeric / sub.games_played, 2) || ' (' || sub.players_beaten || ' beaten)' as first_string,
 			null as second_string
 		from (
 			select gp.playerid,
 				SUM(CASE WHEN g.winningplayer = gp.playerid
 					THEN (SELECT COUNT(*) FROM farkle_games_players x WHERE x.gameid = g.gameid) - 1
 					ELSE 0 END) as players_beaten,
-				COUNT(*) as games_played,
-				ROUND(SUM(CASE WHEN g.winningplayer = gp.playerid THEN 1 ELSE 0 END)::numeric / COUNT(*) * 100) as win_pct
+				COUNT(*) as games_played
 			from farkle_games g
 			join farkle_games_players gp on g.gameid = gp.gameid
 			where (g.gamefinish AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date
@@ -341,7 +340,7 @@ function Leaderboard_RefreshDaily()
 			having COUNT(*) >= 3
 		) sub
 		join farkle_players p on p.playerid = sub.playerid
-		order by (sub.players_beaten::numeric / sub.games_played) desc, sub.win_pct desc
+		order by (sub.players_beaten::numeric / sub.games_played) desc, sub.players_beaten desc
 		LIMIT $maxDataRows) t1";
 	$insert_sql = "insert into farkle_lbdata ($sql)";
 	$result = db_command($insert_sql);

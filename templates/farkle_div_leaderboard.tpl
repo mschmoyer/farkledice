@@ -47,12 +47,12 @@
 			</table>
 
 			<h3 style="margin: 15px 0 8px; 0">Best Win Ratio</h3>
-			<p style="margin: 0 0 5px 0; font-size: 11px; color: #666;">Min 3 games. Weighted by players beaten.</p>
+			<p style="margin: 0 0 5px 0; font-size: 11px; color: #666;">Min 3 games. Avg opponents beaten per game.</p>
 			<table class="pageWidth tabLeaderboard" id="tblLbTodayWins" cellpadding="3px" cellspacing="0px" style="width: 98%">
 				<thead><tr header="">
 					<th style="text-align: left;">Rank</th>
 					<th style="text-align: left;">Player</th>
-					<th style="text-align: left;">Win %</th>
+					<th style="text-align: left;">Ratio</th>
 					<th style="text-align: left;">Games</th>
 				</tr></thead>
 				<tbody></tbody>

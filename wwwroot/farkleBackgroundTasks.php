@@ -61,13 +61,13 @@ function BackgroundTask_RefreshDailyLeaderboards()
 	$shouldRun = db_select_query($sql, SQL_SINGLE_VALUE);
 
 	if ($shouldRun) {
-		BaseUtil_Debug("BackgroundMaintenance: Refreshing daily leaderboards", 1);
-		Leaderboard_RefreshDaily();
-
-		// Set next run to 5 minutes from now
+		// Set next run to 5 minutes from now BEFORE doing work (prevents race condition)
 		$sql = "UPDATE siteinfo SET paramvalue=EXTRACT(EPOCH FROM (NOW() + interval '5' minute))
 				WHERE paramid=2 AND paramname='last_daily_leaderboard_refresh'";
 		db_command($sql);
+
+		BaseUtil_Debug("BackgroundMaintenance: Refreshing daily leaderboards", 1);
+		Leaderboard_RefreshDaily();
 	}
 }
 
@@ -82,6 +82,11 @@ function BackgroundTask_CleanupStaleGames()
 	$shouldRun = db_select_query($sql, SQL_SINGLE_VALUE);
 
 	if ($shouldRun) {
+		// Set next run to 30 minutes from now BEFORE doing work (prevents race condition)
+		$sql = "UPDATE siteinfo SET paramvalue=EXTRACT(EPOCH FROM (NOW() + interval '30' minute))
+				WHERE paramid=4 AND paramname='last_cleanup'";
+		db_command($sql);
+
 		BaseUtil_Debug("BackgroundMaintenance: Cleaning up stale games", 1);
 
 		// Require the function if not already loaded
@@ -90,11 +95,6 @@ function BackgroundTask_CleanupStaleGames()
 		}
 
 		FinishStaleGames(0);
-
-		// Set next run to 30 minutes from now
-		$sql = "UPDATE siteinfo SET paramvalue=EXTRACT(EPOCH FROM (NOW() + interval '30' minute))
-				WHERE paramid=4 AND paramname='last_cleanup'";
-		db_command($sql);
 	}
 }
 
@@ -113,15 +113,15 @@ function BackgroundTask_BotAutoFill()
 	$shouldRun = db_select_query($sql, SQL_SINGLE_VALUE);
 
 	if ($shouldRun) {
+		// Set next run based on environment BEFORE doing work (prevents race condition)
+		$sql = "UPDATE siteinfo SET paramvalue=EXTRACT(EPOCH FROM (NOW() + interval '{$checkIntervalSeconds}' second))
+				WHERE paramid=7 AND paramname='last_bot_fill_check'";
+		db_command($sql);
+
 		BaseUtil_Debug("BackgroundMaintenance: Checking for games to auto-fill with bots (interval: {$checkIntervalSeconds}s)", 1);
 
 		// Find random games waiting for players
 		Bot_FillWaitingRandomGames($checkIntervalSeconds);
-
-		// Set next run based on environment
-		$sql = "UPDATE siteinfo SET paramvalue=EXTRACT(EPOCH FROM (NOW() + interval '{$checkIntervalSeconds}' second))
-				WHERE paramid=7 AND paramname='last_bot_fill_check'";
-		db_command($sql);
 	}
 }
 
