@@ -92,7 +92,10 @@
 				else if( $p['action'] == 'farklegetupdate' )	$rc = FarkleSendUpdate( $_SESSION['playerid'], $p['gameid'] );
 				else if( $p['action'] == 'quitgame')			$rc = FarkleQuitGame( $_SESSION['playerid'], $p['gameid'] );
 				else if( $p['action'] == 'farkleroll' )			$rc = FarkleRoll( $_SESSION['playerid'], $p['gameid'], $p['saveddice'], $p['newdice'] );
-				else if( $p['action'] == 'farklepass' )			$rc = FarklePass( $_SESSION['playerid'], $p['gameid'], $p['saveddice'] );	
+				else if( $p['action'] == 'farklepass' )			$rc = FarklePass( $_SESSION['playerid'], $p['gameid'], $p['saveddice'] );
+
+				// Emoji Reactions
+				else if( $p['action'] == 'submitemoji' )		$rc = SubmitEmojiReaction( $_SESSION['playerid'], $p['gameid'], isset($p['emoji']) ? $p['emoji'] : '' );
 
 				// Achievements & Levels
 				else if( $p['action'] == 'getachievements' )	$rc = GetAchievements( $p['playerid'] );

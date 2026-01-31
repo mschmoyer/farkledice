@@ -28,6 +28,19 @@ var divInstructionsObj;
 var divReleaseNotesObj;
 var divMenuObj;
 var divTournamentObj;
+
+// Get the most common emoji from a string of emojis
+function getMostCommonEmoji(emojiStr) {
+	if (!emojiStr || emojiStr.length === 0) return null;
+	var emojis = [...emojiStr]; // Spread to handle multi-byte chars
+	var counts = {};
+	emojis.forEach(function(e) { counts[e] = (counts[e] || 0) + 1; });
+	var maxEmoji = null, maxCount = 0;
+	for (var e in counts) {
+		if (counts[e] > maxCount) { maxEmoji = e; maxCount = counts[e]; }
+	}
+	return { emoji: maxEmoji, count: maxCount };
+}
 var divTouranmentListObj;
 var lblRegErrorObj;
 var divAdminObj;
@@ -606,12 +619,19 @@ function DisplayPlayerTag( appendDivId, pData, score ) //thePlayerId, name, colo
 
 	if( score.length > 0 ) n.find('.playerAchScore').html( addCommas( score ) );
 
-	n.find('#playerImg').show().attr('src', '/images/stock.png').addClass('playerCardImage');
-	
-	n.find('#playerImg').off( 'click' );
-	n.find('#playerImg').on( 'click', function() {
-		PlayerTagClick(n); 
-	} );
+	// Display emoji in player card
+	// display_emoji is set by calling context: game view uses emoji_sent
+	// Otherwise calculate "known for" emoji from emoji_reactions
+	var displayEmoji = pData.display_emoji || '';
+	if( !displayEmoji && pData.emoji_reactions ) {
+		var knownFor = getMostCommonEmoji(pData.emoji_reactions);
+		if( knownFor && knownFor.emoji ) {
+			displayEmoji = knownFor.emoji;
+		}
+	}
+	var emojiEl = n.find('.playerCardEmoji');
+	emojiEl.html(displayEmoji);
+	emojiEl.off('click').on('click', function() { PlayerTagClick(n); });
 	
 	if( newCard ) {		
 		n.show();

@@ -1,0 +1,41 @@
+{
+  "id": "feature-20260131-emoji-reactions",
+  "title": "Post-Game Emoji Reactions",
+  "description": "Social feature where players can select an emoji for their opponent at the end of a 2-player game. Emojis are stored as a history string on each player's profile (last ~40), with the most popular emoji highlighted.",
+  "created_at": "2026-01-31T00:00:00Z",
+  "status": "in_progress",
+  "completed_at": null,
+  "branch": "feature/emoji-reactions",
+
+  "requirements": [
+    {"id": "REQ-001", "detail": "Add emoji_reactions field to farkle_players table (VARCHAR, stores last ~40 emojis as string)", "status": "satisfied"},
+    {"id": "REQ-002", "detail": "Add emoji_given field to farkle_games_players table to track if player already sent/skipped emoji for that game", "status": "satisfied"},
+    {"id": "REQ-003", "detail": "Emoji picker popup (6x6 grid) auto-appears after 2-player game ends", "status": "satisfied"},
+    {"id": "REQ-004", "detail": "Popup only shows for non-multiplayer games (2 players only)", "status": "satisfied"},
+    {"id": "REQ-005", "detail": "Popup only shows within 1 day of game completion", "status": "satisfied"},
+    {"id": "REQ-006", "detail": "Popup hidden if player already selected or skipped emoji for that game", "status": "satisfied"},
+    {"id": "REQ-007", "detail": "Skip button closes popup and marks emoji_given so it won't appear again", "status": "satisfied"},
+    {"id": "REQ-008", "detail": "Selecting emoji appends to opponent's emoji_reactions (prepend new, trim to ~40)", "status": "satisfied"},
+    {"id": "REQ-009", "detail": "Player profile shows 'From Your Opponents:' emoji stream", "status": "satisfied"},
+    {"id": "REQ-010", "detail": "Player profile shows 'You're known for:' with most common emoji + count", "status": "satisfied"},
+    {"id": "REQ-011", "detail": "Curate 36 balanced emojis for the picker grid", "status": "satisfied"},
+    {"id": "REQ-012", "detail": "Add emoji_sent field to farkle_games_players to store the actual emoji chosen (separate from emoji_given boolean)", "status": "satisfied"},
+    {"id": "REQ-013", "detail": "Display the sent emoji in the game view, floating left of the opponent's player card", "status": "satisfied"},
+    {"id": "REQ-014", "detail": "Replace player card image (stock.png) with emoji - in game view show emoji_sent, elsewhere show 'known for' emoji", "status": "satisfied"},
+    {"id": "REQ-015", "detail": "Remove all stock.png and Facebook image logic from player cards", "status": "satisfied"}
+  ],
+
+  "tasks": [
+    {"id": "task-001", "type": "implementation", "requirement_ids": ["REQ-001", "REQ-002"], "description": "Add database schema for emoji reactions", "status": "completed", "completed_at": "2026-01-31T00:00:00Z"},
+    {"id": "task-002", "type": "implementation", "requirement_ids": ["REQ-007", "REQ-008"], "description": "Create PHP backend for emoji submission", "status": "completed", "completed_at": "2026-01-31T00:00:00Z"},
+    {"id": "task-003", "type": "implementation", "requirement_ids": ["REQ-003", "REQ-011"], "description": "Create emoji picker popup UI", "status": "completed", "completed_at": "2026-01-31T00:00:00Z"},
+    {"id": "task-004", "type": "implementation", "requirement_ids": ["REQ-004", "REQ-005", "REQ-006"], "description": "Implement popup display logic", "status": "completed", "completed_at": "2026-01-31T00:00:00Z"},
+    {"id": "task-005", "type": "implementation", "requirement_ids": ["REQ-009", "REQ-010"], "description": "Add emoji display to player profile", "status": "completed", "completed_at": "2026-01-31T00:00:00Z"},
+    {"id": "task-006", "type": "implementation", "requirement_ids": ["REQ-012"], "description": "Add emoji_sent field to database schema and migration", "status": "completed", "completed_at": "2026-01-31T00:00:00Z"},
+    {"id": "task-007", "type": "implementation", "requirement_ids": ["REQ-012"], "description": "Update PHP backend to store and return emoji_sent", "status": "completed", "completed_at": "2026-01-31T00:00:00Z"},
+    {"id": "task-008", "type": "implementation", "requirement_ids": ["REQ-013"], "description": "Display emoji in game view next to opponent player card", "status": "completed", "completed_at": "2026-01-31T00:00:00Z"},
+    {"id": "task-009", "type": "implementation", "requirement_ids": ["REQ-014", "REQ-015"], "description": "Replace player card image with emoji display", "status": "completed", "completed_at": "2026-01-31T00:00:00Z"},
+    {"id": "task-010", "type": "implementation", "requirement_ids": ["REQ-014"], "description": "Add known_for_emoji to player data queries for non-game contexts", "status": "completed", "completed_at": "2026-01-31T00:00:00Z"},
+    {"id": "task-FINAL", "type": "verification", "requirement_ids": [], "description": "Final verification - verify all requirements are satisfied", "status": "pending", "completed_at": null}
+  ]
+}

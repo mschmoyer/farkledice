@@ -54,7 +54,8 @@ CREATE TABLE IF NOT EXISTS farkle_players (
   reinvite_token VARCHAR(64) DEFAULT NULL,
   reinvite_expires TIMESTAMP DEFAULT NULL,
   active BOOLEAN DEFAULT true,
-  stylepoints INTEGER DEFAULT 0
+  stylepoints INTEGER DEFAULT 0,
+  emoji_reactions VARCHAR(200) DEFAULT ''
 );
 
 -- Create players devices table for session management
@@ -123,7 +124,9 @@ CREATE TABLE IF NOT EXISTS farkle_games_players (
   lastroundscore INTEGER DEFAULT 0,
   lastxpgain INTEGER DEFAULT 0,
   inactivepasses INTEGER DEFAULT 0,
-  playerscore INTEGER DEFAULT 0
+  playerscore INTEGER DEFAULT 0,
+  emoji_given BOOLEAN DEFAULT FALSE,
+  emoji_sent VARCHAR(10) DEFAULT ''
 );
 
 CREATE INDEX IF NOT EXISTS idx_gameid ON farkle_games_players(gameid);

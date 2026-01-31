@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "2.7.0",
+      "date": "2026-01-31",
+      "headline": "Emoji Reactions!",
+      "notes": [
+        "🎲 NEW: Send emoji reactions to opponents after games - How'd they roll?",
+        "Player cards now display your 'known for' emoji based on reactions received",
+        "View your emoji history and most common reaction on your profile",
+        "Enhanced My Profile page - larger font, new stats, and better display!"
+      ]
+    },
+    {
       "version": "2.6.0",
       "date": "2025-01-31",
       "notes": [

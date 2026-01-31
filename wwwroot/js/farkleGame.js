@@ -331,10 +331,10 @@ function FarkleGameDisplayEnded() {
 	clearTimeout( gGameTimer );
 	FarkleGameDisplayDice();
 	
-	// Modify the layout to prevent weird things from happening and show play again button. 
+	// Modify the layout to prevent weird things from happening and show play again button.
 	$('#btnQuitGame').hide();
 	btnRollDiceObj.setAttribute('disabled','');
-	btnPassObj.setAttribute('disabled','');		
+	btnPassObj.setAttribute('disabled','');
 
 	$('#btnPlayAgain').hide();
 	$('#btnNewRandom').hide();
@@ -342,6 +342,14 @@ function FarkleGameDisplayEnded() {
 		$('#btnNewRandom').show();
 	else
 		$('#btnPlayAgain').show();
+
+	// Show emoji picker if eligible (2-player game, finished recently, hasn't submitted yet)
+	if( gGameData.show_emoji_picker === true || gGameData.show_emoji_picker === 't' || gGameData.show_emoji_picker === '1' ) {
+		// Delay showing the emoji picker to let the player see the win/loss message first
+		setTimeout( function() {
+			ShowEmojiPicker( gGameData.gameid );
+		}, 1000 );
+	}
 }
 
 
@@ -985,11 +993,29 @@ function Bot_DisplayMessage( message ) {
 }
 
 function FarkleGamePlayerTag( p, scoreStr ) {
-	//&radic;
+	// Determine which emoji to display on this player's card
+	if( p.playerid != playerid && g_myPlayerIndex >= 0 ) {
+		// This is opponent's card - show emoji I sent to them, or their "known for" emoji
+		var myEmojiSent = gGamePlayerData[g_myPlayerIndex].emoji_sent || '';
+		if( myEmojiSent && myEmojiSent.length > 0 ) {
+			p.display_emoji = myEmojiSent;
+		} else {
+			// No emoji sent yet - show their "known for" emoji
+			var knownFor = getMostCommonEmoji(p.emoji_reactions);
+			if( knownFor && knownFor.emoji ) {
+				p.display_emoji = knownFor.emoji;
+			}
+		}
+	} else {
+		// This is my card - show my "known for" emoji
+		var knownFor = getMostCommonEmoji(p.emoji_reactions);
+		if( knownFor && knownFor.emoji ) {
+			p.display_emoji = knownFor.emoji;
+		}
+	}
+
 	newTag = DisplayPlayerTag( 'divGamePlayers', p, scoreStr );
 	newTag.css('margin', '0 0 7px 0');
-		//.find('.playerAchScore')
-		//.append( "<br/><span class='playerCardRound'>"+( p.playerround==11 ? 'Done' : (p.playerround==1?'-':"<span style='color:white'>Rnd</span> "+p.playerround) )+"</span>" );
 }
 
 /**
