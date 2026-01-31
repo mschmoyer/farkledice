@@ -721,7 +721,9 @@ function FarkleSendUpdate( $playerid, $gameid )
 		COALESCE((select COALESCE(sum(setscore),0) from farkle_sets where playerid=a.playerid and gameid=$gameid and roundnum=$currentRound),0) as roundscore,
 		a.playerturn, COALESCE(b.playertitle,'') as playertitle, b.titlelevel,
 		NOW() - a.lastplayed as lastplayedseconds,
-		b.is_bot, b.bot_algorithm, b.personality_id
+		b.is_bot, b.bot_algorithm, b.personality_id,
+		COALESCE(a.emoji_sent, '') as emoji_sent,
+		COALESCE(b.emoji_reactions, '') as emoji_reactions
 		from farkle_games_players a, farkle_players b
 		where a.gameid=$gameid and a.playerid=b.playerid
 		ORDER BY (a.playerid=$playerid) desc, a.playerscore desc, b.lastplayed desc";
@@ -732,6 +734,39 @@ function FarkleSendUpdate( $playerid, $gameid )
 		return Array( 'Error' => 'Could not get information about players in this game. Please contact admin@farkledice.com' );
 	}	
 	
+	// Check if we should show the emoji picker for this player
+	// Conditions: game finished, 2 players only, within 1 day, player hasn't submitted emoji yet
+	$showEmojiPicker = false;
+	if( $turnDataForReturning['winningplayer'] > 0 && $memberOfGame )
+	{
+		// Check player count and emoji status
+		$sql = "SELECT
+			(SELECT COUNT(*) FROM farkle_games_players WHERE gameid = $gameid) as player_count,
+			(SELECT emoji_given FROM farkle_games_players WHERE gameid = $gameid AND playerid = $playerid) as emoji_given,
+			(SELECT gamefinish FROM farkle_games WHERE gameid = $gameid) as gamefinish";
+		$emojiCheck = db_select_query( $sql, SQL_SINGLE_ROW );
+
+		if( $emojiCheck )
+		{
+			$playerCount = (int)$emojiCheck['player_count'];
+			$emojiGiven = ($emojiCheck['emoji_given'] === 't' || $emojiCheck['emoji_given'] === true || $emojiCheck['emoji_given'] == 1);
+			$gamefinish = $emojiCheck['gamefinish'];
+
+			// Check if game finished within 1 day
+			$gameFinishedRecently = false;
+			if( !empty($gamefinish) )
+			{
+				$sql = "SELECT (NOW() - '$gamefinish'::timestamp) < INTERVAL '1 day' as recent";
+				$recentCheck = db_select_query( $sql, SQL_SINGLE_VALUE );
+				$gameFinishedRecently = ($recentCheck === 't' || $recentCheck === true);
+			}
+
+			// Show emoji picker if: 2 players, game finished recently, and player hasn't submitted emoji
+			$showEmojiPicker = ($playerCount == 2 && $gameFinishedRecently && !$emojiGiven);
+		}
+	}
+	$turnDataForReturning['show_emoji_picker'] = $showEmojiPicker;
+
 	return Array( $turnDataForReturning, $playerData, $setData, $diceOnTable, Ach_GetNewAchievement( $playerid ), $gameid, GetNewLevel( $playerid ), GetGameActivityLog( $gameid ) );
 }
 
@@ -1580,14 +1615,111 @@ function NotifyOtherPlayersInGame( $gameid, $msg )
 	return $didNotifySomebody; 
 }
 
-function GetPlayerListCommaString( $playersFromSQL ) 
+function GetPlayerListCommaString( $playersFromSQL )
 {
 	$pl = array();
 	foreach( $playersFromSQL as $p )
 	{
-		array_push( $pl, $p['playerid'] ); 
+		array_push( $pl, $p['playerid'] );
 	}
-	return implode( ',', $pl ); 
+	return implode( ',', $pl );
+}
+
+/*
+	Func: SubmitEmojiReaction()
+	Desc: Handles emoji submission after a game win. Player can send an emoji to their opponent
+	      or skip. Either way, marks emoji_given=TRUE so the popup won't appear again for this game.
+	Params:
+		$playerid		The player submitting the emoji (current session player)
+		$gameid			The game this emoji is for
+		$emoji			The emoji character (empty string for skip)
+	Returns:
+		Array with success or error message
+*/
+function SubmitEmojiReaction( $playerid, $gameid, $emoji = '' )
+{
+	if( empty($playerid) || empty($gameid) )
+	{
+		BaseUtil_Error( __FUNCTION__ . ": Missing parameters. playerid=$playerid, gameid=$gameid" );
+		return Array( 'Error' => 'Missing required parameters.' );
+	}
+
+	$dbh = db_connect();
+
+	// Verify player is a participant in this game
+	$sql = "SELECT playerid FROM farkle_games_players WHERE gameid = :gameid AND playerid = :playerid";
+	$stmt = $dbh->prepare($sql);
+	$stmt->execute([':gameid' => $gameid, ':playerid' => $playerid]);
+	$isParticipant = $stmt->fetch(PDO::FETCH_ASSOC);
+
+	if( !$isParticipant )
+	{
+		BaseUtil_Error( __FUNCTION__ . ": Player $playerid is not a participant in game $gameid" );
+		return Array( 'Error' => 'You are not a participant in this game.' );
+	}
+
+	// Check if emoji was already given for this game
+	$sql = "SELECT emoji_given FROM farkle_games_players WHERE gameid = :gameid AND playerid = :playerid";
+	$stmt = $dbh->prepare($sql);
+	$stmt->execute([':gameid' => $gameid, ':playerid' => $playerid]);
+	$row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+	if( $row && $row['emoji_given'] )
+	{
+		// Already submitted, just return success silently
+		return Array( 'Error' => null, 'success' => true, 'message' => 'Emoji already submitted for this game.' );
+	}
+
+	// If emoji is provided (not skipped), add it to opponent's emoji_reactions
+	if( !empty($emoji) )
+	{
+		// Get opponent's playerid (for 2-player games, the other player in this game)
+		$sql = "SELECT playerid FROM farkle_games_players WHERE gameid = :gameid AND playerid != :playerid LIMIT 1";
+		$stmt = $dbh->prepare($sql);
+		$stmt->execute([':gameid' => $gameid, ':playerid' => $playerid]);
+		$opponent = $stmt->fetch(PDO::FETCH_ASSOC);
+
+		if( $opponent )
+		{
+			$opponentId = $opponent['playerid'];
+
+			// Get current emoji_reactions for opponent
+			$sql = "SELECT emoji_reactions FROM farkle_players WHERE playerid = :playerid";
+			$stmt = $dbh->prepare($sql);
+			$stmt->execute([':playerid' => $opponentId]);
+			$opponentData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+			$currentReactions = $opponentData ? $opponentData['emoji_reactions'] : '';
+
+			// Prepend new emoji to front of string
+			$newReactions = $emoji . $currentReactions;
+
+			// Trim to keep only the last ~40 characters (from the back)
+			// Note: mb_substr handles multi-byte UTF-8 characters properly
+			if( mb_strlen($newReactions, 'UTF-8') > 54 )
+			{
+				$newReactions = mb_substr($newReactions, 0, 54, 'UTF-8');
+			}
+
+			// Update opponent's emoji_reactions
+			$sql = "UPDATE farkle_players SET emoji_reactions = :reactions WHERE playerid = :playerid";
+			$stmt = $dbh->prepare($sql);
+			$stmt->execute([':reactions' => $newReactions, ':playerid' => $opponentId]);
+
+			BaseUtil_Debug( __FUNCTION__ . ": Player $playerid sent emoji '$emoji' to opponent $opponentId in game $gameid", 1 );
+		}
+	}
+	else
+	{
+		BaseUtil_Debug( __FUNCTION__ . ": Player $playerid skipped emoji for game $gameid", 1 );
+	}
+
+	// Mark emoji_given = TRUE and store emoji_sent for this player in this game
+	$sql = "UPDATE farkle_games_players SET emoji_given = TRUE, emoji_sent = :emoji WHERE gameid = :gameid AND playerid = :playerid";
+	$stmt = $dbh->prepare($sql);
+	$stmt->execute([':emoji' => $emoji, ':gameid' => $gameid, ':playerid' => $playerid]);
+
+	return Array( 'Error' => null, 'success' => true );
 }
 
 ?>

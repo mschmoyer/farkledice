@@ -25,6 +25,8 @@
 
 {include file="farkle_div_tournament.tpl"}
 
+{include file="farkle_div_emojipicker.tpl"}
+
 {if isset($adminlevel) && $adminlevel > 0}
 	{include file="farkle_div_admin.tpl"}
 {/if}
@@ -54,10 +56,10 @@
 
 {* Player Card Object *}
 <div class="playerCard playerCardWidth" id="defaultPlayerCard" style="display: none;">
-	<table width="100%" height="100%" cellpadding="0" cellspacing="0"> 
+	<table width="100%" height="100%" cellpadding="0" cellspacing="0">
 	<tr style="line-height: .7;">
-		<td id="playerImgTd" rowspan="2" width="42px">
-			<img id="playerImg" alt="Player icon" height="32px" width="32px">
+		<td class="playerEmojiTd" rowspan="2" width="42px">
+			<span class="playerCardEmoji"></span>
 		</td>
 		<td><div class="playerName shadowed"></div></td>
 		<td rowspan="2" align="right"><span class="playerAchScore shadowed"></span></td>
@@ -65,7 +67,7 @@
 		<td colspan="2"><span class="playerTitle shadowed"></span></td>
 	</tr>
 	</table>
-	
+
 </div>
 
 {*
@@ -160,6 +162,7 @@
 <script type="text/javascript" src="/js/farklePlayerInfo.js?v={$app_version}"></script>
 <script type="text/javascript" src="/js/farkleLeaderboard.js?v={$app_version}"></script>
 <script type="text/javascript" src="/js/farkleAdmin.js?v={$app_version}"></script>
+<script type="text/javascript" src="/js/farkleEmojiPicker.js?v={$app_version}"></script>
 
 <script>{literal}
 $(document).ready(function()

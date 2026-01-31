@@ -1,40 +1,72 @@
 <!-- PLAYER INFO -->
 <div id="divPlayerInfo" class="farklePage" align="center" style="display: none;">
 
-	<div id="divPlayerInfoTag"></div>
-	
+	<div id="divPlayerInfoTag" style="margin-bottom: 8px;"></div>
+
 	<table class="pageWidth"><tr>
-		<td class="farkleTab" id="tabPInfo0" selected="" width="25%"
+		<td class="farkleTab" id="tabPInfo0" selected="" width="33%"
 			onClick="ShowPlayerInfoEx( 0 );">Stats</td>
-		<td class="farkleTab" id="tabPInfo3"  width="25%"
-			onClick="ShowPlayerInfoEx( 3 );">Options</td>
-		<td class="farkleTab" id="tabPInfo1"  width="25%"
+		{*<td class="farkleTab" id="tabPInfo3"  width="25%"
+			onClick="ShowPlayerInfoEx( 3 );">Options</td>*}
+		<td class="farkleTab" id="tabPInfo1"  width="33%"
 			onClick="ShowPlayerInfoEx( 1 );">Achievements</td>
-		<td class="farkleTab" id="tabPInfo2"  width="25%"
+		<td class="farkleTab" id="tabPInfo2"  width="33%"
 			onClick="ShowPlayerInfoEx( 2 );">Games</td>
-		
+
 	</tr></table>
 	
 	<div class="playerInfoContainer" id="divPlayerInfoItem0" align="center" style="margin: 0px;">
 		<table style="margin: 3px;" cellpadding="3px" class="statsTable">
-		
-		<tr><td align="right">Level:</td><td><span id="lblLevel" style="color: #9DF497;"></span><td></tr>
-		<tr><td align="right">Title:</td><td><span id="lblPlayerTitle"></span><select id="selPlayerTitleSelector" onChange="UpdateTitle()"></select></tr>
-		<tr><td align="right">Last Played:</td><td><span id="lblLastPlayed"></span></td></tr>
-		<tr><td align="right">XP:</td><td><span id="lblXp"></span> (<span id="lblXpToLevel" style="color: yellow;"></span> to level)<td></tr>
-		{*<tr><td align="right">Style Points:</td><td><span id="lblStyle"></span><td></tr>*}
-		<tr><td colspan="2"> </td></tr>
+		<colgroup>
+			<col style="width: 50%;">
+			<col style="width: 50%;">
+		</colgroup>
+
+		{* Level & Progress Section *}
+		<tr><td colspan="2" class="section-header">Level & Progress</td></tr>
+		<tr><td align="right">Level:</td><td><span id="lblLevel" style="color: #9DF497;"></span></td></tr>
+		<tr><td align="right">Title:</td><td><span id="lblPlayerTitle"></span><select id="selPlayerTitleSelector" onChange="UpdateTitle()"></select></td></tr>
+		<tr><td align="right">XP:</td><td><span id="lblXp"></span> / <span id="lblXpToLevel" style="color: yellow;"></span></td></tr>
+		<tr><td colspan="2">
+			<div class="xp-progress-container">
+				<div class="xp-progress-bar" id="xpProgressBar"></div>
+			</div>
+		</td></tr>
+
+		{* Opponent Reactions Section *}
+		<tr id="trEmojiHeader" style="display: none;"><td colspan="2" class="section-header">Opponent Reactions</td></tr>
+		<tr id="trEmojiStream" style="display: none;">
+			<td align="right">Reactions:</td>
+			<td></td>
+		</tr>
+		<tr id="trEmojiStreamContent" style="display: none;">
+			<td colspan="2" style="text-align: center;"><span id="lblEmojiStream" style="font-size: 18px; word-wrap: break-word; line-height: 1.6;"></span></td>
+		</tr>
+		<tr id="trEmojiKnownFor" style="display: none;">
+			<td align="right">Known for:</td>
+			<td><span id="lblMostCommonEmoji" style="font-size: 32px;"></span></td>
+		</tr>
+
+		{* Win/Loss Record Section *}
+		<tr><td colspan="2" class="section-header">Win/Loss Record</td></tr>
 		<tr><td align="right">Wins:</td><td><span id="lblWins">0</span></td></tr>
-		<tr><td align="right">Losses:</td><td><span id="lblLosses">0</span><td></tr>
-		<tr><td align="right">Win/Loss %:</td><td><span id="lblWinLossRatio"></span><td></tr>
-		<tr><td colspan="2"> </td></tr>
-		<tr><td align="right">Total points:</td><td><span id="lblTotalPoints"></span><td></tr>
-		<tr><td align="right">Highest round:</td><td><span id="lblHighestRound"></span><td></tr>
-		<tr><td align="right">Average round:</td><td><span id="lblAvgRound"></span><td></tr>
-		<tr><td align="right">Highest score:</td><td><span id="lblHighest10Round"></span><td></tr>
-		<tr><td colspan="2"> </td></tr>
-		<tr><td align="right">Total Farkles:</td><td><span id="lblFarkles" style="color: red;"></span><td></tr>
-			
+		<tr><td align="right">Losses:</td><td><span id="lblLosses">0</span></td></tr>
+		<tr><td align="right">Win/Loss %:</td><td><span id="lblWinLossRatio"></span></td></tr>
+
+		{* Game Stats Section *}
+		<tr><td colspan="2" class="section-header">Game Stats</td></tr>
+		<tr><td align="right">Total Points:</td><td><span id="lblTotalPoints"></span></td></tr>
+		<tr><td align="right">Highest Round:</td><td><span id="lblHighestRound"></span></td></tr>
+		<tr><td align="right">Average Round:</td><td><span id="lblAvgRound"></span></td></tr>
+		<tr><td align="right">Highest Score:</td><td><span id="lblHighest10Round"></span></td></tr>
+		<tr><td align="right">Total Farkles:</td><td><span id="lblFarkles" style="color: #FF6B6B;"></span></td></tr>
+		<tr><td align="right">Farkle Rate:</td><td><span id="lblFarklePct" style="color: #FF6B6B;"></span></td></tr>
+
+		{* Activity Section - commented out for now
+		<tr><td colspan="2" class="section-header">Activity</td></tr>
+		<tr><td align="right">Last Played:</td><td><span id="lblLastPlayed"></span></td></tr>
+		*}
+
 		<tr><td colspan="2">
 			<br/>
 			Player card backgrounds unlocked:<br/>

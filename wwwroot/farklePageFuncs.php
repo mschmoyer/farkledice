@@ -113,7 +113,10 @@ function GetStats( $playerid, $recordInSession = 1 )
 		stylepoints,
 		playerlevel,
 		highest10round,
-		farkles
+		farkles,
+		roundsplayed,
+		COALESCE(ROUND(farkles::numeric / NULLIF(roundsplayed, 0) * 100, 0), 0) as farkle_pct,
+		COALESCE(emoji_reactions, '') as emoji_reactions
 		from farkle_players where playerid='$playerid'";
 	$stats = db_select_query( $sql, SQL_SINGLE_ROW );
 	 
@@ -128,6 +131,7 @@ function GetPlayerInfo( $playerid )
 {
 	$sql = "select username, playertitle, cardcolor, cardbg,
 			playerlevel, xp, xp_to_level,
+			COALESCE(emoji_reactions, '') as emoji_reactions,
 			(select sum(worth)
 				from farkle_achievements a, farkle_achievements_players b
 				where a.achievementid=b.achievementid and b.playerid=$playerid) as achscore

@@ -1,12 +1,31 @@
 
 var PLAYERINFO_MAX_ITEM = 4;
-var gLastPlayerId = 0; 
+var gLastPlayerId = 0;
 
-var g_playerInfo; 
+var g_playerInfo;
 var g_lastAchPlayerid;
 
-var gCurPlayerid; // The player you are viewing Player Info for. 
-var gCurUsername; 
+var gCurPlayerid; // The player you are viewing Player Info for.
+var gCurUsername;
+
+// Format numbers with commas for display
+function formatNumber(num) {
+	if (num === null || num === undefined || num === '') return '0';
+	return parseInt(num).toLocaleString();
+}
+
+// Get the most common emoji from a string of emojis
+function getMostCommonEmoji(emojiStr) {
+	if (!emojiStr) return null;
+	var emojis = [...emojiStr]; // Spread to handle multi-byte chars
+	var counts = {};
+	emojis.forEach(function(e) { counts[e] = (counts[e] || 0) + 1; });
+	var maxEmoji = null, maxCount = 0;
+	for (var e in counts) {
+		if (counts[e] > maxCount) { maxEmoji = e; maxCount = counts[e]; }
+	}
+	return { emoji: maxEmoji, count: maxCount };
+} 
 
 function ShowCurPlayerInfo() { 
 
@@ -115,24 +134,51 @@ function PopulatePlayerInfo()
 	
 	var winLossRatio = ((parseInt(playerInfo[0].wins) / (parseInt(playerInfo[0].wins) + parseInt(playerInfo[0].losses)) ) * 100).toFixed(0)+'%';
 	if( parseInt(playerInfo[0].wins)==0 && parseInt(playerInfo[0].losses) == 0 ) winLossRatio = '<i style="color: grey;">No data</i>';
-	$('#lblLevel').html(playerInfo[0].playerlevel);
+	$('#lblLevel').html(formatNumber(playerInfo[0].playerlevel));
 	$('#lblTitle').html(playerInfo[0].playertitle);
-	$('#lblLastPlayed').html(playerInfo[0].lastplayed); 
-	$('#lblXp').html(playerInfo[0].xp);
-	$('#lblXpToLevel').html(playerInfo[0].xp_to_level);
-	$('#lblStyle').html(playerInfo[0].stylepoints);
-	
-	$('#lblWins').html(playerInfo[0].wins);
-	$('#lblLosses').html(playerInfo[0].losses);		
+	$('#lblLastPlayed').html(playerInfo[0].lastplayed);
+	$('#lblXp').html(formatNumber(playerInfo[0].xp));
+	$('#lblXpToLevel').html(formatNumber(playerInfo[0].xp_to_level));
+
+	// Update XP progress bar
+	var xpProgress = Math.min(100, (parseInt(playerInfo[0].xp) / parseInt(playerInfo[0].xp_to_level)) * 100);
+	$('#xpProgressBar').css('width', xpProgress + '%');
+	$('#lblStyle').html(formatNumber(playerInfo[0].stylepoints));
+
+	$('#lblWins').html(formatNumber(playerInfo[0].wins));
+	$('#lblLosses').html(formatNumber(playerInfo[0].losses));
 	$('#lblWinLossRatio').html( winLossRatio );
-	
-	$('#lblTotalPoints').html(playerInfo[0].totalpoints);
-	$('#lblHighestRound').html(playerInfo[0].highestround);
-	$('#lblAvgRound').html(playerInfo[0].avground);	
-	$('#lblHighest10Round').html(playerInfo[0].highest10round);	
-	
-	$('#lblFarkles').html(playerInfo[0].farkles);	
-	
+
+	$('#lblTotalPoints').html(formatNumber(playerInfo[0].totalpoints));
+	$('#lblHighestRound').html(formatNumber(playerInfo[0].highestround));
+	$('#lblAvgRound').html(formatNumber(playerInfo[0].avground));
+	$('#lblHighest10Round').html(formatNumber(playerInfo[0].highest10round));
+
+	$('#lblFarkles').html(formatNumber(playerInfo[0].farkles));
+	$('#lblFarklePct').html(playerInfo[0].farkle_pct + '%');
+
+	// Emoji reactions display
+	var emojiReactions = playerInfo[0].emoji_reactions || '';
+	if (emojiReactions && emojiReactions.length > 0) {
+		$('#trEmojiHeader').show();
+		$('#trEmojiStream').show();
+		$('#trEmojiStreamContent').show();
+		$('#trEmojiKnownFor').show();
+		$('#lblEmojiStream').html(emojiReactions);
+		var mostCommon = getMostCommonEmoji(emojiReactions);
+		if (mostCommon && mostCommon.emoji) {
+			$('#lblMostCommonEmoji').html(mostCommon.emoji + '<span style="font-size: 16px; vertical-align: middle;"> (' + mostCommon.count + ')</span>');
+		} else {
+			$('#lblMostCommonEmoji').html('<i style="color: grey;">No reactions yet</i>');
+		}
+	} else {
+		// Empty state - show header with encouraging message
+		$('#trEmojiHeader').show();
+		$('#trEmojiStream').show();
+		$('#lblEmojiStream').html('<i style="color: #aaa; font-size: 14px;">Play other farklers to accrue reactions!</i>');
+		$('#trEmojiKnownFor').hide();
+	}
+
 	$('#txtUserEmail').val(playerInfo[0].email);
 
 	$('#chkEmailMe').attr('checked', (playerInfo[0].sendhourlyemails=='1' ? true : false ) );
