@@ -1033,6 +1033,31 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a3a3a3', end
 	}
 }
 
+/* Segmented Toggle Buttons (for leaderboard day toggle) */
+.segmented-toggle {
+	display: inline-flex;
+	border: 2px solid #d4a017;
+	border-radius: 8px;
+	overflow: hidden;
+}
+.segment-btn {
+	padding: 8px 20px;
+	border: none;
+	background: transparent;
+	color: white;
+	font-weight: bold;
+	cursor: pointer;
+	transition: all 0.2s;
+	font-size: 14px;
+}
+.segment-btn.active {
+	background: #d4a017;
+	color: white;
+}
+.segment-btn:hover:not(.active) {
+	background: rgba(212, 160, 23, 0.2);
+}
+
 /* Bot Game Selection Modal */
 .bot-select-modal {
 	background: white;

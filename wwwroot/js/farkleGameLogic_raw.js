@@ -48,7 +48,7 @@ function farkleInit(diceBackImg)
 	for (i=0;i<=MAX_DICE+1;i++) {
 		gDiceImages[i] = loadImage('/images/diceFront'+i+'.png', 0); 
 	}
-	gDiceImageJoker = loadImage('/images/diceFrontJoker.png', 0); 
+	// gDiceImageJoker = loadImage('/images/diceFrontJoker.png', 0); // Not used currently 
 	
 	for (i=0;i<=MAX_DICE;i++)
 	{

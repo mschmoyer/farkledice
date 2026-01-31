@@ -86,12 +86,17 @@ if( isset($_GET['action']) )
 		if ($counts && count($counts) > 0) {
 			echo "<div style='margin-left:20px;'>Leaderboard entries by category:<br>";
 			$category_names = [
-				0 => 'Yesterday\'s High Scores',
-				1 => 'Yesterday\'s Farklers',
-				2 => 'Yesterday\'s Winners',
+				0 => 'Today\'s High Scores',
+				1 => 'Today\'s Farklers',
+				2 => 'Today\'s Win Ratio',
 				3 => 'Wins/Losses',
 				4 => 'Highest 10-Round',
-				5 => 'Achievement Points'
+				5 => 'Achievement Points',
+				6 => 'Today\'s Best Rounds',
+				10 => 'Yesterday\'s High Scores',
+				11 => 'Yesterday\'s Farklers',
+				12 => 'Yesterday\'s Win Ratio (MVP)',
+				16 => 'Yesterday\'s Best Rounds'
 			];
 
 			$total = 0;
@@ -165,6 +170,25 @@ function GetLeaderBoard()
 		where lbindex=6 and lbrank <= $maxRows
 		order by lbrank";
 	$_SESSION['farkle']['lb'][0][3] = db_select_query( $sql, SQL_MULTI_ROW );
+
+	// Yesterday's stats (lbindex 10, 11, 12, 16)
+	// High scores (10), farkles (11), win ratio (12)
+	for( $i=0; $i<3; $i++ )
+	{
+		$yesterdayIndex = $i + 10;  // 10, 11, 12
+		$sql = "select username, playerid, playerlevel, first_int, second_int, first_string, lbrank
+			from farkle_lbdata
+			where lbindex=$yesterdayIndex and lbrank <= $maxRows
+			order by lbrank";
+		$_SESSION['farkle']['lb']['yesterday'][$i] = db_select_query( $sql, SQL_MULTI_ROW );
+	}
+
+	// Yesterday's best rounds (lbindex 16)
+	$sql = "select username, playerid, playerlevel, first_int, lbrank
+		from farkle_lbdata
+		where lbindex=16 and lbrank <= $maxRows
+		order by lbrank";
+	$_SESSION['farkle']['lb']['yesterday'][3] = db_select_query( $sql, SQL_MULTI_ROW );
 
 	$maxRows = 25; 
 	for( $i=1; $i<4; $i++ )
@@ -285,9 +309,10 @@ function Leaderboard_RefreshData( $force = false )
 // Called from a nightly cron job
 function Leaderboard_RefreshDaily()
 {
-	$maxDataRows = 35; 
-	
-	$sql = "delete from farkle_lbdata where lbindex in (0,1,2,6)";
+	$maxDataRows = 35;
+
+	// Delete both today's data (0,1,2,6) and yesterday's data (10,11,12,16)
+	$sql = "delete from farkle_lbdata where lbindex in (0,1,2,6,10,11,12,16)";
 	$result = db_command($sql);	
 
 	// Update the day of week (Central Time).
@@ -357,8 +382,81 @@ function Leaderboard_RefreshDaily()
 	$insert_sql = "insert into farkle_lbdata ($sql)";
 	$result = db_command($insert_sql);
 
-	// Give the MVP achievement to the top player
-	$sql = "select playerid from farkle_lbdata where lbindex=2 and lbrank=1";
+	// ============================================================
+	// YESTERDAY'S STATS (lbindex 10, 11, 12, 16)
+	// ============================================================
+
+	// Yesterday's highest game scores (lbindex 10)
+	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
+		(select 10 as lbindex, a.playerid, a.username, a.playerlevel,
+		playerscore as first_int, 0 as second_int, null as first_string, null as second_string
+		from farkle_players a, farkle_games_players b
+		where a.playerid=b.playerid and (b.lastplayed AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date - INTERVAL '1 day'
+		order by playerscore desc LIMIT $maxDataRows) t1";
+	$insert_sql = "insert into farkle_lbdata ($sql)";
+	$result = db_command($insert_sql);
+
+	// Yesterday's top farklers (lbindex 11)
+	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
+		(select 11 as lbindex, a.playerid, a.username, a.playerlevel,
+		count(*) as first_int, 0 as second_int, null as first_string, null as second_string
+		from farkle_players a, farkle_games_players b, farkle_rounds c
+		where a.playerid=b.playerid and (b.lastplayed AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date - INTERVAL '1 day'
+		and a.playerid=c.playerid and b.gameid=c.gameid and c.roundscore=0
+		group by a.username, a.playerid, a.playerlevel
+		order by first_int desc LIMIT $maxDataRows) t1";
+	$insert_sql = "insert into farkle_lbdata ($sql)";
+	$result = db_command($insert_sql);
+
+	// Yesterday's best win ratio with Bayesian scoring (lbindex 12) - used for MVP
+	// Bayesian formula: (n / (n + m)) * observed_ratio + (m / (n + m)) * prior
+	// where n = games played, m = confidence parameter (10), prior = 0.5
+	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
+		(select 12 as lbindex, sub.playerid,
+			p.username, p.playerlevel,
+			sub.players_beaten as first_int,
+			sub.games_played as second_int,
+			ROUND(sub.players_beaten::numeric / sub.games_played, 2) || ' (' || sub.players_beaten || ' beaten)' as first_string,
+			ROUND(
+				(sub.games_played::numeric / (sub.games_played + 10)) * (sub.players_beaten::numeric / sub.games_played)
+				+ (10.0 / (sub.games_played + 10)) * 0.5
+			, 3)::text as second_string
+		from (
+			select gp.playerid,
+				SUM(CASE WHEN g.winningplayer = gp.playerid
+					THEN (SELECT COUNT(*) FROM farkle_games_players x WHERE x.gameid = g.gameid) - 1
+					ELSE 0 END) as players_beaten,
+				COUNT(*) as games_played
+			from farkle_games g
+			join farkle_games_players gp on g.gameid = gp.gameid
+			where (g.gamefinish AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date - INTERVAL '1 day'
+			and g.gamewith in (".GAME_WITH_RANDOM.",".GAME_WITH_FRIENDS.")
+			group by gp.playerid
+			having COUNT(*) >= 3
+		) sub
+		join farkle_players p on p.playerid = sub.playerid
+		order by
+			(sub.games_played::numeric / (sub.games_played + 10)) * (sub.players_beaten::numeric / sub.games_played)
+			+ (10.0 / (sub.games_played + 10)) * 0.5 DESC,
+			sub.players_beaten desc
+		LIMIT $maxDataRows) t1";
+	$insert_sql = "insert into farkle_lbdata ($sql)";
+	$result = db_command($insert_sql);
+
+	// Yesterday's best single rounds (lbindex 16)
+	$sql = "select t1.*, ROW_NUMBER() OVER () as lbrank from
+		(select 16 as lbindex, a.playerid, a.username, a.playerlevel,
+		r.roundscore as first_int, 0 as second_int, null as first_string, null as second_string
+		from farkle_rounds r
+		join farkle_players a on a.playerid = r.playerid
+		where (r.rounddatetime AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date - INTERVAL '1 day'
+		and r.roundscore > 0
+		order by r.roundscore desc LIMIT $maxDataRows) t1";
+	$insert_sql = "insert into farkle_lbdata ($sql)";
+	$result = db_command($insert_sql);
+
+	// Give the MVP achievement to yesterday's top player (lbindex=12, Bayesian scored)
+	$sql = "select playerid from farkle_lbdata where lbindex=12 and lbrank=1";
 	$mvpPlayerid = db_select_query( $sql, SQL_SINGLE_VALUE );
 	if( $mvpPlayerid )
 		Ach_AwardAchievement( $mvpPlayerid, ACH_LB_HIGHESTRND );
