@@ -89,10 +89,33 @@ function DoLobbyUpdateEx( inputData )
 	if( !inputData )
 	{
 		ConsoleDebug( 'DoLobbyUpdateEx - no input data.');
+		return;
 	}
-	
-	// Successful register. 
-	data = eval( "(" + inputData + ")" );
+
+	// Parse response using JSON.parse (safer than eval)
+	var data;
+	try {
+		data = JSON.parse( inputData );
+	} catch(e) {
+		ConsoleDebug( 'DoLobbyUpdateEx - JSON parse error: ' + e.message );
+		return;
+	}
+
+	// Check for login required response
+	if( data.LoginRequired || data.Error )
+	{
+		ConsoleDebug( 'DoLobbyUpdateEx - Session expired or error: ' + data.Error );
+		ShowLogin();
+		return;
+	}
+
+	// Check if data is an array as expected
+	if( !Array.isArray(data) || !data[0] )
+	{
+		ConsoleDebug( 'DoLobbyUpdateEx - Unexpected data format' );
+		return;
+	}
+
 	data[0].playerid=playerid;
 	
 	if( username != data[0].username ) {

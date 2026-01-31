@@ -86,9 +86,7 @@
 			<tr><td><input type="button" class="mobileButton lobbyButton" value="Leaderboard" 	onClick="ShowLeaderBoard()" 	id="btnLobbyLeaderboard"></td></tr>
 			<tr><td><input type="button" class="mobileButton lobbyButton" value="Instructions" 	onClick="ShowInstructions()" 	id="btnLobbyInstructions"></td></tr>
 			<tr><td><input type="button" class="mobileButton lobbyButton" value="Logout" 		onClick="Logout()" 				id="btnLobbyLogout" ></td></tr>
-			{if isset($adminlevel) && $adminlevel > 0}
-				<tr><td><input type="button" class="mobileButton lobbyButton" value="Admin" 	onClick="ShowAdmin()" 			id="btnLobbyAdmin" ></td></tr>
-			{/if}
+			<tr id="trLobbyAdmin" {if !isset($adminlevel) || $adminlevel == 0}style="display:none;"{/if}><td><input type="button" class="mobileButton lobbyButton" value="Admin" 	onClick="ShowAdmin()" 			id="btnLobbyAdmin" ></td></tr>
 			
 			
 			</table>

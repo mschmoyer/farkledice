@@ -4,9 +4,10 @@ var gLeaderboardLoaded = 0;
 var gLBLastUpdateData = '';
 //var gLeaderboardItem = 0;
 //var LEADERBOARD_ITEMS_MAX = 4;
-var farkleMeter = 0; 
+var farkleMeter = 0;
 
-var g_lbData; 
+var g_lbData;
+var g_currentDayView = 'today';  // 'today' or 'yesterday' 
 
 function ShowLeaderBoard()
 {
@@ -69,86 +70,148 @@ function LeaderBoardHook()
 	}
 }
 
+// Switch between Today and Yesterday views
+function switchDayView(day) {
+	g_currentDayView = day;
+
+	// Update button states
+	$('#btnToday').toggleClass('active', day === 'today');
+	$('#btnYesterday').toggleClass('active', day === 'yesterday');
+
+	// Repopulate tables with selected day's data
+	PopulateDailyTables();
+}
+
+// Populate the Yesterday's MVP section (always shows yesterday's data)
+function PopulateMVP() {
+	var mvpData = g_lbData.yesterday ? g_lbData.yesterday[2] : null;
+
+	if (mvpData && mvpData.length > 0) {
+		var mvp = mvpData[0];
+		$('#lbMVPName').html(GetLevelHTML(mvp.playerlevel) + mvp.username);
+
+		var ratio = (mvp.first_int / mvp.second_int).toFixed(2);
+		$('#lbMVPStats').html(
+			'Win Ratio: ' + ratio + ' | ' +
+			'Games: ' + mvp.second_int + ' | ' +
+			'Opponents Beaten: ' + mvp.first_int
+		);
+	} else {
+		$('#lbMVPName').html('No MVP yet');
+		$('#lbMVPStats').html('Check back tomorrow!');
+	}
+}
+
+// Populate the daily stats tables based on the current day view (today/yesterday)
+function PopulateDailyTables() {
+	var dataSource = (g_currentDayView === 'today') ? g_lbData[0] : g_lbData.yesterday;
+	var maxRows = 3;
+	var j, lbData, lbPlayerid;
+
+	// Update date label
+	if (g_currentDayView === 'today') {
+		$('#lblLbDateLabel').text('Showing stats for ');
+		$('#lblLbTodayDate').text(g_lbData.dayOfWeek);
+	} else {
+		$('#lblLbDateLabel').text('Showing stats for ');
+		$('#lblLbTodayDate').text('Yesterday');
+	}
+
+	// Check if we have data
+	if (!dataSource) {
+		// Clear all tables and show empty state
+		$("#tblLbTodayHighScores > tbody").empty();
+		$("#tblLbTodayFarkles > tbody").empty();
+		$("#tblLbTodayWins > tbody").empty();
+		$("#tblLbTodayBestRounds > tbody").empty();
+		return;
+	}
+
+	// High Scores (index 0)
+	lbData = dataSource[0];
+	ConsoleDebug('Populating ' + g_currentDayView + ' high scores');
+	$("#tblLbTodayHighScores > tbody").empty();
+	if (lbData) {
+		for (j = 0; j < Math.min(lbData.length, maxRows); j++) {
+			lbPlayerid = lbData[j].playerid;
+			$('#tblLbTodayHighScores > tbody:last').append(
+				'<tr ' + (lbPlayerid == playerid ? 'row3' : (j % 2 == 0 ? 'row1' : 'row2')) + ' playerid="' + lbPlayerid + '">' +
+					'<td>' + lbData[j].lbrank + '</td>' +
+					'<td>' + GetLevelHTML(lbData[j].playerlevel) + lbData[j].username + '</td>' +
+					'<td>' + lbData[j].first_int + '</td>' +
+				'</tr>');
+		}
+	}
+
+	// Farkles (index 1)
+	lbData = dataSource[1];
+	ConsoleDebug('Populating ' + g_currentDayView + ' farkles');
+	$("#tblLbTodayFarkles > tbody").empty();
+	if (lbData) {
+		for (j = 0; j < Math.min(lbData.length, maxRows); j++) {
+			lbPlayerid = lbData[j].playerid;
+			$('#tblLbTodayFarkles > tbody:last').append(
+				'<tr ' + (lbPlayerid == playerid ? 'row3' : (j % 2 == 0 ? 'row1' : 'row2')) + ' playerid="' + lbPlayerid + '">' +
+					'<td>' + lbData[j].lbrank + '</td>' +
+					'<td>' + GetLevelHTML(lbData[j].playerlevel) + lbData[j].username + '</td>' +
+					'<td>' + lbData[j].first_int + '</td>' +
+				'</tr>');
+		}
+	}
+
+	// Win Ratio (index 2)
+	lbData = dataSource[2];
+	ConsoleDebug('Populating ' + g_currentDayView + ' best win ratio');
+	$("#tblLbTodayWins > tbody").empty();
+	if (lbData) {
+		for (j = 0; j < Math.min(lbData.length, maxRows); j++) {
+			lbPlayerid = lbData[j].playerid;
+			$('#tblLbTodayWins > tbody:last').append(
+				'<tr ' + (lbPlayerid == playerid ? 'row3' : (j % 2 == 0 ? 'row1' : 'row2')) + ' playerid="' + lbPlayerid + '">' +
+					'<td>' + lbData[j].lbrank + '</td>' +
+					'<td>' + GetLevelHTML(lbData[j].playerlevel) + lbData[j].username + '</td>' +
+					'<td>' + lbData[j].first_string + '</td>' +
+					'<td>' + lbData[j].second_int + '</td>' +
+				'</tr>');
+		}
+	}
+
+	// Best Rounds (index 3)
+	lbData = dataSource[3];
+	ConsoleDebug('Populating ' + g_currentDayView + ' best rounds');
+	$("#tblLbTodayBestRounds > tbody").empty();
+	if (lbData) {
+		for (j = 0; j < Math.min(lbData.length, maxRows); j++) {
+			lbPlayerid = lbData[j].playerid;
+			$('#tblLbTodayBestRounds > tbody:last').append(
+				'<tr ' + (lbPlayerid == playerid ? 'row3' : (j % 2 == 0 ? 'row1' : 'row2')) + ' playerid="' + lbPlayerid + '">' +
+					'<td>' + lbData[j].lbrank + '</td>' +
+					'<td>' + GetLevelHTML(lbData[j].playerlevel) + lbData[j].username + '</td>' +
+					'<td>' + lbData[j].first_int + '</td>' +
+				'</tr>');
+		}
+	}
+
+	// Rebind click handlers for player info
+	$(".tabLeaderboard tr").off('click').on('click', function() {
+		ShowPlayerInfo($(this).attr("playerid"));
+	});
+}
+
 function PopulateLeaderboard()
 {
 	var i, j, k, idx, lbData, lbRow, lbStars, lbPlayerid;
 	var upperBound;
 	var newTag;
 	var maxRows = 25;
-	
-	idx = 0;
-	
-	$('#lblLbTodayDate').html( g_lbData.dayOfWeek ); 
-	
-	// Today's high scores
-	lbData = g_lbData[idx][0];
-	ConsoleDebug( 'Populating todays high scores' );
-	$("#tblLbTodayHighScores > tbody").empty();
-	for( j=0; j < Math.min(lbData.length,maxRows); j++ )
-	{
-		lbPlayerid = lbData[j].playerid;
-		lbRow = $('#tblLbTodayHighScores > tbody:last').append(
-			'<tr '+(lbPlayerid==playerid?'row3':(j%2==0?'row1':'row2'))+' playerid="' + lbPlayerid + '">'+
-				'<td>'+lbData[j].lbrank+'</td>'+
-				'<td>'+GetLevelHTML( lbData[j].playerlevel )+lbData[j].username+'</td>'+
-				'<td>'+lbData[j].first_int+'</td>'+
-			'</tr>');
-	}
-	
-	// Today's farkles
-	lbData = g_lbData[idx][1];
-	ConsoleDebug( 'Populating todays farkles' );
-	$("#tblLbTodayFarkles > tbody").empty();
-	for( j=0; j < Math.min(lbData.length,maxRows); j++ )
-	{
-		lbPlayerid = lbData[j].playerid;
-		lbRow = $('#tblLbTodayFarkles > tbody:last').append(
-			'<tr '+(lbPlayerid==playerid?'row3':(j%2==0?'row1':'row2'))+' playerid="' + lbPlayerid + '">'+
-				'<td>'+lbData[j].lbrank+'</td>'+
-				'<td>'+GetLevelHTML( lbData[j].playerlevel )+lbData[j].username+'</td>'+
-				'<td>'+lbData[j].first_int+'</td>'+
-			'</tr>');
-	}
-	
-	// Today's Best Win Ratio (first_int=players beaten, second_int=games, first_string=win%)
-	lbData = g_lbData[idx][2];
-	ConsoleDebug( 'Populating todays best win ratio' );
-	$("#tblLbTodayWins > tbody").empty();
-	for( j=0; j < Math.min(lbData.length,maxRows); j++ )
-	{
-		if( j==0 )
-		{
-			$('#lbMVPName').html( GetLevelHTML( lbData[j].playerlevel )+lbData[j].username );
-		}
 
-		lbPlayerid = lbData[j].playerid;
-		lbRow = $('#tblLbTodayWins > tbody:last').append(
-			'<tr '+(lbPlayerid==playerid?'row3':(j%2==0?'row1':'row2'))+' playerid="' + lbPlayerid + '">'+
-				'<td>'+lbData[j].lbrank+'</td>'+
-				'<td>'+GetLevelHTML( lbData[j].playerlevel )+lbData[j].username+'</td>'+
-				'<td>'+lbData[j].first_string+'</td>'+
-				'<td>'+lbData[j].second_int+'</td>'+
-			'</tr>');
-	}
+	// Populate Yesterday's MVP (always uses yesterday's data)
+	PopulateMVP();
 
-	// Today's best rounds (stored at g_lbData[0][3])
-	lbData = g_lbData[idx][3];
-	ConsoleDebug( 'Populating todays best rounds' );
-	$("#tblLbTodayBestRounds > tbody").empty();
-	if( lbData ) {
-		for( j=0; j < Math.min(lbData.length,maxRows); j++ )
-		{
-			lbPlayerid = lbData[j].playerid;
-			lbRow = $('#tblLbTodayBestRounds > tbody:last').append(
-				'<tr '+(lbPlayerid==playerid?'row3':(j%2==0?'row1':'row2'))+' playerid="' + lbPlayerid + '">'+
-					'<td>'+lbData[j].lbrank+'</td>'+
-					'<td>'+GetLevelHTML( lbData[j].playerlevel )+lbData[j].username+'</td>'+
-					'<td>'+lbData[j].first_int+'</td>'+
-				'</tr>');
-		}
-	}
+	// Populate Daily tables based on current view toggle
+	PopulateDailyTables();
 
-	idx++;
+	idx = 1;
 	lbData = g_lbData[idx];
 	ConsoleDebug( 'Populating stats for most wins' );
 	$("#tblLBWins > tbody").empty();

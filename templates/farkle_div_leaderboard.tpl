@@ -26,12 +26,20 @@
 
 		<div class="lbTab regularBox" id="tblLBToday" style="margin: 0px; background-color: transparent;">
 
-			<p><i>Showing stats for <span id="lblLbTodayDate"></span></i></p>
-
 			<div class="regularBox" style="background-color: rgba(241,218,54,0.6);">
-				<img src="/images/star.png"> <span style="margin: -5px;"><b>Daily MVP</b></span> <img src="/images/star.png">
-				<h2 style="margin: 0px;"><span  class="shadowed" id="lbMVPName"></span></h2>
+				<img src="/images/star.png"> <span style="margin: -5px;"><b>Yesterday's MVP</b></span> <img src="/images/star.png">
+				<h2 style="margin: 0px;"><span class="shadowed" id="lbMVPName"></span></h2>
+				<p id="lbMVPStats" style="margin: 5px 0 0 0; font-size: 12px; color: #333;"></p>
 			</div>
+
+			<div style="margin: 15px 0; text-align: center;">
+				<div class="segmented-toggle" id="dayToggle">
+					<button class="segment-btn active" id="btnToday" onclick="switchDayView('today')">Today</button>
+					<button class="segment-btn" id="btnYesterday" onclick="switchDayView('yesterday')">Yesterday</button>
+				</div>
+			</div>
+
+			<p><i id="lblLbDateLabel">Showing stats for </i><span id="lblLbTodayDate"></span></p>
 
 			{*<!-- <div id="farkleMeter" style="width: 200px; height: 160px;"></div> -->*}
 
