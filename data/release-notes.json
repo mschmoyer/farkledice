@@ -1,0 +1,21 @@
+{
+  "releases": [
+    {
+      "version": "2.6.0",
+      "date": "2025-01-31",
+      "notes": [
+        "Added Release Notes page accessible from footer",
+        "Updated footer version styling for better visibility"
+      ]
+    },
+    {
+      "version": "2.5.3",
+      "date": "2025-01-30",
+      "notes": [
+        "Daily leaderboards with Today/Yesterday toggle",
+        "Yesterday's MVP section showing top win ratio player",
+        "Improved leaderboard UI with segmented toggle buttons"
+      ]
+    }
+  ]
+}
