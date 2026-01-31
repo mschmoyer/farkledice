@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Leaderboard - UI Mock</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .tab-header {
+            display: flex;
+            margin-bottom: 0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: #2a2a4a;
+            color: #888;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .tab.active {
+            background: #3a3a5a;
+            color: #fff;
+            border-bottom: 3px solid #d4a017;
+        }
+
+        .content-box {
+            background: #3a3a5a;
+            padding: 20px;
+            border-radius: 0 0 12px 12px;
+        }
+
+        /* MVP Section */
+        .mvp-box {
+            background: linear-gradient(135deg, rgba(241, 218, 54, 0.7) 0%, rgba(212, 160, 23, 0.7) 100%);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(212, 160, 23, 0.3);
+        }
+
+        .mvp-title {
+            color: #333;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .mvp-title img {
+            width: 20px;
+            vertical-align: middle;
+        }
+
+        .mvp-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1a1a2e;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.3);
+            margin: 8px 0;
+        }
+
+        .mvp-level {
+            display: inline-block;
+            background: #4a90d9;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .mvp-stats {
+            font-size: 12px;
+            color: #333;
+            margin-top: 8px;
+        }
+
+        /* Day Toggle */
+        .day-toggle-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .segmented-toggle {
+            display: inline-flex;
+            border: 2px solid #d4a017;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .segment-btn {
+            padding: 10px 24px;
+            border: none;
+            background: transparent;
+            color: #ccc;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .segment-btn.active {
+            background: #d4a017;
+            color: #1a1a2e;
+        }
+
+        .segment-btn:hover:not(.active) {
+            background: rgba(212, 160, 23, 0.2);
+        }
+
+        .date-label {
+            color: #888;
+            font-size: 12px;
+            font-style: italic;
+            margin-top: 10px;
+        }
+
+        /* Tables */
+        .section-title {
+            color: #d4a017;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #4a4a6a;
+        }
+
+        .section-subtitle {
+            color: #888;
+            font-size: 11px;
+            margin: -5px 0 10px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            color: #888;
+            font-size: 11px;
+            padding: 8px 4px;
+            border-bottom: 1px solid #4a4a6a;
+        }
+
+        td {
+            padding: 10px 4px;
+            color: #fff;
+            font-size: 13px;
+            border-bottom: 1px solid #3a3a5a;
+        }
+
+        tr:nth-child(odd) {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .rank {
+            color: #d4a017;
+            font-weight: bold;
+        }
+
+        .player-level {
+            display: inline-block;
+            background: #4a90d9;
+            color: white;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-size: 10px;
+            margin-right: 4px;
+        }
+
+        .highlight-row {
+            background: rgba(212, 160, 23, 0.15) !important;
+        }
+
+        /* Notes section */
+        .notes {
+            margin-top: 30px;
+            padding: 15px;
+            background: #2a2a4a;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .notes h4 {
+            color: #d4a017;
+            margin-top: 0;
+        }
+
+        .notes ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .notes li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Tab Header -->
+        <div class="tab-header">
+            <button class="tab active">Daily</button>
+            <button class="tab">Wins</button>
+            <button class="tab">10 Round</button>
+            <button class="tab">Achievements</button>
+        </div>
+
+        <div class="content-box">
+            <!-- MVP Section (Always Yesterday) -->
+            <div class="mvp-box">
+                <div class="mvp-title">
+                    <span>&#11088;</span> Yesterday's MVP <span>&#11088;</span>
+                </div>
+                <div class="mvp-name">
+                    <span class="mvp-level">55</span>alan
+                </div>
+                <div class="mvp-stats">
+                    Win Ratio: 0.73 | Games: 52 | Opponents Defeated: 38
+                </div>
+            </div>
+
+            <!-- Day Toggle -->
+            <div class="day-toggle-container">
+                <div class="segmented-toggle">
+                    <button class="segment-btn active" onclick="switchDay('today', this)">Today</button>
+                    <button class="segment-btn" onclick="switchDay('yesterday', this)">Yesterday</button>
+                </div>
+                <div class="date-label" id="dateLabel">Showing stats for Friday, Jan 31</div>
+            </div>
+
+            <!-- Highest Game Scores -->
+            <h3 class="section-title">Highest Game Scores</h3>
+            <table id="highScoresTable">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="rank">1</td>
+                        <td><span class="player-level">42</span>mikeyboy</td>
+                        <td>14,250</td>
+                    </tr>
+                    <tr>
+                        <td class="rank">2</td>
+                        <td><span class="player-level">55</span>alan</td>
+                        <td>13,800</td>
+                    </tr>
+                    <tr>
+                        <td class="rank">3</td>
+                        <td><span class="player-level">38</span>dicemaster</td>
+                        <td>12,450</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Best Win Ratio -->
+            <h3 class="section-title">Best Win Ratio</h3>
+            <p class="section-subtitle">Min 3 games. Avg opponents beaten per game.</p>
+            <table id="winRatioTable">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Ratio</th>
+                        <th>Games</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="highlight-row">
+                        <td class="rank">1</td>
+                        <td><span class="player-level">55</span>alan</td>
+                        <td>0.73 (38 beaten)</td>
+                        <td>52</td>
+                    </tr>
+                    <tr>
+                        <td class="rank">2</td>
+                        <td><span class="player-level">29</span>anipper</td>
+                        <td>0.80 (4 beaten)</td>
+                        <td>5</td>
+                    </tr>
+                    <tr>
+                        <td class="rank">3</td>
+                        <td><span class="player-level">44</span>wrozzo</td>
+                        <td>0.71 (5 beaten)</td>
+                        <td>7</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Best Rounds -->
+            <h3 class="section-title">Best Rounds</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="rank">1</td>
+                        <td><span class="player-level">38</span>dicemaster</td>
+                        <td>4,500</td>
+                    </tr>
+                    <tr>
+                        <td class="rank">2</td>
+                        <td><span class="player-level">55</span>alan</td>
+                        <td>4,200</td>
+                    </tr>
+                    <tr>
+                        <td class="rank">3</td>
+                        <td><span class="player-level">29</span>anipper</td>
+                        <td>3,850</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Most Farkles -->
+            <h3 class="section-title">Most Farkles</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Farkles</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="rank">1</td>
+                        <td><span class="player-level">22</span>unluckyone</td>
+                        <td>47</td>
+                    </tr>
+                    <tr>
+                        <td class="rank">2</td>
+                        <td><span class="player-level">55</span>alan</td>
+                        <td>38</td>
+                    </tr>
+                    <tr>
+                        <td class="rank">3</td>
+                        <td><span class="player-level">15</span>newbie123</td>
+                        <td>29</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Design Notes -->
+        <div class="notes">
+            <h4>Design Notes</h4>
+            <ul>
+                <li><strong>MVP is always yesterday's winner</strong> - uses Bayesian Average scoring to reward sustained performance over lucky streaks</li>
+                <li><strong>Today/Yesterday toggle</strong> - switches which day's stats are shown in the tables below</li>
+                <li><strong>MVP stays fixed</strong> - doesn't change when toggling days</li>
+                <li><strong>Bayesian formula:</strong> (g/(g+10)) * ratio + (10/(g+10)) * 0.5</li>
+                <li><strong>With Bayesian scoring:</strong> alan (0.69) beats anipper (0.60) despite lower raw ratio</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Mock data for demonstration
+        const todayData = {
+            date: 'Friday, Jan 31',
+            highScores: [
+                { rank: 1, level: 42, name: 'mikeyboy', score: '14,250' },
+                { rank: 2, level: 55, name: 'alan', score: '13,800' },
+                { rank: 3, level: 38, name: 'dicemaster', score: '12,450' }
+            ],
+            winRatio: [
+                { rank: 1, level: 55, name: 'alan', ratio: '0.73 (38 beaten)', games: 52, isMVP: true },
+                { rank: 2, level: 29, name: 'anipper', ratio: '0.80 (4 beaten)', games: 5 },
+                { rank: 3, level: 44, name: 'wrozzo', ratio: '0.71 (5 beaten)', games: 7 }
+            ]
+        };
+
+        const yesterdayData = {
+            date: 'Thursday, Jan 30',
+            highScores: [
+                { rank: 1, level: 55, name: 'alan', score: '15,100' },
+                { rank: 2, level: 31, name: 'rollinghigh', score: '14,200' },
+                { rank: 3, level: 42, name: 'mikeyboy', score: '13,950' }
+            ],
+            winRatio: [
+                { rank: 1, level: 55, name: 'alan', ratio: '0.73 (38 beaten)', games: 52, isMVP: true },
+                { rank: 2, level: 29, name: 'anipper', ratio: '0.80 (4 beaten)', games: 5 },
+                { rank: 3, level: 44, name: 'wrozzo', ratio: '0.71 (5 beaten)', games: 7 }
+            ]
+        };
+
+        function switchDay(day, btn) {
+            // Update button states
+            document.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Get data for selected day
+            const data = day === 'today' ? todayData : yesterdayData;
+
+            // Update date label
+            document.getElementById('dateLabel').textContent =
+                'Showing stats for ' + data.date;
+
+            // Update high scores table
+            const highScoresBody = document.querySelector('#highScoresTable tbody');
+            highScoresBody.innerHTML = data.highScores.map(row => `
+                <tr>
+                    <td class="rank">${row.rank}</td>
+                    <td><span class="player-level">${row.level}</span>${row.name}</td>
+                    <td>${row.score}</td>
+                </tr>
+            `).join('');
+
+            // Update win ratio table
+            const winRatioBody = document.querySelector('#winRatioTable tbody');
+            winRatioBody.innerHTML = data.winRatio.map(row => `
+                <tr class="${row.isMVP ? 'highlight-row' : ''}">
+                    <td class="rank">${row.rank}</td>
+                    <td><span class="player-level">${row.level}</span>${row.name}</td>
+                    <td>${row.ratio}</td>
+                    <td>${row.games}</td>
+                </tr>
+            `).join('');
+        }
+    </script>
+</body>
+</html>

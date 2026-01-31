@@ -28,12 +28,16 @@ function Login() {
 				// Successful login
 				username = data.username;
 				playerid = data.playerid;
-				$('#txtPassword').val('');						
+				$('#txtPassword').val('');
+				// Show admin button if user is an admin
+				if( data.adminlevel && data.adminlevel > 0 ) {
+					$('#trLobbyAdmin').show();
+				}
 				ShowLobby();
 			} else {
 				$('#lblLoginErr').html( data.Error );
 			}
-		}, 
+		},
 		'action=login&user='+theUser+'&pass='+thePass+'&remember='+rememberMe );
 		
 	} else {
