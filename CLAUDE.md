@@ -407,6 +407,17 @@ Automatic user agent detection in `baseutil.php`:
 - Sets `$gTabletMode` for tablets (iPad)
 - Override with `?mobilemode=1` or `?tabletmode=1`
 
+## Regression Testing
+
+**IMPORTANT:** Run the API game flow test at the end of coding sessions to ensure no regressions.
+
+```bash
+# Run the core game flow API test
+docker exec farkle_web php /var/www/html/test/api_game_flow_test.php
+```
+
+**Expected output:** All tests should pass (green). If any fail (red), investigate before committing.
+
 ## Important Notes
 
 - **Modernized:** Uses PDO with PostgreSQL (migrated from deprecated mysql_* functions)

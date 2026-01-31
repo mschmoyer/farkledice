@@ -491,9 +491,31 @@ When task-FINAL is reached:
 
 ---
 
-### Phase 7: Feature Completion
+### Phase 7: Regression Testing
 
-**When ALL requirements are satisfied and verified:**
+**CRITICAL: Before marking feature complete, run the API regression test.**
+
+```bash
+# Run the core game flow API test
+docker exec farkle_web php /var/www/html/test/api_game_flow_test.php
+```
+
+**What to check:**
+- All tests should pass (green output)
+- If any tests fail (red), the feature may have introduced a regression
+- Do NOT proceed to completion until all tests pass
+
+**If tests fail:**
+1. Create a fix task to address the regression
+2. Spawn a coder agent to fix the issue
+3. Re-run the regression test
+4. Only proceed when all tests pass
+
+---
+
+### Phase 8: Feature Completion
+
+**When ALL requirements are satisfied, verified, AND regression tests pass:**
 
 1. Update the feature file with final status:
    ```json
@@ -550,6 +572,7 @@ When task-FINAL is reached:
 - **Use Write/Edit tools for project files** - NEVER use `cat`, `echo`, or heredocs
 - **Ask about branch preference upfront** - New branch vs current branch
 - **Verify requirements coverage at completion** - Don't mark complete with gaps
+- **Run regression tests before completion** - Execute API game flow test to catch regressions
 
 ## File Editing Rules
 
@@ -590,6 +613,11 @@ VERIFICATION:
 1. When task-FINAL reached, check ALL requirements are satisfied
 2. If gaps exist, add more tasks or ask user to defer requirements
 3. Present coverage report to user
+
+REGRESSION TEST:
+1. Run: docker exec farkle_web php /var/www/html/test/api_game_flow_test.php
+2. All tests must pass (green) before proceeding
+3. If any fail, create fix task and re-run until passing
 
 FINISH:
 1. Update feature file with verification_results
