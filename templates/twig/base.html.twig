@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Farkle Ten{% endblock %}</title>
+
+    {# Legacy CSS files #}
+    <link rel="stylesheet" type="text/css" href="/css/base.css?v={{ app_version }}">
+    <link rel="stylesheet" type="text/css" href="/css/farkle.css?v={{ app_version }}">
+    <link rel="stylesheet" type="text/css" href="/css/mobile.css?v={{ app_version }}">
+
+    {% block stylesheets %}{% endblock %}
+</head>
+<body>
+    {% block body %}{% endblock %}
+
+    {# Legacy JS files #}
+    <script src="/js/util.js?v={{ app_version }}"></script>
+
+    {% block javascripts %}{% endblock %}
+
+    <div style="text-align: center; padding: 10px 0; font-size: 11px; color: #999;">
+        v{{ app_version }}
+    </div>
+</body>
+</html>

@@ -1,0 +1,13 @@
+twig:
+    default_path: '%kernel.project_dir%/templates/twig'
+
+    # Global variables available in all templates
+    globals:
+        app_version: '%env(default::APP_VERSION)%'
+
+    # Enable strict variables in dev for better error messages
+    strict_variables: '%kernel.debug%'
+
+when@test:
+    twig:
+        strict_variables: true

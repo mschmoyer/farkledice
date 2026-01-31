@@ -233,21 +233,24 @@ function Player_UpdateTitle( $titleid )
 	return 0; 
 }
 
-// Return each title visible to a player based on their level (approx. one title every 3 levels) 
+// Return each title visible to a player based on their level (approx. one title every 3 levels)
 function Player_GetTitleChoices( $level )
 {
-	global $gTitles; 
-	
-	// Check for valid level range. 
-	if( $level <= 0 || $level > 999 ) return 0; 
-	
-	$titles = Array();
-	
-	foreach( $gTitles as $i=>$t )
-		if( $i < $level ) 
-			array_push( $titles, Array( 'level'=>$i, 'title'=>$t ) ); 
+	global $gTitles;
 
-	return $titles; 
+	// Check for valid level range.
+	if( $level <= 0 || $level > 999 ) return 0;
+
+	// Safety check - $gTitles may not be in global scope when included from Symfony
+	if( !is_array($gTitles) ) return array();
+
+	$titles = Array();
+
+	foreach( $gTitles as $i=>$t )
+		if( $i < $level )
+			array_push( $titles, Array( 'level'=>$i, 'title'=>$t ) );
+
+	return $titles;
 }
 
 // Options from the player info "Options" screen.
