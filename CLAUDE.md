@@ -31,6 +31,12 @@ The version is defined in `includes/baseutil.php` as `APP_VERSION` and displayed
 - Bump **minor** (and reset revision to 0) for new features, significant enhancements
 - Bump **major** (and reset minor/revision to 0) for breaking changes or major releases
 
+**Release Notes:**
+When updating the version, **always** update `data/release-notes.json`:
+- Add a new entry at the **TOP** of the `releases` array (newest first)
+- Include the version number, date (YYYY-MM-DD format), and an array of change notes
+- Each note should be a brief, user-friendly description of what changed
+
 ## Local Development with Docker
 
 To run this application locally:

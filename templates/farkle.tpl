@@ -21,6 +21,8 @@
 
 {include file="farkle_div_instructions.tpl"}
 
+{include file="farkle_div_releasenotes.tpl"}
+
 {include file="farkle_div_tournament.tpl"}
 
 {if isset($adminlevel) && $adminlevel > 0}

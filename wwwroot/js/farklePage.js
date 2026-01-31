@@ -25,6 +25,7 @@ var divPlayerInfoObj;
 var divLeaderBoardObj;
 var divFriendObj;
 var divInstructionsObj;
+var divReleaseNotesObj;
 var divMenuObj;
 var divTournamentObj;
 var divTouranmentListObj;
@@ -83,6 +84,7 @@ function pageInit( )
 	divLeaderBoardObj = 	$('#divLeaderBoard');
 	divFriendObj = 			$('#divFriends');
 	divInstructionsObj = 	$('#divInstructions');
+	divReleaseNotesObj = 	$('#divReleaseNotes');
 	divMenuObj = 			$('#divLobbyMenu');
 	divTournamentObj = 		$('#divTournament');
 	//divTournamentListObj = 	$('#divTournamentList');
@@ -168,7 +170,10 @@ function HideAllWindows()
 	
 	if( divInstructionsObj.is(":visible") ) gLastPage = divInstructionsObj;
 	divInstructionsObj.hide();
-	
+
+	if( divReleaseNotesObj && divReleaseNotesObj.is(":visible") ) gLastPage = divReleaseNotesObj;
+	if( divReleaseNotesObj ) divReleaseNotesObj.hide();
+
 	if( divNewGameObj.is(":visible") ) gLastPage = divNewGameObj;
 	divNewGameObj.hide();
 	
@@ -219,7 +224,9 @@ function PageGoBack()
 	}
 
 	if(	gLastPage == divInstructionsObj ) {
-		ShowInstructions(); return 1; 
+		ShowInstructions(); return 1;
+	} else if( gLastPage == divReleaseNotesObj ) {
+		ShowReleaseNotes(); return 1;
 	} else if( gLastPage == divNewGameObj ) {
 		ShowNewGame(); return 1; 
 	} else if( gLastPage == divLobbyObj ) {
@@ -433,6 +440,11 @@ function ShowInstructions() {
 	HideAllWindows();
 	divGameObj.hide();
 	divInstructionsObj.show();
+}
+
+function ShowReleaseNotes() {
+	HideAllWindows();
+	divReleaseNotesObj.show();
 }
 
 function StartSoloGame() {

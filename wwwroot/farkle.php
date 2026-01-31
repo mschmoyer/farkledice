@@ -53,6 +53,18 @@
 		$smarty->assign('lastknownscreen', '' );
 	}
 	
+	// Load release notes (limit to last 20)
+	$releaseNotesPath = dirname(__DIR__) . '/data/release-notes.json';
+	$releaseNotes = [];
+	if (file_exists($releaseNotesPath)) {
+		$releaseNotesJson = file_get_contents($releaseNotesPath);
+		$releaseNotes = json_decode($releaseNotesJson, true);
+		if (isset($releaseNotes['releases']) && count($releaseNotes['releases']) > 20) {
+			$releaseNotes['releases'] = array_slice($releaseNotes['releases'], 0, 20);
+		}
+	}
+	$smarty->assign('release_notes', $releaseNotes);
+
 	// Pass these to the template where javascript can pick them up
 	// Set defaults for when user is not logged in
 	$smarty->assign('lobbyinfo', '' );
