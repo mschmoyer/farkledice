@@ -55,11 +55,14 @@
 			<!-- Template for active friend card (hidden) -->
 			<div id="divActiveFriendTemplate" style="display: none;">
 				<div class="activeFriendOuter" style="max-width: 250px; width: 100%; margin: 2px 0; display: flex; align-items: stretch;">
-					<div class="activeFriendCard friendDiv" style="flex: 1; margin: 0; cursor: pointer; display: flex; flex-direction: column; justify-content: center; padding: 4px 10px;">
-						<span class="activeFriendName shadowed" style="color: white; font-weight: bold;"></span>
-						<span class="activeFriendStatus" style="color: #ccc; font-size: 0.75em;"></span>
+					<div class="activeFriendCard friendDiv" style="flex: 1; margin: 0; cursor: pointer; display: flex; flex-direction: row; align-items: center; padding: 4px 10px 4px 2px; border-radius: 0;">
+						<span class="activeFriendEmoji" style="font-size: 24px; min-width: 32px; text-align: center;"></span>
+						<div style="display: flex; flex-direction: column; justify-content: center; text-align: left;">
+							<span class="activeFriendName shadowed" style="color: white; font-weight: bold;"></span>
+							<span class="activeFriendStatus" style="color: #ccc; font-size: 0.75em;"></span>
+						</div>
 					</div>
-					<input type="button" class="mobileButton activeFriendPlayBtn" buttoncolor="green" value="Play" style="margin: 0; border-radius: 0 8px 8px 0;">
+					<input type="button" class="mobileButton activeFriendPlayBtn" buttoncolor="green" value="Play" style="margin: 0; height: 42px; border-radius: 0 8px 8px 0;">
 				</div>
 			</div>
 		</td>

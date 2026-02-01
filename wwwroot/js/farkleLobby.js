@@ -207,6 +207,16 @@ function DoLobbyUpdateEx( inputData )
 			var outerDiv = $('#divActiveFriendTemplate .activeFriendOuter').clone();
 			outerDiv.attr('id', 'objActiveFriend' + friend.playerid);
 
+			// Display "known for" emoji from emoji_reactions
+			var friendEmoji = '';
+			if( friend.emoji_reactions ) {
+				var knownFor = getMostCommonEmoji(friend.emoji_reactions);
+				if( knownFor && knownFor.emoji ) {
+					friendEmoji = knownFor.emoji;
+				}
+			}
+			outerDiv.find('.activeFriendEmoji').text(friendEmoji);
+
 			var card = outerDiv.find('.activeFriendCard');
 			var color = friend.cardcolor || 'green';
 			if( color.match && color.match(/.png/gi) )

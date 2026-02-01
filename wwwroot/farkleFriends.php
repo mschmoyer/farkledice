@@ -179,52 +179,51 @@ function GetFriends( $playerid )
 
 function GetActiveFriends( $playerid )
 {
-	// Use numeric comparison for compatibility with both smallint (local) and boolean (prod)
-	$sql = "select a.username, a.playerid, a.playertitle, a.cardcolor
-			from farkle_players a, farkle_friends b
-			where a.playerid=b.friendid and b.sourceid=$playerid and
-			a.active=1 and b.removed=0 and
-			a.lastplayed > NOW() - interval '10 minutes'
-			order by a.lastplayed desc";
+	// Single query with LEFT JOINs to get friends and their current game/opponent
+	// This eliminates N+1 query pattern (was: 1 query for friends + N queries for games)
+	//
+	// Uses DISTINCT ON to get only one row per friend (most recent game activity)
+	// LEFT JOINs ensure friends without active games still appear
+	$sql = "SELECT DISTINCT ON (a.playerid)
+				a.username, a.playerid, a.playertitle, a.cardcolor,
+				COALESCE(a.emoji_reactions, '') as emoji_reactions,
+				g.gameid, p2.username as opponent
+			FROM farkle_players a
+			JOIN farkle_friends b ON a.playerid = b.friendid
+			LEFT JOIN farkle_games_players gp ON gp.playerid = a.playerid
+			LEFT JOIN farkle_games g ON g.gameid = gp.gameid AND g.winningplayer = 0
+			LEFT JOIN farkle_games_players gp2 ON gp2.gameid = g.gameid AND gp2.playerid != a.playerid
+			LEFT JOIN farkle_players p2 ON gp2.playerid = p2.playerid
+			WHERE b.sourceid = $playerid
+				AND a.active = 1
+				AND b.removed = 0
+				AND a.lastplayed > NOW() - interval '10 minutes'
+			ORDER BY a.playerid, g.gamestart DESC NULLS LAST, a.lastplayed DESC";
 
-	$players = db_select_query( $sql, SQL_MULTI_ROW );
+	$results = db_select_query( $sql, SQL_MULTI_ROW );
 
-	if( !$players || count($players) == 0 )
+	if( !$results || count($results) == 0 )
 	{
 		return Array();
 	}
 
-	// For each active friend, check if they're in an active game
-	foreach( $players as &$player )
+	// Set status based on whether friend has an active game with an opponent
+	foreach( $results as &$player )
 	{
-		$friendId = $player['playerid'];
-
-		// Find any active game this friend is in (winningplayer = 0 means game in progress)
-		$gameSql = "SELECT g.gameid,
-					(SELECT p2.username
-					 FROM farkle_games_players gp2
-					 JOIN farkle_players p2 ON gp2.playerid = p2.playerid
-					 WHERE gp2.gameid = g.gameid AND gp2.playerid != $friendId
-					 LIMIT 1) as opponent
-					FROM farkle_games g
-					JOIN farkle_games_players gp ON g.gameid = gp.gameid
-					WHERE gp.playerid = $friendId AND g.winningplayer = 0
-					ORDER BY g.gamestart DESC
-					LIMIT 1";
-
-		$gameInfo = db_select_query( $gameSql, SQL_SINGLE_ROW );
-
-		if( $gameInfo && !empty($gameInfo['opponent']) )
+		if( !empty($player['opponent']) )
 		{
-			$player['status'] = 'Playing: ' . $gameInfo['opponent'];
+			$player['status'] = 'Playing: ' . $player['opponent'];
 		}
 		else
 		{
 			$player['status'] = 'In Lobby';
 		}
+		// Clean up fields not needed by caller
+		unset($player['gameid']);
+		unset($player['opponent']);
 	}
 
-	return $players;
+	return $results;
 }
 
 ?>
