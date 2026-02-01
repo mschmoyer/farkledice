@@ -1,0 +1,156 @@
+/**
+ * lobby.css - Styles for the game lobby
+ */
+
+/* Main Lobby Containers */
+#divLobby,
+#divLobbyIdle {
+	text-align: center;
+}
+
+/* Lobby Player Card */
+#divLobbyPlayerCard {
+	margin-bottom: 0;
+}
+
+/* Lobby Labels */
+.lobbyLabel {
+	margin-left: 12px;
+	font-size: 0.8em;
+	text-align: left;
+}
+
+/* Lobby XP Section */
+.lobbyXpTable {
+	margin: 1px;
+	border-collapse: collapse;
+}
+
+.lobbyXpLabel {
+	font-size: 12px;
+	color: white;
+}
+
+.lobbyXpBarTable {
+	border: 1px solid black;
+	margin: 0;
+	height: 16px;
+	border-collapse: collapse;
+}
+
+/* Lobby Main Layout */
+.lobbyLayoutTable {
+	border-collapse: separate;
+	border-spacing: 3px;
+}
+
+.lobbyLayoutTable td {
+	vertical-align: top;
+}
+
+.lobbyGamesColumn {
+	width: 80%;
+	text-align: right;
+}
+
+.lobbyButtonsColumn {
+	width: 20%;
+}
+
+.lobbyButtonsTable {
+	border-collapse: collapse;
+}
+
+.lobbyButtonsTable td {
+	text-align: center;
+}
+
+/* Lobby Content */
+.lobbyContent {
+	margin: 8px 0 0 0;
+}
+
+#divLobbyGames,
+#divActiveFriends {
+	margin: 0;
+}
+
+/* Lobby No Games Message */
+#divLobbyNoGames .lobbyNoGamesCenter {
+	text-align: center;
+}
+
+#divLobbyNoGames .lobbyNoGamesText {
+	font-size: 10px;
+	margin: 8px;
+}
+
+/* Active Friends Section */
+#divActiveFriendsSection {
+	margin-top: 12px;
+}
+
+.activeFriendOuter {
+	max-width: 250px;
+	width: 100%;
+	margin: 2px 0;
+	display: flex;
+	align-items: stretch;
+}
+
+.activeFriendCard.friendDiv {
+	flex: 1;
+	margin: 0;
+	cursor: pointer;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	padding: 4px 10px 4px 2px;
+	border-radius: 0;
+}
+
+.activeFriendEmoji {
+	font-size: 24px;
+	min-width: 32px;
+	text-align: center;
+}
+
+.activeFriendInfo {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	text-align: left;
+}
+
+.activeFriendName {
+	color: white;
+	font-weight: bold;
+}
+
+.activeFriendStatus {
+	color: #ccc;
+	font-size: 0.75em;
+}
+
+.activeFriendPlayBtn.mobileButton {
+	margin: 0;
+	height: 42px;
+	border-radius: 0 8px 8px 0;
+}
+
+/* Double XP Label */
+#lblDoubleXP {
+	font-weight: 900;
+	font-family: helvetica;
+	color: #a9db80;
+}
+
+/* Lobby Idle */
+.lobbyIdleRefreshBtn {
+	width: 110px;
+}
+
+/* Hidden utility class */
+.hidden {
+	display: none;
+}
