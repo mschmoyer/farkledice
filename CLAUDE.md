@@ -336,9 +336,7 @@ Templates are in `templates/` directory:
 - `templates/` - Smarty templates
 - `wwwroot/admin/` - Administrative tools
 - `src/` - Additional source files (minimal usage)
-- `tests/` - Test files
-
-**Note:** When creating test PHP files, place them in a `/test` subfolder to keep them organized and separate from production code.
+- `tests/` - PHPUnit test files (Unit and Integration tests)
 
 ### Database
 
@@ -407,16 +405,74 @@ Automatic user agent detection in `baseutil.php`:
 - Sets `$gTabletMode` for tablets (iPad)
 - Override with `?mobilemode=1` or `?tabletmode=1`
 
-## Regression Testing
+## Testing
 
-**IMPORTANT:** Run the API game flow test at the end of coding sessions to ensure no regressions.
+**IMPORTANT:** Run tests after implementing any feature or fix to ensure no regressions. Tests MUST pass before committing.
+
+### Running Tests
 
 ```bash
-# Run the core game flow API test
-docker exec farkle_web php /var/www/html/test/api_game_flow_test.php
+# Run all PHPUnit tests (recommended)
+docker exec farkle_web vendor/bin/phpunit
+
+# Run only unit tests (fast, no database)
+docker exec farkle_web vendor/bin/phpunit --testsuite Unit
+
+# Run only integration tests (requires database)
+docker exec farkle_web vendor/bin/phpunit --testsuite Integration
+
+# Run a specific test file
+docker exec farkle_web vendor/bin/phpunit tests/Unit/DiceScoringTest.php
+
+# Run with verbose output
+docker exec farkle_web vendor/bin/phpunit --testdox
 ```
 
-**Expected output:** All tests should pass (green). If any fail (red), investigate before committing.
+### Test Suites
+
+| Suite | Tests | Description |
+|-------|-------|-------------|
+| **Unit/DiceScoringTest** | 58 | All dice scoring combinations |
+| **Integration/GameFlowTest** | 7 | Game creation, 10-round gameplay |
+| **Integration/LobbyTest** | 15 | Lobby info, active games, player data |
+| **Integration/ProfileTest** | 19 | Profile stats, titles, achievements |
+
+**Total: 99 tests**
+
+### Test Structure
+
+```
+tests/
+├── bootstrap.php           # Test setup and autoloading
+├── TestCase.php            # Base class for unit tests
+├── DatabaseTestCase.php    # Base class for DB tests (with transaction rollback)
+├── Unit/
+│   └── DiceScoringTest.php # Pure unit tests, no database
+├── Integration/
+│   ├── GameFlowTest.php    # Game creation and play flow
+│   ├── LobbyTest.php       # Lobby functionality
+│   └── ProfileTest.php     # Player profile functionality
+└── Fixtures/
+    ├── TestPlayers.php     # Test player data
+    └── DiceScenarios.php   # Dice roll scenarios
+```
+
+### Writing New Tests
+
+- **Unit tests**: Extend `Tests\TestCase`, no database access
+- **Integration tests**: Extend `Tests\DatabaseTestCase`, uses transactions that auto-rollback
+- Use `$this->createTestPlayer('name')` to create isolated test players
+- Use `$this->loginAs($playerId)` to simulate logged-in user
+- Tests that need `mschmoyer` user should use `$this->markTestSkipped()` if user doesn't exist
+
+### Expected Output
+
+```
+PHPUnit 10.5.60
+OK (99 tests, 224 assertions)
+```
+
+All tests should pass. If any fail, investigate before committing.
 
 ## Important Notes
 

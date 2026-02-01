@@ -44,3 +44,4 @@ node_modules/
 /playwright/.cache/
 tests/screenshots/*.png
 /local
+/.phpunit.cache
