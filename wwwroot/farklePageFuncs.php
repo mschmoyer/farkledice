@@ -151,8 +151,11 @@ function GetLobbyInfo( )
 	}
 	
 	$_SESSION['farkle']['lastknownscreen'] = 'lobby';
-	
+
 	$playerid = $_SESSION['playerid'];
+
+	// Update lastplayed so player shows as active to friends while in lobby
+	db_command("update farkle_players set lastplayed=NOW() where playerid=$playerid");
 	
 	if( date('j') >= 24 && date('j') <= 25 && date('n') == 12 ) {
 		// christmas eve or christmas

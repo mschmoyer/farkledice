@@ -3,8 +3,22 @@ var lobbyActive = 0;
 var gLobbyTimer;
 var gLobbyTimer_ticks = 0;
 var gLobbyGettingInfo = 0;
-var gLobbyAjaxTimeout = 0; 
+var gLobbyAjaxTimeout = 0;
 var gCurPlayerTag = 0;
+
+/**
+ * Handle home icon click - reload page if already in lobby, otherwise show lobby
+ */
+function HomeIconClick()
+{
+	if( divLobbyObj && divLobbyObj.is(":visible") )
+	{
+		// Already in lobby, reload the page
+		location.reload();
+		return;
+	}
+	ShowLobby();
+}
 
 function ShowLobby()
 {

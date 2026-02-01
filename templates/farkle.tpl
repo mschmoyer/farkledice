@@ -2,7 +2,7 @@
 {include file="header.tpl" title="Farkle Ten"}
 
 <img class="imagebutton homeimage mobileButton" id="imgHomeIcon" alt="Show Farkle Lobby"
-	src="/images/home.png" onClick="ShowLobby()">
+	src="/images/home.png" onClick="HomeIconClick()">
 
 
 {include file="farkle_div_login.tpl"}
