@@ -154,9 +154,8 @@ function GetLobbyInfo( )
 
 	$playerid = $_SESSION['playerid'];
 
-	// Update lastplayed so player shows as active to friends while in lobby
-	db_command("update farkle_players set lastplayed=NOW() where playerid=$playerid");
-	
+	// Note: lastplayed is updated on login, dice roll, and turn pass - no need to update during lobby polling
+
 	if( date('j') >= 24 && date('j') <= 25 && date('n') == 12 ) {
 		// christmas eve or christmas
 		Ach_AwardAchievement( $_SESSION['playerid'], ACH_HOLIDAY );

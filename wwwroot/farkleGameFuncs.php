@@ -1522,53 +1522,70 @@ function GetGameActivityLog($gameid) {
 		}
 	}
 
-	$sql = "SELECT r.playerid, r.roundnum, r.roundscore,
-				   p.username
+	// Single query with LEFT JOIN to get rounds and dice data together
+	// This eliminates N+1 query pattern (was: 1 query for rounds + N queries for dice)
+	$sql = "SELECT r.playerid, r.roundnum, r.roundscore, p.username,
+				   s.handnum, s.d1save, s.d2save, s.d3save, s.d4save, s.d5save, s.d6save
 			FROM farkle_rounds r
 			JOIN farkle_players p ON r.playerid = p.playerid
+			LEFT JOIN farkle_sets s ON s.gameid = r.gameid
+				AND s.playerid = r.playerid
+				AND s.roundnum = r.roundnum
+				AND s.setscore > 0
 			WHERE r.gameid = $gameid
-			ORDER BY r.rounddatetime ASC";
+			ORDER BY r.rounddatetime ASC, s.handnum ASC, s.setnum ASC";
 	$results = db_select_query($sql, SQL_MULTI_ROW);
 
 	if (!$results) return array();
 
-	// Filter and process results
-	$filteredResults = array();
+	// Group results by player+round, collecting dice into hands
+	$roundsMap = array();
+	$roundOrder = array(); // Track insertion order
 
-	foreach ($results as $entry) {
-		$playerid = $entry['playerid'];
-		$roundnum = intval($entry['roundnum']);
+	foreach ($results as $row) {
+		$playerid = $row['playerid'];
+		$roundnum = intval($row['roundnum']);
 
 		// Hide opponent rounds that are at or ahead of the current player's round
 		if ($playerid != $myPlayerId && $roundnum >= $currentPlayerRound) {
-			continue; // Skip this entry
+			continue;
 		}
 
-		// Get all saved dice from all sets in this round, ordered by hand and set
-		$diceSql = "SELECT handnum, d1save, d2save, d3save, d4save, d5save, d6save
-					FROM farkle_sets
-					WHERE gameid = $gameid AND playerid = $playerid AND roundnum = $roundnum
-					AND setscore > 0
-					ORDER BY handnum ASC, setnum ASC";
-		$diceRows = db_select_query($diceSql, SQL_MULTI_ROW);
+		$key = $playerid . '_' . $roundnum;
 
-		// Group dice by hand number
-		$hands = array();
-		if ($diceRows) {
-			foreach ($diceRows as $row) {
-				$handNum = intval($row['handnum']);
-				if (!isset($hands[$handNum])) {
-					$hands[$handNum] = array();
-				}
-				for ($i = 1; $i <= 6; $i++) {
-					$val = intval($row["d{$i}save"]);
-					// Only include actual dice values (1-6), not 0 or 10
-					if ($val >= 1 && $val <= 6) {
-						$hands[$handNum][] = $val;
-					}
+		// Initialize round entry if not seen yet
+		if (!isset($roundsMap[$key])) {
+			$roundsMap[$key] = array(
+				'playerid' => $playerid,
+				'roundnum' => $roundnum,
+				'roundscore' => $row['roundscore'],
+				'username' => $row['username'],
+				'hands' => array()
+			);
+			$roundOrder[] = $key;
+		}
+
+		// Add dice to hands if we have dice data (LEFT JOIN may return null)
+		if ($row['handnum'] !== null) {
+			$handNum = intval($row['handnum']);
+			if (!isset($roundsMap[$key]['hands'][$handNum])) {
+				$roundsMap[$key]['hands'][$handNum] = array();
+			}
+			for ($i = 1; $i <= 6; $i++) {
+				$val = intval($row["d{$i}save"]);
+				// Only include actual dice values (1-6), not 0 or 10
+				if ($val >= 1 && $val <= 6) {
+					$roundsMap[$key]['hands'][$handNum][] = $val;
 				}
 			}
 		}
+	}
+
+	// Build final results array preserving order
+	$filteredResults = array();
+	foreach ($roundOrder as $key) {
+		$entry = $roundsMap[$key];
+		$hands = $entry['hands'];
 
 		// Sort dice within each hand (descending so higher values first)
 		foreach ($hands as &$handDice) {
@@ -1578,6 +1595,7 @@ function GetGameActivityLog($gameid) {
 		// Convert to indexed array of hands
 		ksort($hands);
 		$entry['dicehands'] = array_values($hands);
+		unset($entry['hands']);
 
 		$filteredResults[] = $entry;
 	}

@@ -55,8 +55,14 @@ CREATE TABLE IF NOT EXISTS farkle_players (
   reinvite_expires TIMESTAMP DEFAULT NULL,
   active BOOLEAN DEFAULT true,
   stylepoints INTEGER DEFAULT 0,
-  emoji_reactions VARCHAR(200) DEFAULT ''
+  emoji_reactions VARCHAR(200) DEFAULT '',
+  is_bot BOOLEAN DEFAULT false
 );
+
+-- Performance indexes for farkle_players
+CREATE INDEX IF NOT EXISTS idx_players_active ON farkle_players(active);
+CREATE INDEX IF NOT EXISTS idx_players_lastplayed ON farkle_players(lastplayed);
+CREATE INDEX IF NOT EXISTS idx_players_is_bot ON farkle_players(is_bot);
 
 -- Create players devices table for session management
 CREATE TABLE IF NOT EXISTS farkle_players_devices (
@@ -104,6 +110,11 @@ CREATE TABLE IF NOT EXISTS farkle_games (
 
 CREATE INDEX IF NOT EXISTS idx_whostarted ON farkle_games(whostarted);
 CREATE INDEX IF NOT EXISTS idx_winningplayer ON farkle_games(winningplayer);
+
+-- Performance indexes for farkle_games
+CREATE INDEX IF NOT EXISTS idx_games_gamefinish ON farkle_games(gamefinish);
+CREATE INDEX IF NOT EXISTS idx_games_gamewith ON farkle_games(gamewith);
+CREATE INDEX IF NOT EXISTS idx_games_last_activity ON farkle_games(last_activity);
 
 -- Create game players junction table
 CREATE TABLE IF NOT EXISTS farkle_games_players (
@@ -166,6 +177,10 @@ CREATE TABLE IF NOT EXISTS farkle_friends (
   UNIQUE (playerid, friendid)
 );
 
+-- Performance indexes for farkle_friends
+CREATE INDEX IF NOT EXISTS idx_friends_sourceid ON farkle_friends(sourceid);
+CREATE INDEX IF NOT EXISTS idx_friends_sourceid_removed ON farkle_friends(sourceid, removed);
+
 -- Create tournaments table
 CREATE TYPE tournament_status AS ENUM ('upcoming', 'active', 'completed');
 
@@ -199,6 +214,35 @@ CREATE TABLE IF NOT EXISTS farkle_rounds (
 );
 
 CREATE INDEX IF NOT EXISTS idx_rounds_playerid_gameid ON farkle_rounds(playerid, gameid);
+
+-- Performance indexes for farkle_rounds
+CREATE INDEX IF NOT EXISTS idx_rounds_rounddatetime ON farkle_rounds(rounddatetime);
+CREATE INDEX IF NOT EXISTS idx_rounds_gameid_roundnum ON farkle_rounds(gameid, roundnum);
+
+-- Create sets table (dice set tracking within rounds)
+CREATE TABLE IF NOT EXISTS farkle_sets (
+  playerid INTEGER NOT NULL,
+  gameid INTEGER NOT NULL,
+  roundnum INTEGER,
+  setnum INTEGER DEFAULT 1,
+  handnum INTEGER DEFAULT 1,
+  setscore INTEGER DEFAULT 0,
+  d1 SMALLINT DEFAULT 0,
+  d2 SMALLINT DEFAULT 0,
+  d3 SMALLINT DEFAULT 0,
+  d4 SMALLINT DEFAULT 0,
+  d5 SMALLINT DEFAULT 0,
+  d6 SMALLINT DEFAULT 0,
+  d1save SMALLINT DEFAULT 0,
+  d2save SMALLINT DEFAULT 0,
+  d3save SMALLINT DEFAULT 0,
+  d4save SMALLINT DEFAULT 0,
+  d5save SMALLINT DEFAULT 0,
+  d6save SMALLINT DEFAULT 0
+);
+
+-- Performance indexes for farkle_sets (JOIN optimization for activity log)
+CREATE INDEX IF NOT EXISTS idx_sets_gameid_playerid_roundnum ON farkle_sets(gameid, playerid, roundnum);
 
 -- Insert a test user (password is 'test123' - MD5 hashed with salt)
 INSERT INTO farkle_players (username, password, salt, email, level, xp)

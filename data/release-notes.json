@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "2.7.2",
+      "date": "2026-01-31",
+      "notes": [
+        "Database performance improvements for faster page loads",
+        "Optimized friend list and activity log queries",
+        "Added database indexes for improved query performance"
+      ]
+    },
+    {
       "version": "2.7.0",
       "date": "2026-01-31",
       "headline": "Emoji Reactions!",
