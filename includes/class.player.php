@@ -4,7 +4,7 @@ class Player {
 	
 	private $data = array();	
 	
-	public __construct() {
+	public function __construct() {
 
 	}
 	
@@ -73,7 +73,7 @@ class Player {
 		Params: 	$playerid = the friend
 		Returns: 	TRUE if friends, FALSE otherwise. 
 	*/
-	public IsFriend( static $playerid ) {
+	public function IsFriend( $playerid ) {
 		$results = 0; 
 		$sql = "select friendid from farkle_friends where sourceid=$m_playerid and friendid=$playerid"; 
 		$results = db_select_query( $sql, SQL_SINGLE_VALUE );
