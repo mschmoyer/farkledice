@@ -43,6 +43,7 @@
 
 	<link rel="stylesheet" type="text/css" href="/css/mobile.css?v={$app_version}" />
 	<link rel="stylesheet" type="text/css" href="/css/farkle.css?v={$app_version}" />
+	<link rel="stylesheet" type="text/css" href="/css/lobby.css?v={$app_version}" />
 	{*{if $mobilemode}<link rel="stylesheet" type="text/css" href="/css/mobile_farkle.css" />{/if}*}
 
 	<script type="text/javascript" src="/js/bubble_util.js?v={$app_version}"></script>
