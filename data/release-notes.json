@@ -1,6 +1,13 @@
 {
   "releases": [
     {
+      "version": "2.7.4",
+      "date": "2025-02-01",
+      "notes": [
+        "Fixed Rivalry achievements not being awarded (beat same player 5/15/50 times)"
+      ]
+    },
+    {
       "version": "2.7.0",
       "date": "2026-01-31",
       "headline": "Emoji Reactions!",
