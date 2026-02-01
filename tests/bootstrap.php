@@ -6,6 +6,11 @@
  * necessary application files.
  */
 
+// Initialize $_SESSION before any includes that might use it
+if (!isset($_SESSION)) {
+    $_SESSION = [];
+}
+
 // Set working directory to wwwroot (matches app behavior)
 chdir(__DIR__ . '/../wwwroot');
 
