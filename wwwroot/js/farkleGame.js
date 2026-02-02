@@ -1524,3 +1524,69 @@ function PlayAgain( )
 		}
 	}
 }*/
+
+// ============================================================================
+// KEYBOARD SHORTCUTS (Desktop Only)
+// ============================================================================
+// R: Roll dice
+// S: Score/bank points
+// 1-6: Select/unselect dice
+
+(function() {
+	document.addEventListener('keydown', function(event) {
+		// Don't handle shortcuts if typing in an input field or textarea
+		var activeElement = document.activeElement;
+		if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+			return;
+		}
+
+		// Don't handle shortcuts if game div is not visible
+		if (!divGameObj || !divGameObj.is(':visible')) {
+			return;
+		}
+
+		// Don't handle shortcuts if bot is processing turn
+		if (gBotProcessingTurn) {
+			return;
+		}
+
+		// Only allow shortcuts during active game states
+		if (gGameState !== GAME_STATE_ROLLING && gGameState !== GAME_STATE_ROLLED && gGameState !== GAME_STATE_PASSED) {
+			return;
+		}
+
+		var key = event.key.toLowerCase();
+
+		// R: Roll dice
+		if (key === 'r') {
+			if (!btnRollDiceObj.getAttribute('disabled')) {
+				event.preventDefault();
+				RollDice();
+			}
+			return;
+		}
+
+		// S: Score/bank points
+		if (key === 's') {
+			if (!btnPassObj.getAttribute('disabled')) {
+				event.preventDefault();
+				PassTurn();
+			}
+			return;
+		}
+
+		// 1-6: Select/unselect dice (maps to dice indices 0-5)
+		if (key >= '1' && key <= '6') {
+			var diceIndex = parseInt(key) - 1;
+			// Only allow dice selection when not in PASSED state
+			if (gGameState === GAME_STATE_ROLLING || gGameState === GAME_STATE_ROLLED) {
+				// Check if this die exists and has a valid value
+				if (dice[diceIndex] && dice[diceIndex].value > 0 && dice[diceIndex].value < 7 && !dice[diceIndex].scored) {
+					event.preventDefault();
+					SaveDice(diceIndex);
+				}
+			}
+			return;
+		}
+	});
+})();

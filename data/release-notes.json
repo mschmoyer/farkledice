@@ -1,6 +1,20 @@
 {
   "releases": [
     {
+      "version": "2.8.3",
+      "date": "2026-02-02",
+      "notes": [
+        "NEW: Keyboard shortcuts for desktop players - R to roll, S to score, 1-6 to select dice"
+      ]
+    },
+    {
+      "version": "2.8.2",
+      "date": "2026-02-02",
+      "notes": [
+        "UI: Added spacing between action buttons and player cards - apparently 10 whole pixels was simply not enough for some people, Nick"
+      ]
+    },
+    {
       "version": "2.8.1",
       "date": "2026-02-02",
       "notes": [
