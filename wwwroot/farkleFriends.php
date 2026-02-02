@@ -9,22 +9,21 @@ require_once('../includes/baseutil.php');
 require_once('dbutil.php');
 
 function AddFriend( $playerid, $identstring, $ident )
-{	
+{
 	if( $ident == 'username' )
 	{
-		$theIdent = strtolower(db_escape_string($identstring));
-		$sql = "select min(playerid) from farkle_players
-			where lower(username)='$theIdent'";
-			
-		$friendid = db_select_query( $sql, SQL_SINGLE_VALUE );
+		$theIdent = strtolower($identstring);
+		$sql = "SELECT min(playerid) FROM farkle_players WHERE lower(username) = :username";
+
+		$friendid = db_query($sql, [':username' => $theIdent], SQL_SINGLE_VALUE);
 		if( empty($friendid) )
 			return Array('Error' => 'Player not found.');
 	}
 	else if( $ident == 'email' )
 	{
-		$theIdent = strtolower(db_escape_string($identstring));
-		$sql = "select * from farkle_players where lower(email)='$theIdent'";
-		$friendid = db_select_query( $sql, SQL_SINGLE_VALUE );
+		$theIdent = strtolower($identstring);
+		$sql = "SELECT * FROM farkle_players WHERE lower(email) = :email";
+		$friendid = db_query($sql, [':email' => $theIdent], SQL_SINGLE_VALUE);
 		if( empty($friendid) )
 		{
 			// No email found. Email this user inviting them to join and play. 
@@ -59,33 +58,33 @@ function AddFriend( $playerid, $identstring, $ident )
 	if( !empty($friendid) )
 	{
 		$removed = -1;
-		$sql = "select removed from farkle_friends where sourceid=$playerid and friendid=$friendid";
-		$removed = db_select_query( $sql, SQL_SINGLE_VALUE );
-	
+		$sql = "SELECT removed FROM farkle_friends WHERE sourceid = :sourceid AND friendid = :friendid";
+		$removed = db_query($sql, [':sourceid' => $playerid, ':friendid' => $friendid], SQL_SINGLE_VALUE);
+
 		if( $removed == 1 )
 		{
-			$sql = "update farkle_friends set removed=0 where sourceid=$playerid and friendid=$friendid";
-			$rc = db_command($sql);
+			$sql = "UPDATE farkle_friends SET removed = 0 WHERE sourceid = :sourceid AND friendid = :friendid";
+			$rc = db_execute($sql, [':sourceid' => $playerid, ':friendid' => $friendid]);
 		}
 		else if( $removed == 0 )
 		{
-			$alreadyExists = db_select_query( "select count(*) from farkle_friends where sourceid=$playerid and friendid=$friendid", SQL_SINGLE_VALUE );
-		
-			if( $alreadyExists ) 
+			$alreadyExists = db_query("SELECT count(*) FROM farkle_friends WHERE sourceid = :sourceid AND friendid = :friendid", [':sourceid' => $playerid, ':friendid' => $friendid], SQL_SINGLE_VALUE);
+
+			if( $alreadyExists )
 			{
 				return Array('Error' => 'Already friends with this player.');
 			}
 			else
 			{
-				$sql = "insert into farkle_friends (sourceid, friendid) values ($playerid, $friendid)";
-				if( !db_command($sql) )
+				$sql = "INSERT INTO farkle_friends (sourceid, friendid) VALUES (:sourceid, :friendid)";
+				if( !db_execute($sql, [':sourceid' => $playerid, ':friendid' => $friendid]) )
 				{
-					// Error already logged by db_command
+					// Error already logged by db_execute
 					error_log( "Error creating friend" );
 				}
 			}
 		}
-		
+
 		Ach_CheckFriends( $playerid );
 		//return $playerid;
 	}
@@ -97,29 +96,30 @@ function AddFriend( $playerid, $identstring, $ident )
 
 function RemoveFriend( $playerid, $friendid )
 {
-	$sql = "select friendid from farkle_friends where sourceid=$playerid and friendid=$friendid";
-	$friendExists = db_select_query( $sql, SQL_SINGLE_VALUE );
+	$sql = "SELECT friendid FROM farkle_friends WHERE sourceid = :sourceid AND friendid = :friendid";
+	$friendExists = db_query($sql, [':sourceid' => $playerid, ':friendid' => $friendid], SQL_SINGLE_VALUE);
 
 	if( $friendExists )
 	{
-		$sql = "update farkle_friends set removed=1 where sourceid=$playerid and friendid=$friendid";
+		$sql = "UPDATE farkle_friends SET removed = 1 WHERE sourceid = :sourceid AND friendid = :friendid";
+		db_execute($sql, [':sourceid' => $playerid, ':friendid' => $friendid]);
 	}
 	else
 	{
-		$sql = "insert into farkle_friends (sourceid, friendid, removed) values ($playerid, $friendid, 1)";
+		$sql = "INSERT INTO farkle_friends (sourceid, friendid, removed) VALUES (:sourceid, :friendid, 1)";
+		db_execute($sql, [':sourceid' => $playerid, ':friendid' => $friendid]);
 	}
-	db_command($sql);
-	
-	$_SESSION['farkle']['friends'] = null; // Clear the friends cache so it re-queries. 
-	
+
+	$_SESSION['farkle']['friends'] = null; // Clear the friends cache so it re-queries.
+
 	return 1;
 }
 
 function GetNewGameInfo( $playerid )
 {
-	$sql = "select count(*) from farkle_games a where whostarted=$playerid and winningplayer=0";
-	
-	$gamesStarted = db_select_query( $sql, SQL_SINGLE_VALUE );
+	$sql = "SELECT count(*) FROM farkle_games a WHERE whostarted = :playerid AND winningplayer = 0";
+
+	$gamesStarted = db_query($sql, [':playerid' => $playerid], SQL_SINGLE_VALUE);
 	return Array( GetGameFriends( $playerid ), $gamesStarted );
 }
 
@@ -133,13 +133,13 @@ function GetGameFriends( $playerid, $force = false )
 		BaseUtil_Debug( __FUNCTION__ . " No friend data cached. Adding friend data.", 7 );
 
 		// Use numeric comparison for compatibility with smallint columns
-		$sql = "select a.username, a.playerid, a.playertitle, a.cardcolor, a.lastplayed
-				from farkle_players a, farkle_friends b
-				where a.playerid=b.friendid and b.sourceid=$playerid and
-				a.active=1 and b.removed=0
-				order by lastplayed desc";
-		
-		$players = db_select_query( $sql, SQL_MULTI_ROW );
+		$sql = "SELECT a.username, a.playerid, a.playertitle, a.cardcolor, a.lastplayed
+				FROM farkle_players a, farkle_friends b
+				WHERE a.playerid = b.friendid AND b.sourceid = :sourceid AND
+				a.active = 1 AND b.removed = 0
+				ORDER BY lastplayed DESC";
+
+		$players = db_query($sql, [':sourceid' => $playerid], SQL_MULTI_ROW);
 		$_SESSION['farkle']['friends'] = $players; 
 	//}
 	//else
@@ -194,13 +194,13 @@ function GetActiveFriends( $playerid )
 			LEFT JOIN farkle_games g ON g.gameid = gp.gameid AND g.winningplayer = 0
 			LEFT JOIN farkle_games_players gp2 ON gp2.gameid = g.gameid AND gp2.playerid != a.playerid
 			LEFT JOIN farkle_players p2 ON gp2.playerid = p2.playerid
-			WHERE b.sourceid = $playerid
+			WHERE b.sourceid = :sourceid
 				AND a.active = 1
 				AND b.removed = 0
 				AND a.lastplayed > NOW() - interval '10 minutes'
 			ORDER BY a.playerid, g.gamestart DESC NULLS LAST, a.lastplayed DESC";
 
-	$results = db_select_query( $sql, SQL_MULTI_ROW );
+	$results = db_query($sql, [':sourceid' => $playerid], SQL_MULTI_ROW);
 
 	if( !$results || count($results) == 0 )
 	{

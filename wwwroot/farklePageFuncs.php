@@ -92,22 +92,20 @@ function GetStats( $playerid, $recordInSession = 1 )
 		$_SESSION['farkle']['lastknownscreen'] = 'playerinfo';
 		$_SESSION['farkle']['lastplayerinfoid'] = $playerid;
 	}
-	$usernameSql = "select username from farkle_players where playerid='$playerid'";
-	$friendSql = "select 1 from farkle_friends where sourceid='" . $_SESSION['playerid'] . "' and friendid=$playerid";
-	
+
 	// Total points
-	$sql = "select
+	$sql = "SELECT
 		username, email, sendhourlyemails, random_selectable, playerid, playertitle, cardcolor, cardbg,
-		(select sum(worth)
-			from farkle_achievements a, farkle_achievements_players b
-			where a.achievementid=b.achievementid and b.playerid='$playerid') as achscore,
+		(SELECT sum(worth)
+			FROM farkle_achievements a, farkle_achievements_players b
+			WHERE a.achievementid = b.achievementid AND b.playerid = :playerid) as achscore,
 		totalpoints,
 		highestround,
 		TO_CHAR(lastplayed,'Mon DD') as lastplayed,
 		COALESCE(avgscorepoints / NULLIF(roundsplayed,0),0) as avground,
 		wins,
 		losses,
-		COALESCE(($friendSql),0) as isfriend,
+		COALESCE((SELECT 1 FROM farkle_friends WHERE sourceid = :sessionplayerid AND friendid = :playerid2), 0) as isfriend,
 		xp,
 		xp_to_level,
 		stylepoints,
@@ -117,8 +115,8 @@ function GetStats( $playerid, $recordInSession = 1 )
 		roundsplayed,
 		COALESCE(ROUND(farkles::numeric / NULLIF(roundsplayed, 0) * 100, 0), 0) as farkle_pct,
 		COALESCE(emoji_reactions, '') as emoji_reactions
-		from farkle_players where playerid='$playerid'";
-	$stats = db_select_query( $sql, SQL_SINGLE_ROW );
+		FROM farkle_players WHERE playerid = :playerid3";
+	$stats = db_query($sql, [':playerid' => $playerid, ':sessionplayerid' => $_SESSION['playerid'], ':playerid2' => $playerid, ':playerid3' => $playerid], SQL_SINGLE_ROW);
 	 
 	if( empty($stats['avground']) ) $stats['avground'] = '0';
 
@@ -129,15 +127,15 @@ function GetStats( $playerid, $recordInSession = 1 )
 
 function GetPlayerInfo( $playerid )
 {
-	$sql = "select username, playertitle, cardcolor, cardbg,
+	$sql = "SELECT username, playertitle, cardcolor, cardbg,
 			playerlevel, xp, xp_to_level,
 			COALESCE(emoji_reactions, '') as emoji_reactions,
-			(select sum(worth)
-				from farkle_achievements a, farkle_achievements_players b
-				where a.achievementid=b.achievementid and b.playerid=$playerid) as achscore
-		from farkle_players
-		where playerid=$playerid";
-	$playerInfo = db_select_query( $sql, SQL_SINGLE_ROW );
+			(SELECT sum(worth)
+				FROM farkle_achievements a, farkle_achievements_players b
+				WHERE a.achievementid = b.achievementid AND b.playerid = :playerid) as achscore
+		FROM farkle_players
+		WHERE playerid = :playerid2";
+	$playerInfo = db_query($sql, [':playerid' => $playerid, ':playerid2' => $playerid], SQL_SINGLE_ROW);
 
 	return $playerInfo;
 }
@@ -155,7 +153,7 @@ function GetLobbyInfo( )
 	$playerid = $_SESSION['playerid'];
 
 	// Update lastplayed so player shows as active to friends while in lobby
-	db_command("update farkle_players set lastplayed=NOW() where playerid=$playerid");
+	db_execute("UPDATE farkle_players SET lastplayed = NOW() WHERE playerid = :playerid", [':playerid' => $playerid]);
 	
 	if( date('j') >= 24 && date('j') <= 25 && date('n') == 12 ) {
 		// christmas eve or christmas
@@ -198,46 +196,47 @@ function GetGames( $playerid, $completed, $limit = 20, $skipSolo = 0 )
 	}
 
 	$skipSql = "";
-	if( $skipSolo ) $skipSql = " and b.maxturns > 1 ";
+	if( $skipSolo ) $skipSql = " AND b.maxturns > 1 ";
 
-	$sql = "select * from (
-		select a.gameid, b.currentturn, b.maxturns, b.winningplayer, a.playerturn, a.playerround, b.gamemode,
+	// Complex query with dynamic clauses - using integer casting for limit
+	$sql = "SELECT * FROM (
+		SELECT a.gameid, b.currentturn, b.maxturns, b.winningplayer, a.playerturn, a.playerround, b.gamemode,
 		TO_CHAR(b.gamefinish,'Mon-DD-YYYY HH:MI AM') as gamefinish, b.playerstring,
 		COALESCE(b.max_round, 10) as max_round, COALESCE(b.is_overtime, false) as is_overtime,
-		((a.playerturn=b.currentturn and b.gamemode=1) or (a.playerround <= COALESCE(b.max_round, 10) and b.gamemode=2)) as yourturn,
-		(select count(*) from farkle_games_players where gameid=b.gameid and playerround > COALESCE(b.max_round, 10) and b.gamemode=2) as finishedplayers
-		from farkle_games_players a, farkle_games b
-		where playerid='$playerid' and a.gameid=b.gameid $skipSql
-		and $winPlayerClause
-		order by $orderByClause) x
-		LIMIT $limit OFFSET 0";
-		
-	$gamedata = db_select_query( $sql, SQL_MULTI_ROW );
+		((a.playerturn=b.currentturn AND b.gamemode=1) OR (a.playerround <= COALESCE(b.max_round, 10) AND b.gamemode=2)) as yourturn,
+		(SELECT count(*) FROM farkle_games_players WHERE gameid=b.gameid AND playerround > COALESCE(b.max_round, 10) AND b.gamemode=2) as finishedplayers
+		FROM farkle_games_players a, farkle_games b
+		WHERE playerid = :playerid AND a.gameid=b.gameid $skipSql
+		AND $winPlayerClause
+		ORDER BY $orderByClause) x
+		LIMIT " . (int)$limit . " OFFSET 0";
+
+	$gamedata = db_query($sql, [':playerid' => $playerid], SQL_MULTI_ROW);
 	
 	return $gamedata;
 }
 
 function Player_UpdateTitle( $titleid )
 {
-	global $gTitles; 
-	
-	$sql = "select playerlevel from farkle_players where playerid={$_SESSION['playerid']}";
-	$playerlevel = db_select_query( $sql, SQL_SINGLE_VALUE );
-	
+	global $gTitles;
+
+	$sql = "SELECT playerlevel FROM farkle_players WHERE playerid = :playerid";
+	$playerlevel = db_query($sql, [':playerid' => $_SESSION['playerid']], SQL_SINGLE_VALUE);
+
 	if( $titleid > $playerlevel )
 	{
-		// This title ID is too high for the player's level (might have been javascript client manipulation). Don't pass go. 
+		// This title ID is too high for the player's level (might have been javascript client manipulation). Don't pass go.
 		error_log( "Player {$_SESSION['username']} ({$_SESSION['playerid']}) - illegal title update. Level=$playerlevel, Title ID=$titleid" );
-		return 0; 
+		return 0;
 	}
 	else
 	{
-		// Title ID is valid for this player's level. Update it. 
-		$sql = "update farkle_players set playertitle='" . $gTitles[$titleid] . "' where playerid={$_SESSION['playerid']}";
-		db_command($sql);
-		return 1; 
+		// Title ID is valid for this player's level. Update it.
+		$sql = "UPDATE farkle_players SET playertitle = :title WHERE playerid = :playerid";
+		db_execute($sql, [':title' => $gTitles[$titleid], ':playerid' => $_SESSION['playerid']]);
+		return 1;
 	}
-	return 0; 
+	return 0;
 }
 
 // Return each title visible to a player based on their level (approx. one title every 3 levels) 
@@ -273,11 +272,16 @@ function SaveOptions( $email, $sendHourlyEmails=1, $random_selectable=1 )
 	}
 
 	// PostgreSQL needs boolean values cast properly
-	$randomSelectableBool = ($random_selectable == 1) ? 'true' : 'false';
+	$randomSelectableBool = ($random_selectable == 1) ? true : false;
 
-	$sql = "update farkle_players set email='$email', sendhourlyemails=$sendHourlyEmails, random_selectable=$randomSelectableBool
-		where playerid={$_SESSION['playerid']}";
-	$result = db_command($sql);
+	$sql = "UPDATE farkle_players SET email = :email, sendhourlyemails = :sendhourly, random_selectable = :randomsel
+		WHERE playerid = :playerid";
+	$result = db_execute($sql, [
+		':email' => $email,
+		':sendhourly' => $sendHourlyEmails,
+		':randomsel' => $randomSelectableBool,
+		':playerid' => $_SESSION['playerid']
+	]);
 
 	return "Options saved.";
 }

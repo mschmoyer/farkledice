@@ -20,18 +20,18 @@ if( isset($_GET['test']) )
 	{
 		$g_debug=14;
 		//FinishStaleGames( $test=1 );
-		require_once('farkleGameFuncs.php'); 
-		require_once('farkleGameFuncs.php'); 
-		
-		$sql = "Select gameid, gamewith, maxturns from farkle_games where gamestart > NOW() - interval '20 hours' LIMIT 2000 OFFSET 1";
-		$allGames = db_select_query( $sql, SQL_MULTI_ROW );
+		require_once('farkleGameFuncs.php');
+		require_once('farkleGameFuncs.php');
+
+		$sql = "SELECT gameid, gamewith, maxturns FROM farkle_games WHERE gamestart > NOW() - interval '20 hours' LIMIT 2000 OFFSET 1";
+		$allGames = db_query($sql, [], SQL_MULTI_ROW);
 		foreach( $allGames as $g )
 		{
 			$newName = GetFarkleGameName( $g['gameid'], $g['gamewith'], GetGamePlayerids($g['gameid']), $g['maxturns'] );
-			$sql = "update farkle_games set playerstring='$newName' where gameid={$g['gameid']}";
-			db_command($sql);
+			$sql = "UPDATE farkle_games SET playerstring = :playername WHERE gameid = :gameid";
+			db_execute($sql, [':playername' => $newName, ':gameid' => $g['gameid']]);
 		}
-		
+
 	}
 }
 
@@ -86,16 +86,14 @@ function FinishStaleGames( $test=0 )
 	
 	BaseUtil_Debug( __FUNCTION__ . ": entered. Test Mode? $test", 14 );
 	
-	//$sql = "select gameid, gamemode from farkle_games where winningplayer=0 and gamestart < NOW()-interval '1' month";
-	
-	$sql = "select gameid, gamemode, maxturns, whostarted, gamewith, gamestart,
-		(select max(playerround) from farkle_games_players where gameid=a.gameid ) as maxround,
-		(select min(playerround) from farkle_games_players where gameid=a.gameid ) as minround,
-		(select count(*) from farkle_games_players where gameid=a.gameid ) as numplayers
-		from farkle_games a
-		where gameexpire < NOW() and winningplayer=0
+	$sql = "SELECT gameid, gamemode, maxturns, whostarted, gamewith, gamestart,
+		(SELECT max(playerround) FROM farkle_games_players WHERE gameid = a.gameid) as maxround,
+		(SELECT min(playerround) FROM farkle_games_players WHERE gameid = a.gameid) as minround,
+		(SELECT count(*) FROM farkle_games_players WHERE gameid = a.gameid) as numplayers
+		FROM farkle_games a
+		WHERE gameexpire < NOW() AND winningplayer = 0
 		LIMIT 400";
-	$oldGames = db_select_query( $sql, SQL_MULTI_ROW );
+	$oldGames = db_query($sql, [], SQL_MULTI_ROW);
 	
 	// Don't send emails if it looks like we're about to spam. Some kind of pent-up mass update. 
 	$sendEmail = 1;
@@ -121,27 +119,27 @@ function FinishStaleGames( $test=0 )
 		{
 			if( $o['gamewith'] == GAME_WITH_RANDOM && $o['minround'] == 1 && $o['numplayers'] > 1 )
 			{
-				// A random game with somebody who has not played. Let's knock them out of the game and let it find another player. 
+				// A random game with somebody who has not played. Let's knock them out of the game and let it find another player.
 				AppendEmail(  __FUNCTION__ . ": Knocking players out of random game $gameid because they did not play." );
-				
+
 				if( !$test )
 				{
-					$sql = "delete from farkle_games_players where gameid=$gameid and playerround=1";
-					$result = db_command($sql);
+					$sql = "DELETE FROM farkle_games_players WHERE gameid = :gameid AND playerround = 1";
+					$result = db_execute($sql, [':gameid' => $gameid]);
 					continue; // FOR LOOP NEXT ROW
 				}
 			}
-			
+
 			if( $o['minround'] > 1 )
-			{			
-				// All players have played at least one round. Highest score wins. 
-				
-				$sql = "select playerid, max(playerscore) 
-					from farkle_games_players 
-					where gameid=$gameid 
-					group by playerid
-					order by 2 desc";
-				$winner = db_select_query( $sql, SQL_SINGLE_ROW );
+			{
+				// All players have played at least one round. Highest score wins.
+
+				$sql = "SELECT playerid, max(playerscore)
+					FROM farkle_games_players
+					WHERE gameid = :gameid
+					GROUP BY playerid
+					ORDER BY 2 desc";
+				$winner = db_query($sql, [':gameid' => $gameid], SQL_SINGLE_ROW);
 				
 				AppendEmail( __FUNCTION__ . ": Giving winner to high score player {$winner['playerid']}" );
 				$gamesFinished++; 
@@ -151,22 +149,22 @@ function FinishStaleGames( $test=0 )
 			}
 		}
 		
-		// Somebody has not played in this game at all and it was with friends. We will just delete it. 
+		// Somebody has not played in this game at all and it was with friends. We will just delete it.
 		AppendEmail( __FUNCTION__ . ": deleting game." );
-			
+
 		if( !$test )
 		{
-			// Everybody loses -- game simply dissapears. 	
-			$sql = "delete from farkle_sets where gameid=$gameid";
-			$result = db_command($sql);
-			$sql = "delete from farkle_rounds where gameid=$gameid";
-			$result = db_command($sql);
-			$sql = "delete from farkle_games_players where gameid=$gameid";
-			$result = db_command($sql);
-			$sql = "delete from farkle_games where gameid=$gameid";
-			$result = db_command($sql);
-			
-			$gamesFinished++; 
+			// Everybody loses -- game simply dissapears.
+			$sql = "DELETE FROM farkle_sets WHERE gameid = :gameid";
+			$result = db_execute($sql, [':gameid' => $gameid]);
+			$sql = "DELETE FROM farkle_rounds WHERE gameid = :gameid";
+			$result = db_execute($sql, [':gameid' => $gameid]);
+			$sql = "DELETE FROM farkle_games_players WHERE gameid = :gameid";
+			$result = db_execute($sql, [':gameid' => $gameid]);
+			$sql = "DELETE FROM farkle_games WHERE gameid = :gameid";
+			$result = db_execute($sql, [':gameid' => $gameid]);
+
+			$gamesFinished++;
 		}
 
 	}
@@ -189,23 +187,23 @@ function CleanupTables()
 {
 	BaseUtil_Debug( __FUNCTION__ . ": Cleaning up farkle sets for completed games.", 7 );
 
-	$sql = "delete from farkle_sets where gameid in (select gameid from farkle_games where winningplayer > 0)";
-	$result = db_command($sql);
+	$sql = "DELETE FROM farkle_sets WHERE gameid IN (SELECT gameid FROM farkle_games WHERE winningplayer > 0)";
+	$result = db_execute($sql);
 
 	// Cleanup stale farkle_round data
-	$sql = "delete from farkle_rounds where gameid in
-		(select gameid from farkle_games where winningplayer > 0 and gamefinish < NOW()-interval '31' day)";
-	$result = db_command($sql);
+	$sql = "DELETE FROM farkle_rounds WHERE gameid IN
+		(SELECT gameid FROM farkle_games WHERE winningplayer > 0 AND gamefinish < NOW() - interval '31' day)";
+	$result = db_execute($sql);
 
 	// Cleanup expired sessions (older than 30 days)
 	BaseUtil_Debug( __FUNCTION__ . ": Cleaning up expired sessions.", 7 );
 	$sql = "DELETE FROM farkle_sessions WHERE last_access < NOW() - INTERVAL '30 days'";
-	$result = db_command($sql);
+	$result = db_execute($sql);
 
 	// Cleanup stale device records (not used in 90 days)
 	BaseUtil_Debug( __FUNCTION__ . ": Cleaning up stale device records.", 7 );
 	$sql = "DELETE FROM farkle_players_devices WHERE lastused < NOW() - INTERVAL '90 days'";
-	$result = db_command($sql);
+	$result = db_execute($sql);
 }
 
 ?>
