@@ -62,7 +62,8 @@ function CreateTournament( $playercap, $tformat, $launchHours, $name, $lobbyImag
 		$maxAchId++;
 		$randIcon = "tournament" . rand(1,3) . ".png";
 
-		$sql = "INSERT INTO farkle_achievements VALUES (:achid, :achname,
+		$sql = "INSERT INTO farkle_achievements (achievementid, name, description, xp_reward, imagefile)
+			VALUES (:achid, :achname,
 			CONCAT('Hosted ', TO_CHAR( NOW() + (:launchhours || ' hours')::INTERVAL, 'Mon DD, YYYY') ), 35, :randicon)";
 		$rc = db_execute($sql, [':achid' => $maxAchId, ':achname' => 'Win ' . $name, ':launchhours' => $launchHours, ':randicon' => $randIcon]);
 

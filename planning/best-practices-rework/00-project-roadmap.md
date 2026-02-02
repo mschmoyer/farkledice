@@ -166,7 +166,7 @@ If you want to make progress before the full roadmap:
 
 | Metric | Current | After Phase 2 | After Phase 4 | Final |
 |--------|---------|---------------|---------------|-------|
-| Test Coverage | <1% | 30% | 60% | 80%+ |
+| Test Coverage | ~10% (65 tests) | 30% | 60% | 80%+ |
 | SQL Injection Risk | High | None | None | None |
 | CSRF Protection | None | Full | Full | Full |
 | Typed Functions | ~5% | ~5% | 90% | 90% |
@@ -184,7 +184,7 @@ If you want to make progress before the full roadmap:
 | [03-smarty-modernization.md](./03-smarty-modernization.md) | Medium | 6-8 weeks | Planned |
 | [04-service-layer.md](./04-service-layer.md) | Medium-High | 6-8 weeks | Planned |
 | [05-type-hints.md](./05-type-hints.md) | Medium | 5-6 weeks | Planned |
-| [06-testing-infrastructure.md](./06-testing-infrastructure.md) | Medium-High | 4-6 weeks | Planned |
+| [06-testing-infrastructure.md](./06-testing-infrastructure.md) | Medium-High | 4-6 weeks | **Completed (2026-02-01)** |
 | [07-bot-consolidation.md](./07-bot-consolidation.md) | Medium | 4-5 weeks | Planned |
 | [08-eliminate-globals.md](./08-eliminate-globals.md) | Medium | 4-5 weeks | Planned |
 

@@ -13,7 +13,6 @@ require_once('farkleAchievements.php');
 require_once('farkleDiceScoring.php');
 require_once('farklePageFuncs.php');
 require_once('farkleTournament.php');
-require_once('smsified/smsified_funcs.php');
 require_once('iphone_funcs.php');
 require_once('farkleLevel.php'); 
 
