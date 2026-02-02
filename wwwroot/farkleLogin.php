@@ -222,6 +222,8 @@ function UserLogin( $user, $pass, $remember=1 )
 	{
 		LoginGenerateSession( $pInfo['playerid'] );
 		LoginSuccess( $pInfo, $remember );
+		// Include new CSRF token so client can update
+		$pInfo['csrf_token'] = csrf_token();
 		return $pInfo;
 	}
 
