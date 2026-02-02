@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS farkle_players (
   resetpasscode VARCHAR(64) DEFAULT NULL,
   reinvite_token VARCHAR(64) DEFAULT NULL,
   reinvite_expires TIMESTAMP DEFAULT NULL,
-  active BOOLEAN DEFAULT true,
+  active SMALLINT DEFAULT 1,
   stylepoints INTEGER DEFAULT 0,
   emoji_reactions VARCHAR(200) DEFAULT '',
   is_bot BOOLEAN DEFAULT false,
