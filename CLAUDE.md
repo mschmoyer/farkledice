@@ -16,7 +16,7 @@ Live site: https://www.farkledice.com
 
 **IMPORTANT:** Always update the version when making changes to the codebase.
 
-The version is defined in `includes/baseutil.php` as `APP_VERSION` and displayed in the footer of every page.
+The version is defined in `includes/version.php` as `APP_VERSION` and displayed in the footer of every page.
 
 **Format:** `Major.Minor.Revision`
 
