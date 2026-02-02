@@ -1642,6 +1642,29 @@ function GetGameActivityLog($gameid) {
 
 	if (!$results) return array();
 
+	// Fetch ALL sets for this game in one query (instead of N queries per round)
+	$allSetsSql = "SELECT playerid, roundnum, handnum, d1save, d2save, d3save, d4save, d5save, d6save
+				   FROM farkle_sets
+				   WHERE gameid = :gameid AND setscore > 0
+				   ORDER BY handnum ASC, setnum ASC";
+	$allSets = db_query($allSetsSql, [':gameid' => $gameid], SQL_MULTI_ROW);
+
+	// Build a lookup map: setsMap[playerid][roundnum] = array of set rows
+	$setsMap = array();
+	if ($allSets) {
+		foreach ($allSets as $setRow) {
+			$pid = $setRow['playerid'];
+			$rnd = intval($setRow['roundnum']);
+			if (!isset($setsMap[$pid])) {
+				$setsMap[$pid] = array();
+			}
+			if (!isset($setsMap[$pid][$rnd])) {
+				$setsMap[$pid][$rnd] = array();
+			}
+			$setsMap[$pid][$rnd][] = $setRow;
+		}
+	}
+
 	// Filter and process results
 	$filteredResults = array();
 
@@ -1654,28 +1677,21 @@ function GetGameActivityLog($gameid) {
 			continue; // Skip this entry
 		}
 
-		// Get all saved dice from all sets in this round, ordered by hand and set
-		$diceSql = "SELECT handnum, d1save, d2save, d3save, d4save, d5save, d6save
-					FROM farkle_sets
-					WHERE gameid = :gameid AND playerid = :playerid AND roundnum = :roundnum
-					AND setscore > 0
-					ORDER BY handnum ASC, setnum ASC";
-		$diceRows = db_query($diceSql, [':gameid' => $gameid, ':playerid' => $playerid, ':roundnum' => $roundnum], SQL_MULTI_ROW);
+		// Get dice rows from the pre-fetched map (no query needed)
+		$diceRows = isset($setsMap[$playerid][$roundnum]) ? $setsMap[$playerid][$roundnum] : array();
 
 		// Group dice by hand number
 		$hands = array();
-		if ($diceRows) {
-			foreach ($diceRows as $row) {
-				$handNum = intval($row['handnum']);
-				if (!isset($hands[$handNum])) {
-					$hands[$handNum] = array();
-				}
-				for ($i = 1; $i <= 6; $i++) {
-					$val = intval($row["d{$i}save"]);
-					// Only include actual dice values (1-6), not 0 or 10
-					if ($val >= 1 && $val <= 6) {
-						$hands[$handNum][] = $val;
-					}
+		foreach ($diceRows as $row) {
+			$handNum = intval($row['handnum']);
+			if (!isset($hands[$handNum])) {
+				$hands[$handNum] = array();
+			}
+			for ($i = 1; $i <= 6; $i++) {
+				$val = intval($row["d{$i}save"]);
+				// Only include actual dice values (1-6), not 0 or 10
+				if ($val >= 1 && $val <= 6) {
+					$hands[$handNum][] = $val;
 				}
 			}
 		}
