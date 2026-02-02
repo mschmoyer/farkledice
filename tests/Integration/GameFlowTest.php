@@ -186,18 +186,30 @@ class GameFlowTest extends DatabaseTestCase
         $gameId = $result[5] ?? null;
         $this->assertNotNull($gameId, 'Game ID should be returned');
 
-        // Play rounds for Player 1 until they complete 10 rounds
-        // The loop may run more than 10 times if there are issues, but we cap at 15 to prevent infinite loops
-        $this->loginAs($this->player1Id);
-        for ($attempt = 0; $attempt < 15; $attempt++) {
-            $p1Round = $this->queryValue(
+        // Play alternating rounds for both players until they complete 10 rounds each
+        // The game requires alternating turns between players
+        // Each round may require multiple rolls, so we need enough iterations
+        for ($attempt = 0; $attempt < 50; $attempt++) {
+            $p1Round = (int)$this->queryValue(
                 "SELECT playerround FROM farkle_games_players WHERE gameid = :gameid AND playerid = :playerid",
                 [':gameid' => $gameId, ':playerid' => $this->player1Id]
             );
-            if ((int)$p1Round > 10) {
-                break; // Player 1 has completed all 10 rounds
+            $p2Round = (int)$this->queryValue(
+                "SELECT playerround FROM farkle_games_players WHERE gameid = :gameid AND playerid = :playerid",
+                [':gameid' => $gameId, ':playerid' => $this->player2Id]
+            );
+
+            // Check if both players completed 10 rounds
+            if ($p1Round > 10 && $p2Round > 10) {
+                break;
             }
+
+            // Try playing as each player - the game will only allow the current player's turn
+            $this->loginAs($this->player1Id);
             $this->playOneRound($gameId, $this->player1Id);
+
+            $this->loginAs($this->player2Id);
+            $this->playOneRound($gameId, $this->player2Id);
         }
 
         // Verify player 1 completed 10 rounds (playerround should be 11 after completing round 10)
@@ -206,19 +218,6 @@ class GameFlowTest extends DatabaseTestCase
             [':gameid' => $gameId, ':playerid' => $this->player1Id]
         );
         $this->assertGreaterThanOrEqual(11, (int)$p1Round, 'Player 1 should have completed all 10 rounds (playerround >= 11)');
-
-        // Play rounds for Player 2 until they complete 10 rounds
-        $this->loginAs($this->player2Id);
-        for ($attempt = 0; $attempt < 15; $attempt++) {
-            $p2Round = $this->queryValue(
-                "SELECT playerround FROM farkle_games_players WHERE gameid = :gameid AND playerid = :playerid",
-                [':gameid' => $gameId, ':playerid' => $this->player2Id]
-            );
-            if ((int)$p2Round > 10) {
-                break; // Player 2 has completed all 10 rounds
-            }
-            $this->playOneRound($gameId, $this->player2Id);
-        }
 
         // Verify game completed
         $game = $this->queryRow(

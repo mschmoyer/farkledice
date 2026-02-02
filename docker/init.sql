@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS farkle_players (
   farkles INTEGER DEFAULT 0,
   prestige INTEGER DEFAULT 0,
   titlelevel INTEGER DEFAULT 0,
-  level_acked INTEGER DEFAULT 0,
+  level_acked BOOLEAN DEFAULT false,
   title VARCHAR(100) DEFAULT NULL,
   avgscorepoints INTEGER DEFAULT 0,
   roundsplayed INTEGER DEFAULT 0,
@@ -55,7 +55,10 @@ CREATE TABLE IF NOT EXISTS farkle_players (
   reinvite_expires TIMESTAMP DEFAULT NULL,
   active BOOLEAN DEFAULT true,
   stylepoints INTEGER DEFAULT 0,
-  emoji_reactions VARCHAR(200) DEFAULT ''
+  emoji_reactions VARCHAR(200) DEFAULT '',
+  is_bot BOOLEAN DEFAULT false,
+  bot_algorithm VARCHAR(50) DEFAULT NULL,
+  personality_id INTEGER DEFAULT NULL
 );
 
 -- Create players devices table for session management
@@ -65,6 +68,7 @@ CREATE TABLE IF NOT EXISTS farkle_players_devices (
   sessionid VARCHAR(64),
   device VARCHAR(100),
   token VARCHAR(255),
+  devicetoken VARCHAR(255),
   lastused TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   agentstring TEXT,
   UNIQUE (playerid, device)
@@ -91,7 +95,7 @@ CREATE TABLE IF NOT EXISTS farkle_games (
   maxturns INTEGER DEFAULT 2,
   gamestart TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   mintostart INTEGER DEFAULT 0,
-  lastturn TIMESTAMP DEFAULT NULL,
+  lastturn INTEGER DEFAULT 0,
   playerarray TEXT DEFAULT NULL,
   titleredeemed INTEGER DEFAULT 0,
   gameexpire TIMESTAMP DEFAULT NULL,
@@ -99,7 +103,8 @@ CREATE TABLE IF NOT EXISTS farkle_games (
   gamefinish TIMESTAMP DEFAULT NULL,
   winningreason VARCHAR(255) DEFAULT NULL,
   max_round INTEGER DEFAULT 10,
-  is_overtime BOOLEAN DEFAULT FALSE
+  is_overtime BOOLEAN DEFAULT FALSE,
+  bot_play_mode VARCHAR(20) DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_whostarted ON farkle_games(whostarted);
@@ -148,7 +153,8 @@ CREATE TABLE IF NOT EXISTS farkle_achievements_players (
   id SERIAL PRIMARY KEY,
   playerid INTEGER NOT NULL,
   achievementid INTEGER NOT NULL,
-  earned_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  achievedate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  awarded BOOLEAN DEFAULT false,
   UNIQUE (playerid, achievementid)
 );
 
@@ -187,6 +193,42 @@ CREATE TABLE IF NOT EXISTS farkle_tournament_participants (
   rank INTEGER DEFAULT NULL,
   UNIQUE (tournamentid, playerid)
 );
+
+-- Create tournament games table
+CREATE TABLE IF NOT EXISTS farkle_tournaments_games (
+  id SERIAL PRIMARY KEY,
+  tournamentid INTEGER NOT NULL,
+  gameid INTEGER NOT NULL,
+  roundnum INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_tournaments_games_tournamentid ON farkle_tournaments_games(tournamentid);
+CREATE INDEX IF NOT EXISTS idx_tournaments_games_gameid ON farkle_tournaments_games(gameid);
+
+-- Create sets table (dice roll tracking)
+CREATE TABLE IF NOT EXISTS farkle_sets (
+  id SERIAL PRIMARY KEY,
+  playerid INTEGER NOT NULL,
+  gameid INTEGER NOT NULL,
+  roundnum INTEGER NOT NULL,
+  setnum INTEGER NOT NULL,
+  handnum INTEGER DEFAULT 0,
+  d1 INTEGER DEFAULT 0,
+  d2 INTEGER DEFAULT 0,
+  d3 INTEGER DEFAULT 0,
+  d4 INTEGER DEFAULT 0,
+  d5 INTEGER DEFAULT 0,
+  d6 INTEGER DEFAULT 0,
+  d1save INTEGER DEFAULT 0,
+  d2save INTEGER DEFAULT 0,
+  d3save INTEGER DEFAULT 0,
+  d4save INTEGER DEFAULT 0,
+  d5save INTEGER DEFAULT 0,
+  d6save INTEGER DEFAULT 0,
+  setscore INTEGER DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_sets_playerid_gameid ON farkle_sets(playerid, gameid);
 
 -- Create rounds table (round score tracking for activity log)
 CREATE TABLE IF NOT EXISTS farkle_rounds (
