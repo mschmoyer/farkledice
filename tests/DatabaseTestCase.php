@@ -66,7 +66,7 @@ abstract class DatabaseTestCase extends TestCase
         $hashedPassword = md5($password) . md5(''); // Match app's password hashing (pass + salt)
 
         $sql = "INSERT INTO farkle_players (username, password, salt, email, active)
-                VALUES (:username, :password, '', :email, true)
+                VALUES (:username, :password, '', :email, 1)
                 RETURNING playerid";
 
         $stmt = self::$db->prepare($sql);

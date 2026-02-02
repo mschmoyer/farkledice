@@ -143,6 +143,28 @@ docker exec farkle_db psql -U farkle_user -d farkle_db -c "SELECT username, admi
 docker exec farkle_db psql -U farkle_user -d farkle_db -c "UPDATE farkle_players SET adminlevel = 1 WHERE username = 'mschmoyer';"
 ```
 
+### Database Backup & Restore
+
+Backup production data from Heroku and restore to local Docker for development with real data.
+
+**Backup from Heroku:**
+```bash
+./scripts/backup-heroku-db.sh
+```
+Creates a timestamped backup in `local/db-backups/` (gitignored).
+
+**Restore to local Docker:**
+```bash
+# Restore the latest backup
+./scripts/restore-db-to-local.sh
+
+# Restore a specific backup
+./scripts/restore-db-to-local.sh local/db-backups/backup-20240101-120000.dump
+```
+Prompts for confirmation before overwriting local data.
+
+**Note:** Both local Docker and Heroku run PostgreSQL 17 for compatibility.
+
 ### Local HTTPS (Optional)
 
 For trusted HTTPS at `https://localhost:8443` without browser warnings:
@@ -340,7 +362,7 @@ Templates are in `templates/` directory:
 
 ### Database
 
-**PostgreSQL 16** (migrated from MySQL)
+**PostgreSQL 17** (migrated from MySQL)
 - Connection: `db_connect()` in `dbutil.php` using PDO
 - Local: Config from `../configs/siteconfig.ini` or env vars (DB_HOST, DB_USER, etc.)
 - Heroku: Auto-configured via `DATABASE_URL` environment variable

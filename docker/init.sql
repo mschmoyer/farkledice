@@ -159,38 +159,47 @@ CREATE TABLE IF NOT EXISTS farkle_achievements_players (
 );
 
 -- Create friends table
+-- sourceid = who initiated the friendship, friendid = who they friended
 CREATE TYPE friend_status AS ENUM ('pending', 'accepted', 'blocked');
 
 CREATE TABLE IF NOT EXISTS farkle_friends (
-  id SERIAL PRIMARY KEY,
-  playerid INTEGER NOT NULL,
+  sourceid INTEGER NOT NULL,
   friendid INTEGER NOT NULL,
+  removed SMALLINT DEFAULT 0,
   status friend_status DEFAULT 'pending',
   created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  sourceid INTEGER DEFAULT NULL,
-  removed BOOLEAN DEFAULT false,
-  UNIQUE (playerid, friendid)
+  PRIMARY KEY (sourceid, friendid)
 );
 
 -- Create tournaments table
-CREATE TYPE tournament_status AS ENUM ('upcoming', 'active', 'completed');
-
 CREATE TABLE IF NOT EXISTS farkle_tournaments (
   tournamentid SERIAL PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  status tournament_status DEFAULT 'upcoming',
-  start_date TIMESTAMP DEFAULT NULL,
-  end_date TIMESTAMP DEFAULT NULL,
+  tname VARCHAR(100) DEFAULT NULL,
+  playercap INTEGER DEFAULT 0,
+  tformat INTEGER DEFAULT 0,
+  pointstowin INTEGER DEFAULT 10000,
+  mintostart INTEGER DEFAULT 500,
+  startcondition INTEGER DEFAULT 0,
+  lobbyimage VARCHAR(255) DEFAULT NULL,
+  roundhours INTEGER DEFAULT 24,
+  roundnum INTEGER DEFAULT 0,
+  roundstartdate TIMESTAMP DEFAULT NULL,
+  winningplayer INTEGER DEFAULT 0,
+  achievementid INTEGER DEFAULT NULL,
+  finishdate TIMESTAMP DEFAULT NULL,
+  launchdate TIMESTAMP DEFAULT NULL,
+  startdate TIMESTAMP DEFAULT NULL,
   created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create tournament participants table
-CREATE TABLE IF NOT EXISTS farkle_tournament_participants (
+-- Create tournament players table (tracks player participation)
+CREATE TABLE IF NOT EXISTS farkle_tournaments_players (
   id SERIAL PRIMARY KEY,
   tournamentid INTEGER NOT NULL,
   playerid INTEGER NOT NULL,
-  score INTEGER DEFAULT 0,
-  rank INTEGER DEFAULT NULL,
+  seednum INTEGER DEFAULT 0,
+  wins INTEGER DEFAULT 0,
+  losses INTEGER DEFAULT 0,
   UNIQUE (tournamentid, playerid)
 );
 
@@ -199,8 +208,25 @@ CREATE TABLE IF NOT EXISTS farkle_tournaments_games (
   id SERIAL PRIMARY KEY,
   tournamentid INTEGER NOT NULL,
   gameid INTEGER NOT NULL,
-  roundnum INTEGER NOT NULL
+  roundnum INTEGER NOT NULL,
+  byeplayerid INTEGER DEFAULT 0
 );
+
+-- Create leaderboard cache table
+-- Column order must match legacy INSERT queries in farkleLeaderboard.php
+CREATE TABLE IF NOT EXISTS farkle_lbdata (
+  lbindex INTEGER NOT NULL,
+  playerid INTEGER NOT NULL,
+  username VARCHAR(100) DEFAULT NULL,
+  playerlevel INTEGER DEFAULT 1,
+  first_int INTEGER DEFAULT 0,
+  second_int INTEGER DEFAULT 0,
+  first_string VARCHAR(255) DEFAULT NULL,
+  second_string VARCHAR(255) DEFAULT NULL,
+  lbrank INTEGER DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_lbdata_lbindex ON farkle_lbdata(lbindex);
 
 CREATE INDEX IF NOT EXISTS idx_tournaments_games_tournamentid ON farkle_tournaments_games(tournamentid);
 CREATE INDEX IF NOT EXISTS idx_tournaments_games_gameid ON farkle_tournaments_games(gameid);
@@ -241,6 +267,21 @@ CREATE TABLE IF NOT EXISTS farkle_rounds (
 );
 
 CREATE INDEX IF NOT EXISTS idx_rounds_playerid_gameid ON farkle_rounds(playerid, gameid);
+
+-- Create siteinfo table (system configuration)
+CREATE TABLE IF NOT EXISTS siteinfo (
+  paramid INTEGER PRIMARY KEY,
+  paramname VARCHAR(100) NOT NULL,
+  paramvalue TEXT DEFAULT NULL
+);
+
+-- Insert default siteinfo values
+INSERT INTO siteinfo (paramid, paramname, paramvalue) VALUES
+  (1, 'last_leaderboard_refresh', '0'),
+  (2, 'last_daily_leaderboard_refresh', '0'),
+  (3, 'day_of_week', 'Monday'),
+  (4, 'last_cleanup', '0')
+ON CONFLICT (paramid) DO NOTHING;
 
 -- Insert a test user (password is 'test123' - MD5 hashed with salt)
 INSERT INTO farkle_players (username, password, salt, email, level, xp)
