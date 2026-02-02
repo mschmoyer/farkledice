@@ -209,7 +209,7 @@ function UserLogin( $user, $pass, $remember=1 )
 
 	$sql = "SELECT username, playerid, adminlevel, sessionid
 		FROM farkle_players
-		WHERE (MD5(username) = :user OR MD5(LOWER(email)) = :user2) AND password = CONCAT(:pass, MD5(salt))";
+		WHERE (MD5(username) = :user OR MD5(LOWER(email)) = :user2) AND password = CONCAT(:pass::TEXT, MD5(salt))";
 
 	$pInfo = db_query($sql, [':user' => $user, ':user2' => $user, ':pass' => $pass], SQL_SINGLE_ROW);
 	if( $pInfo )
@@ -271,7 +271,7 @@ function UserRegister( $user, $pass, $email, $remember = 0, $registeringGuest = 
 	if( stripos( $sess_user, 'guest') === 0 )
 	{
 		// Logged in as a guest, so just transfer their information over to the guest account.
-		$sql = "UPDATE farkle_players SET username = :username, password = CONCAT(:pass, MD5(:salt)),
+		$sql = "UPDATE farkle_players SET username = :username, password = CONCAT(:pass::TEXT, MD5(:salt)),
 			email = :email, salt = :salt2 WHERE playerid = :playerid";
 		$params = [
 			':username' => $user,
@@ -288,7 +288,7 @@ function UserRegister( $user, $pass, $email, $remember = 0, $registeringGuest = 
 		// Allow new user
 		$remoteIp = $_SERVER['REMOTE_ADDR'];
 		$sql = "INSERT INTO farkle_players (username, password, email, salt, lastplayed, createdate, remoteaddr)
-			VALUES (:username, CONCAT(:pass, MD5(:salt)), :email, :salt2, NOW(), NOW(), :remoteaddr)";
+			VALUES (:username, CONCAT(:pass::TEXT, MD5(:salt)), :email, :salt2, NOW(), NOW(), :remoteaddr)";
 		$params = [
 			':username' => $user,
 			':pass' => $pass,
@@ -355,7 +355,7 @@ function ResetPassword( $code, $pass )
 	$playerid = db_query($sql, [':code' => $code], SQL_SINGLE_VALUE);
 	if( !empty($playerid) )
 	{
-		$sql = "UPDATE farkle_players SET password = CONCAT(:pass, MD5(:salt)) WHERE playerid = :playerid";
+		$sql = "UPDATE farkle_players SET password = CONCAT(:pass::TEXT, MD5(:salt)) WHERE playerid = :playerid";
 		db_execute($sql, [':pass' => $pass, ':salt' => $salt, ':playerid' => $playerid]);
 		return Array('Success'=>'1');
 	}
