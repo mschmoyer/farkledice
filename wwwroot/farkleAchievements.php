@@ -391,30 +391,30 @@ function AckAchievement( $playerid, $achievementid )
 	return 0;
 }
 
-// NOTE: Prestige test failed. 
-/*function Ach_CheckRivals( $playerid, $loser )
+// Check rivalry achievements - beat the same player multiple times
+function Ach_CheckRivals( $playerid, $loser )
 {
 	BaseUtil_Debug( __FUNCTION__ . ": entered.", 14 );
 	$achievementAwarded = 0;
-	
-	return 0; // TBD: Disabled pending prestige compatibility.
-	
-	if( $playerid == $loser ) return 0; 
-	
-	$sql = "select count(*) from farkle_games a, farkle_games_players b, farkle_games_players c
-	where a.gameid=b.gameid and a.gameid=c.gameid and b.playerid=$playerid and c.playerid=$loser
-	and a.winningplayer=$playerid";
-	$numTimesPlayedSomeone = db_select_query( $sql, SQL_SINGLE_VALUE );
-	
-	if( $numTimesPlayedSomeone >= 5 )
-		$achievementAwarded =  Ach_AwardAchievement( $playerid, ACH_RIVALS_5 );	
-	if( $numTimesPlayedSomeone >= 15 )
-		$achievementAwarded =  Ach_AwardAchievement( $playerid, ACH_RIVALS_15 );	
-	if( $numTimesPlayedSomeone >= 50 )
-		$achievementAwarded =  Ach_AwardAchievement( $playerid, ACH_RIVALS_50 );	
-		
+
+	if( $playerid == $loser ) return 0;
+	if( empty($playerid) || empty($loser) ) return 0;
+
+	$sql = "SELECT count(*) FROM farkle_games a, farkle_games_players b, farkle_games_players c
+		WHERE a.gameid=b.gameid AND a.gameid=c.gameid
+		AND b.playerid=$playerid AND c.playerid=$loser
+		AND a.winningplayer=$playerid";
+	$numTimesBeaten = db_select_query( $sql, SQL_SINGLE_VALUE );
+
+	if( $numTimesBeaten >= 5 )
+		$achievementAwarded = Ach_AwardAchievement( $playerid, ACH_RIVALS_5 );
+	if( $numTimesBeaten >= 15 )
+		$achievementAwarded = Ach_AwardAchievement( $playerid, ACH_RIVALS_15 );
+	if( $numTimesBeaten >= 50 )
+		$achievementAwarded = Ach_AwardAchievement( $playerid, ACH_RIVALS_50 );
+
 	return $achievementAwarded;
-}*/
+}
 
 //NOTE: This should probably dissapear. 
 /*function Ach_CheckRandomAchieves( $playerid )

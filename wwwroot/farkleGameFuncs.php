@@ -1331,11 +1331,18 @@ function FarkleWinGame( $gameid, $winnerid, $reason = "", $sendEmail=1, $achieve
 				where playerid in (select playerid from farkle_games_players where gameid=$gameid and playerid != $winnerid)";
 			$result = db_command($sql);
 			
-			// Check if the player has earned the unique games achievement. 
+			// Check if the player has earned the unique games achievement.
 			Ach_CheckVsPlayers( $winnerid );
+
+			// Check rivalry achievements (beat the same player multiple times)
+			$sql = "SELECT playerid FROM farkle_games_players WHERE gameid=$gameid AND playerid != $winnerid";
+			$losers = db_select_query( $sql, SQL_MULTI_ROW );
+			foreach( $losers as $loser ) {
+				Ach_CheckRivals( $winnerid, $loser['playerid'] );
+			}
 		}
-	}	
-	
+	}
+
 	if( $achieves )
 	{
 		Ach_CheckPlayerWins( $winnerid );
