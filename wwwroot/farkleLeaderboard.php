@@ -314,12 +314,14 @@ function Leaderboard_RefreshDaily()
 	$result = db_execute($sql, [':paramid' => 3]);
 
 	// Today Stats (all date comparisons use Central Time)
+	// Note: Timestamps are stored as UTC in 'timestamp without time zone' columns.
+	// We must first interpret them as UTC, then convert to Chicago time.
 	// Highest game scores today
 	$sql = "SELECT t1.*, ROW_NUMBER() OVER () as lbrank FROM
 		(SELECT 0 as lbindex, a.playerid, a.username, a.playerlevel,
 		playerscore as first_int, 0 as second_int, null as first_string, null as second_string
 		FROM farkle_players a, farkle_games_players b
-		WHERE a.playerid=b.playerid AND (b.lastplayed AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date
+		WHERE a.playerid=b.playerid AND (b.lastplayed AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date
 		ORDER BY playerscore desc LIMIT " . (int)$maxDataRows . ") t1";
 	$insert_sql = "INSERT INTO farkle_lbdata ($sql)";
 	$result = db_execute($insert_sql);
@@ -329,7 +331,7 @@ function Leaderboard_RefreshDaily()
 		(SELECT 1 as lbindex, a.playerid, a.username, a.playerlevel,
 		count(*) as first_int, 0 as second_int, null as first_string, null as second_string
 		FROM farkle_players a, farkle_games_players b, farkle_rounds c
-		WHERE a.playerid=b.playerid AND (b.lastplayed AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date
+		WHERE a.playerid=b.playerid AND (b.lastplayed AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date
 		AND a.playerid=c.playerid AND b.gameid=c.gameid AND c.roundscore=0
 		GROUP BY a.username, a.playerid, a.playerlevel
 		ORDER BY first_int desc LIMIT " . (int)$maxDataRows . ") t1";
@@ -353,7 +355,7 @@ function Leaderboard_RefreshDaily()
 				COUNT(*) as games_played
 			FROM farkle_games g
 			JOIN farkle_games_players gp on g.gameid = gp.gameid
-			WHERE (g.gamefinish AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date
+			WHERE (g.gamefinish AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date
 			AND g.gamewith in (".GAME_WITH_RANDOM.",".GAME_WITH_FRIENDS.")
 			GROUP BY gp.playerid
 			HAVING COUNT(*) >= 3
@@ -370,7 +372,7 @@ function Leaderboard_RefreshDaily()
 		r.roundscore as first_int, 0 as second_int, null as first_string, null as second_string
 		FROM farkle_rounds r
 		JOIN farkle_players a on a.playerid = r.playerid
-		WHERE (r.rounddatetime AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date
+		WHERE (r.rounddatetime AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date
 		AND r.roundscore > 0
 		ORDER BY r.roundscore desc LIMIT " . (int)$maxDataRows . ") t1";
 	$insert_sql = "INSERT INTO farkle_lbdata ($sql)";
@@ -385,7 +387,7 @@ function Leaderboard_RefreshDaily()
 		(SELECT 10 as lbindex, a.playerid, a.username, a.playerlevel,
 		playerscore as first_int, 0 as second_int, null as first_string, null as second_string
 		FROM farkle_players a, farkle_games_players b
-		WHERE a.playerid=b.playerid AND (b.lastplayed AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date - INTERVAL '1 day'
+		WHERE a.playerid=b.playerid AND (b.lastplayed AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date - INTERVAL '1 day'
 		ORDER BY playerscore desc LIMIT " . (int)$maxDataRows . ") t1";
 	$insert_sql = "INSERT INTO farkle_lbdata ($sql)";
 	$result = db_execute($insert_sql);
@@ -395,7 +397,7 @@ function Leaderboard_RefreshDaily()
 		(SELECT 11 as lbindex, a.playerid, a.username, a.playerlevel,
 		count(*) as first_int, 0 as second_int, null as first_string, null as second_string
 		FROM farkle_players a, farkle_games_players b, farkle_rounds c
-		WHERE a.playerid=b.playerid AND (b.lastplayed AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date - INTERVAL '1 day'
+		WHERE a.playerid=b.playerid AND (b.lastplayed AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date - INTERVAL '1 day'
 		AND a.playerid=c.playerid AND b.gameid=c.gameid AND c.roundscore=0
 		GROUP BY a.username, a.playerid, a.playerlevel
 		ORDER BY first_int desc LIMIT " . (int)$maxDataRows . ") t1";
@@ -423,7 +425,7 @@ function Leaderboard_RefreshDaily()
 				COUNT(*) as games_played
 			FROM farkle_games g
 			JOIN farkle_games_players gp on g.gameid = gp.gameid
-			WHERE (g.gamefinish AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date - INTERVAL '1 day'
+			WHERE (g.gamefinish AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date - INTERVAL '1 day'
 			AND g.gamewith in (".GAME_WITH_RANDOM.",".GAME_WITH_FRIENDS.")
 			GROUP BY gp.playerid
 			HAVING COUNT(*) >= 3
@@ -443,7 +445,7 @@ function Leaderboard_RefreshDaily()
 		r.roundscore as first_int, 0 as second_int, null as first_string, null as second_string
 		FROM farkle_rounds r
 		JOIN farkle_players a on a.playerid = r.playerid
-		WHERE (r.rounddatetime AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date - INTERVAL '1 day'
+		WHERE (r.rounddatetime AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago')::date = (NOW() AT TIME ZONE 'America/Chicago')::date - INTERVAL '1 day'
 		AND r.roundscore > 0
 		ORDER BY r.roundscore desc LIMIT " . (int)$maxDataRows . ") t1";
 	$insert_sql = "INSERT INTO farkle_lbdata ($sql)";
