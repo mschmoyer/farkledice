@@ -48,18 +48,18 @@
 		$result = db_command($sql);
 	}*/
 	
-	$games = db_select_query( "select count(*) from farkle_games where gamestart > NOW() - interval '24 hours'", SQL_SINGLE_VALUE );
-	echo "Today's game count: $games\n\r"; 
-	$alert .= "$games games today."; 
-	
-	$newPlayers = db_select_query( "select count(*) from farkle_players where createdate > NOW() - interval '24 hours'", SQL_SINGLE_VALUE );
-	echo "Today's new player count: $newPlayers\n\r"; 
-	$alert .= "$newPlayers new players."; 
-	
-	$activePlayers = db_select_query( "select count(*) from farkle_players where lastplayed > NOW() - interval '15 days'", SQL_SINGLE_VALUE ); 
+	$games = db_query("SELECT count(*) FROM farkle_games WHERE gamestart > NOW() - interval '24 hours'", [], SQL_SINGLE_VALUE);
+	echo "Today's game count: $games\n\r";
+	$alert .= "$games games today.";
+
+	$newPlayers = db_query("SELECT count(*) FROM farkle_players WHERE createdate > NOW() - interval '24 hours'", [], SQL_SINGLE_VALUE);
+	echo "Today's new player count: $newPlayers\n\r";
+	$alert .= "$newPlayers new players.";
+
+	$activePlayers = db_query("SELECT count(*) FROM farkle_players WHERE lastplayed > NOW() - interval '15 days'", [], SQL_SINGLE_VALUE);
 	echo "Active Players (last 15 days): $activePlayers\n\r";
-	
-	$activeGames = db_select_query( "select count(*) from farkle_games where winningplayer=0", SQL_SINGLE_VALUE ); 
+
+	$activeGames = db_query("SELECT count(*) FROM farkle_games WHERE winningplayer = 0", [], SQL_SINGLE_VALUE);
 	echo "Active Games: $activeGames"; 
 	
 	SendPushNotification( 1, $alert, $sound="newGameTone.aif" );

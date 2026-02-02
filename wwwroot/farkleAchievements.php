@@ -130,14 +130,14 @@ function Ach_CheckLevel( $playerid, $playerlevel )
 
 function Ach_CheckPerfectGame( $playerid, $gameid )
 {
-	$achAwarded = 0; 
-	// Give this player the perfect game achievement if they earned it. 
-	$sql = "select count(*) from farkle_rounds where roundscore=0 and gameid=$gameid and playerid=$playerid";
-	$farkles = db_select_query( $sql, SQL_SINGLE_VALUE );
-	
+	$achAwarded = 0;
+	// Give this player the perfect game achievement if they earned it.
+	$sql = "SELECT count(*) FROM farkle_rounds WHERE roundscore = 0 AND gameid = :gameid AND playerid = :playerid";
+	$farkles = db_query($sql, [':gameid' => $gameid, ':playerid' => $playerid], SQL_SINGLE_VALUE);
+
 	if( $farkles && $farkles == 0 )
 		$achAwarded = Ach_AwardAchievement( $playerid, ACH_PERFECT_GAME );
-		
+
 	return $achAwarded;
 }
 
@@ -151,17 +151,17 @@ function Ach_CheckVsPlayers( $playerid )
 	}
 
 	$achievementAwarded = 0;
-	
-	$sql = "select c.playerid, count(*) as numGames 
-		from farkle_games a, farkle_games_players b, farkle_games_players c
-		where a.gameid=b.gameid and a.gameid=c.gameid and a.gamemode=2
-		and b.playerid=$playerid
-		and c.playerid<>$playerid
-		and a.winningplayer>0.
-		and a.gamestart > '2012-12-17'
-		group by c.playerid";
-		
-	$numDiffPlayersArr = db_select_query( $sql, SQL_MULTI_ROW );
+
+	$sql = "SELECT c.playerid, count(*) as numGames
+		FROM farkle_games a, farkle_games_players b, farkle_games_players c
+		WHERE a.gameid = b.gameid AND a.gameid = c.gameid AND a.gamemode = 2
+		AND b.playerid = :playerid
+		AND c.playerid <> :playerid2
+		AND a.winningplayer > 0
+		AND a.gamestart > '2012-12-17'
+		GROUP BY c.playerid";
+
+	$numDiffPlayersArr = db_query($sql, [':playerid' => $playerid, ':playerid2' => $playerid], SQL_MULTI_ROW);
 	$numDiffPlayers = count($numDiffPlayersArr);
 	
 	if( $numDiffPlayers >= 5 )
@@ -179,10 +179,10 @@ function Ach_CheckVsPlayers( $playerid )
 function Ach_CheckFarkles( $playerid )
 {
 	BaseUtil_Debug( __FUNCTION__ . ": entered.", 14 );
-	
+
 	// Get count of all friends who our player has started a game against
-	$sql = "select farkles from farkle_players where playerid=$playerid";
-	$numFarkles = db_select_query( $sql, SQL_SINGLE_VALUE );
+	$sql = "SELECT farkles FROM farkle_players WHERE playerid = :playerid";
+	$numFarkles = db_query($sql, [':playerid' => $playerid], SQL_SINGLE_VALUE);
 	
 	$achievementAwarded = 0;
 	if( $numFarkles == 100 )
@@ -198,12 +198,12 @@ function Ach_CheckFarkles( $playerid )
 function Ach_CheckFriends( $playerid )
 {
 	BaseUtil_Debug( __FUNCTION__ . ": entered.", 14 );
-	
+
 	// Get count of all friends who our player has started a game against
-	$sql = "select count(*) from farkle_friends a
-		where a.sourceid=$playerid and 
-			exists(select * from farkle_games_players b where a.friendid=b.playerid)";
-	$numFriends = db_select_query( $sql, SQL_SINGLE_VALUE );
+	$sql = "SELECT count(*) FROM farkle_friends a
+		WHERE a.sourceid = :sourceid AND
+			EXISTS(SELECT * FROM farkle_games_players b WHERE a.friendid = b.playerid)";
+	$numFriends = db_query($sql, [':sourceid' => $playerid], SQL_SINGLE_VALUE);
 	
 	$achievementAwarded = 0;
 	
@@ -247,12 +247,12 @@ function Ach_CheckHighestDifferential( $playerid, $playerScore, $nextHighestScor
 function Ach_CheckPlayerWins( $playerid )
 {
 	BaseUtil_Debug( __FUNCTION__ . ": entered.", 14 );
-	
+
 	$aa = 0;
-	
-	$sql = "select wins from farkle_players where playerid=$playerid";
-	
-	$numWins = db_select_query( $sql, SQL_SINGLE_VALUE );
+
+	$sql = "SELECT wins FROM farkle_players WHERE playerid = :playerid";
+
+	$numWins = db_query($sql, [':playerid' => $playerid], SQL_SINGLE_VALUE);
 	
 	// NOTE: Probably should be: 1, 5, 10, 50, 100
 	if( $numWins >= 5 && $numWins < 25 ) $aa =  Ach_AwardAchievement( $playerid, ACH_WINS1 );
@@ -283,14 +283,14 @@ function Ach_CheckRoundScore( $playerid, $roundscore )
 function Ach_GetNewAchievement( $playerid )
 {
 	BaseUtil_Debug( __FUNCTION__ . ": entered.", 14 );
-	
+
 	// Get any un-awarded achievements
-	$sql = "select b.achievementid as achievementid, title, description, worth, imagefile
-			from farkle_achievements_players a, farkle_achievements b
-			where a.playerid=$playerid and a.achievementid=b.achievementid and a.awarded=false LIMIT 1";
-	$achData = db_select_query( $sql, SQL_SINGLE_ROW );
+	$sql = "SELECT b.achievementid as achievementid, title, description, worth, imagefile
+			FROM farkle_achievements_players a, farkle_achievements b
+			WHERE a.playerid = :playerid AND a.achievementid = b.achievementid AND a.awarded = false LIMIT 1";
+	$achData = db_query($sql, [':playerid' => $playerid], SQL_SINGLE_ROW);
 	if( isset($achData) ) return $achData;
-	return 0;		
+	return 0;
 }
 
 // Award given achievement if it has not been given. 
@@ -307,18 +307,18 @@ function Ach_AwardAchievement( $playerid, $achievementid )
 	if( Ach_CheckForAchievement( $playerid, $achievementid ) == 0 )
 	{
 		if( empty($gTestMode) )
-		{				
+		{
 			// Give 20XP for earning an achievement. Do not include the "level" achievements (recursion)
 			if( $achievementid < 32 || $achievementid > 37 ) {
-				//error_log( "Giving player $playerid " . PLAYERLEVEL_ACHIEVE_XP . " xp for earning achievement $achievementid." ); 
+				//error_log( "Giving player $playerid " . PLAYERLEVEL_ACHIEVE_XP . " xp for earning achievement $achievementid." );
 				//GivePlayerXP( $playerid, PLAYERLEVEL_ACHIEVE_XP );
 			}
-			
-			$sql = "insert into farkle_achievements_players (playerid, achievementid, achievedate) 
-				values ($playerid, $achievementid, NOW() )";
-			$result = db_command($sql);
+
+			$sql = "INSERT INTO farkle_achievements_players (playerid, achievementid, achievedate)
+				VALUES (:playerid, :achievementid, NOW())";
+			$result = db_execute($sql, [':playerid' => $playerid, ':achievementid' => $achievementid]);
 		}
-		return $achievementid; 
+		return $achievementid;
 	}
 	else
 	{
@@ -331,41 +331,41 @@ function Ach_AwardAchievement( $playerid, $achievementid )
 function Ach_CheckForAchievement( $playerid, $achievementid )
 {
 	BaseUtil_Debug( __FUNCTION__ . ": entered.", 14 );
-	
+
 	if( empty($playerid) || empty($achievementid) ) {
 		BaseUtil_Error( "Ach_CheckForAchievement - missing required parameter. pid=$playerid, achid=$achievementid" );
 		return 0;
 	}
-	
-	$theyHaveIt = 0; 
-	$sql = "select count(*) from farkle_achievements_players where playerid=$playerid and achievementid=$achievementid";
-	$theyHaveIt = db_select_query( $sql, SQL_SINGLE_VALUE );
-	
+
+	$theyHaveIt = 0;
+	$sql = "SELECT count(*) FROM farkle_achievements_players WHERE playerid = :playerid AND achievementid = :achievementid";
+	$theyHaveIt = db_query($sql, [':playerid' => $playerid, ':achievementid' => $achievementid], SQL_SINGLE_VALUE);
+
 	if( $theyHaveIt > 0 )
 		return 1;
-		
+
 	return 0;
 }
 
 function GetAchievements( $playerid )
 {
 	BaseUtil_Debug( __FUNCTION__ . ": entered.", 14 );
-	
+
 	$achData = Array();
-		
+
 	// Get all achievements but set earned=1 for ones the player has
-	$sql = "select 1 as earned, a.*, b.achievedate, TO_CHAR(b.achievedate,'Mon DD, YYYY') as formatteddate
-				from farkle_achievements a, farkle_achievements_players b
-				where a.achievementid=b.achievementid and b.playerid=$playerid
+	$sql = "SELECT 1 as earned, a.*, b.achievedate, TO_CHAR(b.achievedate, 'Mon DD, YYYY') as formatteddate
+				FROM farkle_achievements a, farkle_achievements_players b
+				WHERE a.achievementid = b.achievementid AND b.playerid = :playerid
 			UNION
-			select 0 as earned, c.*, null as achievedate, TO_CHAR(NOW(),'Mon DD, YYYY') as formatteddate
-				from farkle_achievements c 
-				where not exists (select 1 from farkle_achievements_players d 
-					where d.achievementid=c.achievementid and d.playerid=$playerid)
-					and c.achievementid < 1000
-			order by earned desc, achievedate desc, worth desc";
-	
-	$achData = db_select_query( $sql, SQL_MULTI_ROW );	
+			SELECT 0 as earned, c.*, null as achievedate, TO_CHAR(NOW(), 'Mon DD, YYYY') as formatteddate
+				FROM farkle_achievements c
+				WHERE NOT EXISTS (SELECT 1 FROM farkle_achievements_players d
+					WHERE d.achievementid = c.achievementid AND d.playerid = :playerid2)
+					AND c.achievementid < 1000
+			ORDER BY earned DESC, achievedate DESC, worth DESC";
+
+	$achData = db_query($sql, [':playerid' => $playerid, ':playerid2' => $playerid], SQL_MULTI_ROW);	
 	
 	$totalPoints = 0;
 	if( count($achData) > 0 )
@@ -384,8 +384,8 @@ function AckAchievement( $playerid, $achievementid )
 	if( !empty($achievementid) && !empty($playerid) )
 	{
 		// Set this as awarded so we don't show it again
-		$sql = "update farkle_achievements_players set awarded=true where playerid=$playerid and achievementid=$achievementid";
-		$result = db_command($sql);	
+		$sql = "UPDATE farkle_achievements_players SET awarded = true WHERE playerid = :playerid AND achievementid = :achievementid";
+		$result = db_execute($sql, [':playerid' => $playerid, ':achievementid' => $achievementid]);
 		return 1;
 	}
 	return 0;
@@ -401,10 +401,10 @@ function Ach_CheckRivals( $playerid, $loser )
 	if( empty($playerid) || empty($loser) ) return 0;
 
 	$sql = "SELECT count(*) FROM farkle_games a, farkle_games_players b, farkle_games_players c
-		WHERE a.gameid=b.gameid AND a.gameid=c.gameid
-		AND b.playerid=$playerid AND c.playerid=$loser
-		AND a.winningplayer=$playerid";
-	$numTimesBeaten = db_select_query( $sql, SQL_SINGLE_VALUE );
+		WHERE a.gameid = b.gameid AND a.gameid = c.gameid
+		AND b.playerid = :playerid AND c.playerid = :loser
+		AND a.winningplayer = :winnerid";
+	$numTimesBeaten = db_query($sql, [':playerid' => $playerid, ':loser' => $loser, ':winnerid' => $playerid], SQL_SINGLE_VALUE);
 
 	if( $numTimesBeaten >= 5 )
 		$achievementAwarded = Ach_AwardAchievement( $playerid, ACH_RIVALS_5 );

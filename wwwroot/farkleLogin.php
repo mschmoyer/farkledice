@@ -55,9 +55,13 @@ function UserLogout()
 	// Clear the session from this device's row
 	if( isset($_SESSION['farklesession']) )
 	{
-		$sql = "update farkle_players_devices set sessionid='LoggedOut{$_SESSION['farklesession']}', lastused=NOW() 
-				where playerid={$_SESSION['playerid']} and sessionid='{$_SESSION['farklesession']}'";
-		$rc = db_command($sql);
+		$sql = "UPDATE farkle_players_devices SET sessionid = :logout_session, lastused = NOW()
+				WHERE playerid = :playerid AND sessionid = :sessionid";
+		$rc = db_execute($sql, [
+			':logout_session' => 'LoggedOut' . $_SESSION['farklesession'],
+			':playerid' => $_SESSION['playerid'],
+			':sessionid' => $_SESSION['farklesession']
+		]);
 	}
 	
 	if( isset($_SESSION['username']) ) 
@@ -97,11 +101,11 @@ function UserLoginSafe( $sessionid, $remember=1 )
 {
 	BaseUtil_Debug( __FUNCTION__ . " entered.", 7 );
 	
-	// Attempt to find the selected session id 
-	$sql = "select a.username, a.playerid as playerid, adminlevel, b.agentString
-		from farkle_players a, farkle_players_devices b
-		where a.playerid=b.playerid and b.sessionid='$sessionid'";			
-	$pInfo = db_select_query( $sql, SQL_SINGLE_ROW );
+	// Attempt to find the selected session id
+	$sql = "SELECT a.username, a.playerid as playerid, adminlevel, b.agentString
+		FROM farkle_players a, farkle_players_devices b
+		WHERE a.playerid = b.playerid AND b.sessionid = :sessionid";
+	$pInfo = db_query($sql, [':sessionid' => $sessionid], SQL_SINGLE_ROW);
 	
 	if( $pInfo )
 	{
@@ -119,21 +123,25 @@ function UserLoginSafe( $sessionid, $remember=1 )
 // This function will remain in place until old sessions are migrated to the new table (or until reasonable to leave it in). 
 function RegenerateDevice( $sessionid, $playerid )
 {
-	// Attempt to find a sessionid in farkle_players that does not exist in devices. 
-	$sql = "select playerid, sessionid from farkle_players_devices where sessionid='$sessionid'";
-	$prev = db_select_query( $sql, SQL_SINGLE_ROW );
-	
-	if( !$prev ) 
+	// Attempt to find a sessionid in farkle_players that does not exist in devices.
+	$sql = "SELECT playerid, sessionid FROM farkle_players_devices WHERE sessionid = :sessionid";
+	$prev = db_query($sql, [':sessionid' => $sessionid], SQL_SINGLE_ROW);
+
+	if( !$prev )
 	{
 		BaseUtil_Debug( __FUNCTION__ . ": Migrating player {$playerid} session to new table.", 1 );
-		// No device found -- but they do have a session. 
-		// This is old data so we'll make a new device with the current user agent. 
+		// No device found -- but they do have a session.
+		// This is old data so we'll make a new device with the current user agent.
 		$agentString = ( !empty($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : "unrecognized" );
 
-		$sql = "insert into farkle_players_devices (playerid, sessionid, lastused, agentstring) values 
-				({$playerid}, '{$sessionid}', NOW(), '{$agentString}')";
-		$rc = db_command($sql);
-		return 1; 
+		$sql = "INSERT INTO farkle_players_devices (playerid, sessionid, lastused, agentstring)
+				VALUES (:playerid, :sessionid, NOW(), :agentstring)";
+		$rc = db_execute($sql, [
+			':playerid' => $playerid,
+			':sessionid' => $sessionid,
+			':agentstring' => $agentString
+		]);
+		return 1;
 	}
 	return 0; 
 }
@@ -148,8 +156,8 @@ function LoginSuccess( $pInfo, $remember=1 )
 	
 	// Update IP address and mark as active on login
 	$remoteIP = $_SERVER['REMOTE_ADDR'];
-	$sql = "update farkle_players set remoteaddr='{$remoteIP}', lastplayed=NOW() where playerid='{$pInfo['playerid']}'";
-	$rc = db_command($sql);
+	$sql = "UPDATE farkle_players SET remoteaddr = :remoteaddr, lastplayed = NOW() WHERE playerid = :playerid";
+	$rc = db_execute($sql, [':remoteaddr' => $remoteIP, ':playerid' => $pInfo['playerid']]);
 	
 	return 1;
 }
@@ -173,11 +181,18 @@ function LoginGenerateSession( $playerid, $remember=1, $device='web' )
 	if( $remember )
 	{
 		// New device
-		$sql = "insert into farkle_players_devices (playerid, sessionid, lastused, agentstring, device) values
-				($playerid, '$sessionid', NOW(), '$agentString', '$device')
-				ON CONFLICT (playerid, device) DO UPDATE SET sessionid='$sessionid', agentstring='$agentString', lastused=NOW()";
-		$rc = db_command($sql);
-		
+		$sql = "INSERT INTO farkle_players_devices (playerid, sessionid, lastused, agentstring, device)
+				VALUES (:playerid, :sessionid, NOW(), :agentstring, :device)
+				ON CONFLICT (playerid, device) DO UPDATE SET sessionid = :sessionid2, agentstring = :agentstring2, lastused = NOW()";
+		$rc = db_execute($sql, [
+			':playerid' => $playerid,
+			':sessionid' => $sessionid,
+			':agentstring' => $agentString,
+			':device' => $device,
+			':sessionid2' => $sessionid,
+			':agentstring2' => $agentString
+		]);
+
 		// Remember the sessionid for a month
 		setcookie('farklesession', $sessionid, time()+20*365*24*60*60 ); // Not MD5
 		setcookie('playerid', $playerid, time()+20*365*24*60*60 ); // Not MD5
@@ -191,19 +206,19 @@ function LoginGenerateSession( $playerid, $remember=1, $device='web' )
 function UserLogin( $user, $pass, $remember=1 )
 {
 	BaseUtil_Debug( __FUNCTION__ . " entered.", 7 );
-		
-	$sql = "select username, playerid, adminlevel, sessionid
-		from farkle_players
-		where (MD5(username)='$user' OR MD5(LOWER(email))='$user') and password=CONCAT('$pass',MD5(salt))";	
-		
-	$pInfo = db_select_query( $sql, SQL_SINGLE_ROW );
+
+	$sql = "SELECT username, playerid, adminlevel, sessionid
+		FROM farkle_players
+		WHERE (MD5(username) = :user OR MD5(LOWER(email)) = :user2) AND password = CONCAT(:pass, MD5(salt))";
+
+	$pInfo = db_query($sql, [':user' => $user, ':user2' => $user, ':pass' => $pass], SQL_SINGLE_ROW);
 	if( $pInfo )
 	{
 		LoginGenerateSession( $pInfo['playerid'] );
 		LoginSuccess( $pInfo, $remember );
 		return $pInfo;
 	}
-	
+
 	return Array('Error' => 'Username or password incorrect.');
 }
 
@@ -229,8 +244,8 @@ function UserRegister( $user, $pass, $email, $remember = 0, $registeringGuest = 
 	}
 	
 	//$sql = "select username, email from farkle_players where username = '$user' or email='$email'";
-	$sql = "select username from farkle_players where username = '$user'";
-	$userExists = db_select_query( $sql, SQL_SINGLE_ROW );
+	$sql = "SELECT username FROM farkle_players WHERE username = :username";
+	$userExists = db_query($sql, [':username' => $user], SQL_SINGLE_ROW);
 	
 	if( !empty($userExists) ) 
 	{
@@ -255,20 +270,36 @@ function UserRegister( $user, $pass, $email, $remember = 0, $registeringGuest = 
 	if( isset($_SESSION['username']) ) $sess_user = $_SESSION['username'];
 	if( stripos( $sess_user, 'guest') === 0 )
 	{
-		// Logged in as a guest, so just transfer their information over to the guest account. 
-		$sql = "update farkle_players set username='$user', password=CONCAT('$pass',MD5('$salt')), 
-			email='$email', salt='$salt' where playerid=" . $_SESSION['playerid'];
+		// Logged in as a guest, so just transfer their information over to the guest account.
+		$sql = "UPDATE farkle_players SET username = :username, password = CONCAT(:pass, MD5(:salt)),
+			email = :email, salt = :salt2 WHERE playerid = :playerid";
+		$params = [
+			':username' => $user,
+			':pass' => $pass,
+			':salt' => $salt,
+			':email' => $email,
+			':salt2' => $salt,
+			':playerid' => $_SESSION['playerid']
+		];
 		BaseUtil_Debug( "Updating guest account to real account.", 7 );
-	} 
+	}
 	else
-	{		
+	{
 		// Allow new user
 		$remoteIp = $_SERVER['REMOTE_ADDR'];
-		$sql = "insert into farkle_players (username, password, email, salt, lastplayed, createdate, remoteaddr ) 
-			values ('$user', CONCAT('$pass',MD5('$salt')), '$email', '$salt', NOW(), NOW(), '$remoteIp' )";	
+		$sql = "INSERT INTO farkle_players (username, password, email, salt, lastplayed, createdate, remoteaddr)
+			VALUES (:username, CONCAT(:pass, MD5(:salt)), :email, :salt2, NOW(), NOW(), :remoteaddr)";
+		$params = [
+			':username' => $user,
+			':pass' => $pass,
+			':salt' => $salt,
+			':email' => $email,
+			':salt2' => $salt,
+			':remoteaddr' => $remoteIp
+		];
 		BaseUtil_Debug( "Inserting new account.", 7 );
 	}
-	if( db_command($sql) )
+	if( db_execute($sql, $params) )
 	{
 		$userinfo = UserLogin( md5($user), $pass, $remember );
 		return $userinfo;	
@@ -281,20 +312,19 @@ function UserRegister( $user, $pass, $email, $remember = 0, $registeringGuest = 
 
 function ResendPassword( $email )
 {
-	BaseUtil_Debug( "ResendPassword: entered.", 7 );	
+	BaseUtil_Debug( "ResendPassword: entered.", 7 );
 	// Get the email of the current player in this game
-	$sql = "select playerid from farkle_players
-		where lower(email)=lower('$email')";
-	$playerid = db_select_query( $sql, SQL_SINGLE_VALUE );
-	
+	$sql = "SELECT playerid FROM farkle_players WHERE LOWER(email) = LOWER(:email)";
+	$playerid = db_query($sql, [':email' => $email], SQL_SINGLE_VALUE);
+
 	$resetPassCode = random_string( 16, 16 );
-	
+
 	if( !empty($playerid ) )
 	{
-		BaseUtil_Debug( "ResendPassword: Updating passcode for playerid $playerid.", 7 );	
-		
-		$sql = "update farkle_players set resetpasscode='$resetPassCode' where playerid=$playerid";
-		db_command($sql);
+		BaseUtil_Debug( "ResendPassword: Updating passcode for playerid $playerid.", 7 );
+
+		$sql = "UPDATE farkle_players SET resetpasscode = :resetpasscode WHERE playerid = :playerid";
+		db_execute($sql, [':resetpasscode' => $resetPassCode, ':playerid' => $playerid]);
 		
 		$subject = "Your farkle password reset code";
 		
@@ -319,47 +349,54 @@ function ResendPassword( $email )
 
 function ResetPassword( $code, $pass )
 {
-	BaseUtil_Debug( "ResetPassword: entered.", 7 );	
+	BaseUtil_Debug( "ResetPassword: entered.", 7 );
 	$salt = "35td2c";
-	//CONCAT('$pass',MD5('$salt'))
-	$sql = "select playerid from farkle_players where resetpasscode='$code'";
-	$playerid = db_select_query( $sql, SQL_SINGLE_VALUE );
+	$sql = "SELECT playerid FROM farkle_players WHERE resetpasscode = :code";
+	$playerid = db_query($sql, [':code' => $code], SQL_SINGLE_VALUE);
 	if( !empty($playerid) )
 	{
-		$sql = "update farkle_players set password=CONCAT('$pass',MD5('$salt')) where playerid=$playerid";
-		db_command($sql);
+		$sql = "UPDATE farkle_players SET password = CONCAT(:pass, MD5(:salt)) WHERE playerid = :playerid";
+		db_execute($sql, [':pass' => $pass, ':salt' => $salt, ':playerid' => $playerid]);
 		return Array('Success'=>'1');
 	}
-	
+
 	BaseUtil_Debug( __FUNCTION__ . ": Bad password reset value. Code=$code", 1);
 	return Array('Error'=>'Invalid password reset code.');
 }
 
 function AddDeviceToken( $device, $deviceToken, $sessionid, $playerid )
 {
-	$resp = Array( 'Error' => 'Unknown error' ); 
-	BaseUtil_Debug( __FUNCTION__ . ": attempting to add $device token for $playerid. deviceToken=$deviceToken, session=$sessionid", 7 ); 
-	
-	$agentString = ( !empty($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : "unrecognized" );
-	$sql = "insert into farkle_players_devices (playerid, sessionid, device, token, lastused, agentstring)
-			values ('$playerid', '$sessionid', '$device', '$deviceToken', NOW(), '$agentString')
-			ON CONFLICT (playerid, device) DO UPDATE SET token='$deviceToken', lastused=NOW(), agentstring='$agentString'";
+	$resp = Array( 'Error' => 'Unknown error' );
+	BaseUtil_Debug( __FUNCTION__ . ": attempting to add $device token for $playerid. deviceToken=$deviceToken, session=$sessionid", 7 );
 
-	if( db_command($sql) )
+	$agentString = ( !empty($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : "unrecognized" );
+	$sql = "INSERT INTO farkle_players_devices (playerid, sessionid, device, token, lastused, agentstring)
+			VALUES (:playerid, :sessionid, :device, :token, NOW(), :agentstring)
+			ON CONFLICT (playerid, device) DO UPDATE SET token = :token2, lastused = NOW(), agentstring = :agentstring2";
+
+	if( db_execute($sql, [
+		':playerid' => $playerid,
+		':sessionid' => $sessionid,
+		':device' => $device,
+		':token' => $deviceToken,
+		':agentstring' => $agentString,
+		':token2' => $deviceToken,
+		':agentstring2' => $agentString
+	]) )
 	{
-		$sql = "select playerid, sessionid, device, token from farkle_players_devices where playerid=1 and device='$device'";
-		$data = db_select_query( $sql, SQL_SINGLE_ROW );
-		
+		$sql = "SELECT playerid, sessionid, device, token FROM farkle_players_devices WHERE playerid = :playerid AND device = :device";
+		$data = db_query($sql, [':playerid' => $playerid, ':device' => $device], SQL_SINGLE_ROW);
+
 		BaseUtil_Debug( __FUNCTION__ . ": Success. table now contains playerid={$data['playerid']}, sess={$data['sessionid']}, token={$data['token']}", 14 );
-		
+
 		$resp = Array( 'Message' => 'Token Accepted', 'Playerid' => $playerid, 'Token' => $deviceToken );
 	}
 	else
 	{
-		BaseUtil_Error( __FUNCTION__ . ": Error updating player $playerid devicetoken." ); 
+		BaseUtil_Error( __FUNCTION__ . ": Error updating player $playerid devicetoken." );
 		$resp = Array( 'Error' => 'Error updating player devicetoken.' );
 	}
-	
+
 	return $resp;
 }
 

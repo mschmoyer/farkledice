@@ -41,8 +41,8 @@ function BackgroundMaintenance()
 function BackgroundTask_RefreshLeaderboards()
 {
 	// Check timestamp in siteinfo table (paramid=1)
-	$sql = "SELECT (paramvalue::numeric <= EXTRACT(EPOCH FROM NOW())) FROM siteinfo WHERE paramid=1";
-	$shouldRun = db_select_query($sql, SQL_SINGLE_VALUE);
+	$sql = "SELECT (paramvalue::numeric <= EXTRACT(EPOCH FROM NOW())) FROM siteinfo WHERE paramid = :paramid";
+	$shouldRun = db_query($sql, [':paramid' => 1], SQL_SINGLE_VALUE);
 
 	if ($shouldRun) {
 		BaseUtil_Debug("BackgroundMaintenance: Refreshing main leaderboards", 1);
@@ -57,14 +57,14 @@ function BackgroundTask_RefreshLeaderboards()
 function BackgroundTask_RefreshDailyLeaderboards()
 {
 	// Check timestamp in siteinfo table (paramid=2)
-	$sql = "SELECT (paramvalue::numeric <= EXTRACT(EPOCH FROM NOW())) FROM siteinfo WHERE paramid=2";
-	$shouldRun = db_select_query($sql, SQL_SINGLE_VALUE);
+	$sql = "SELECT (paramvalue::numeric <= EXTRACT(EPOCH FROM NOW())) FROM siteinfo WHERE paramid = :paramid";
+	$shouldRun = db_query($sql, [':paramid' => 2], SQL_SINGLE_VALUE);
 
 	if ($shouldRun) {
 		// Set next run to 5 minutes from now BEFORE doing work (prevents race condition)
-		$sql = "UPDATE siteinfo SET paramvalue=EXTRACT(EPOCH FROM (NOW() + interval '5' minute))
-				WHERE paramid=2 AND paramname='last_daily_leaderboard_refresh'";
-		db_command($sql);
+		$sql = "UPDATE siteinfo SET paramvalue = EXTRACT(EPOCH FROM (NOW() + interval '5' minute))
+				WHERE paramid = :paramid AND paramname = :paramname";
+		db_execute($sql, [':paramid' => 2, ':paramname' => 'last_daily_leaderboard_refresh']);
 
 		BaseUtil_Debug("BackgroundMaintenance: Refreshing daily leaderboards", 1);
 		Leaderboard_RefreshDaily();
@@ -78,14 +78,14 @@ function BackgroundTask_RefreshDailyLeaderboards()
 function BackgroundTask_CleanupStaleGames()
 {
 	// Check timestamp in siteinfo table (paramid=4)
-	$sql = "SELECT (paramvalue::numeric <= EXTRACT(EPOCH FROM NOW())) FROM siteinfo WHERE paramid=4";
-	$shouldRun = db_select_query($sql, SQL_SINGLE_VALUE);
+	$sql = "SELECT (paramvalue::numeric <= EXTRACT(EPOCH FROM NOW())) FROM siteinfo WHERE paramid = :paramid";
+	$shouldRun = db_query($sql, [':paramid' => 4], SQL_SINGLE_VALUE);
 
 	if ($shouldRun) {
 		// Set next run to 30 minutes from now BEFORE doing work (prevents race condition)
-		$sql = "UPDATE siteinfo SET paramvalue=EXTRACT(EPOCH FROM (NOW() + interval '30' minute))
-				WHERE paramid=4 AND paramname='last_cleanup'";
-		db_command($sql);
+		$sql = "UPDATE siteinfo SET paramvalue = EXTRACT(EPOCH FROM (NOW() + interval '30' minute))
+				WHERE paramid = :paramid AND paramname = :paramname";
+		db_execute($sql, [':paramid' => 4, ':paramname' => 'last_cleanup']);
 
 		BaseUtil_Debug("BackgroundMaintenance: Cleaning up stale games", 1);
 
@@ -109,14 +109,14 @@ function BackgroundTask_BotAutoFill()
 	$checkIntervalSeconds = $isTestServer ? 60 : 86400; // 1 min dev, 24 hrs prod
 
 	// Check timestamp in siteinfo table (paramid=7)
-	$sql = "SELECT (paramvalue::numeric <= EXTRACT(EPOCH FROM NOW())) FROM siteinfo WHERE paramid=7";
-	$shouldRun = db_select_query($sql, SQL_SINGLE_VALUE);
+	$sql = "SELECT (paramvalue::numeric <= EXTRACT(EPOCH FROM NOW())) FROM siteinfo WHERE paramid = :paramid";
+	$shouldRun = db_query($sql, [':paramid' => 7], SQL_SINGLE_VALUE);
 
 	if ($shouldRun) {
 		// Set next run based on environment BEFORE doing work (prevents race condition)
-		$sql = "UPDATE siteinfo SET paramvalue=EXTRACT(EPOCH FROM (NOW() + interval '{$checkIntervalSeconds}' second))
-				WHERE paramid=7 AND paramname='last_bot_fill_check'";
-		db_command($sql);
+		$sql = "UPDATE siteinfo SET paramvalue = EXTRACT(EPOCH FROM (NOW() + interval '" . (int)$checkIntervalSeconds . "' second))
+				WHERE paramid = :paramid AND paramname = :paramname";
+		db_execute($sql, [':paramid' => 7, ':paramname' => 'last_bot_fill_check']);
 
 		BaseUtil_Debug("BackgroundMaintenance: Checking for games to auto-fill with bots (interval: {$checkIntervalSeconds}s)", 1);
 

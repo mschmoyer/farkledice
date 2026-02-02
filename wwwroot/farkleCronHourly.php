@@ -12,9 +12,9 @@
 	
 	function NotifyOfUnplayedGames()
 	{
-		$sql = "select distinct b.playerid as playerid from farkle_games a, farkle_games_players b, farkle_players_devices c
-		where a.gameid=b.gameid and a.winningplayer=0 and b.playerid=c.playerid and c.token is not null";
-		$players = db_select_query( $sql, SQL_MULTI_ROW );
+		$sql = "SELECT DISTINCT b.playerid as playerid FROM farkle_games a, farkle_games_players b, farkle_players_devices c
+		WHERE a.gameid = b.gameid AND a.winningplayer = 0 AND b.playerid = c.playerid AND c.token IS NOT NULL";
+		$players = db_query($sql, [], SQL_MULTI_ROW);
 		
 		//foreach( $players as $p )
 		//{
@@ -25,13 +25,13 @@
 	function EmailMyGames()
 	{
 		// Get all games for all players that have not been played yet.
-		$sql = "select b.playerid, c.username, c.email, a.gameid, a.playerstring,
+		$sql = "SELECT b.playerid, c.username, c.email, a.gameid, a.playerstring,
 			TO_CHAR(a.gamestart, 'Mon DD @ HH12:00 AM') as gamestart
-			from farkle_games a, farkle_games_players b, farkle_players c
-			where a.gameid=b.gameid and c.playerid=b.playerid and a.winningplayer=0 and a.whostarted != c.playerid
-			and b.playerround=1 and b.notified=0 and c.sendhourlyemails=1 and c.email is not null and char_length(c.email) >= 5
-			order by b.playerid, a.gamestart";
-		$games = db_select_query( $sql, SQL_MULTI_ROW );
+			FROM farkle_games a, farkle_games_players b, farkle_players c
+			WHERE a.gameid = b.gameid AND c.playerid = b.playerid AND a.winningplayer = 0 AND a.whostarted != c.playerid
+			AND b.playerround = 1 AND b.notified = 0 AND c.sendhourlyemails = 1 AND c.email IS NOT NULL AND char_length(c.email) >= 5
+			ORDER BY b.playerid, a.gamestart";
+		$games = db_query($sql, [], SQL_MULTI_ROW);
 		if( $games ) $lastPlayerid = $games[0]['playerid']; 
 		$msg = "";
 		
@@ -79,9 +79,9 @@
 			
 		}
 		
-		// Clear any new games from further emails. 
-		$sql = "update farkle_games_players set notified=1 where notified=0";
-		$result = db_command($sql);
+		// Clear any new games from further emails.
+		$sql = "UPDATE farkle_games_players SET notified = 1 WHERE notified = 0";
+		$result = db_execute($sql);
 	}
 	
 	// For testing, this will only email Mike for now...TBD: remove this. 
@@ -100,8 +100,8 @@
 	CheckTournaments( );
 	//$gEmailEnabled = false;
 	
-	$sql = "select count(*) from farkle_games a where winningplayer=0 and (select count(*) from farkle_games_players where gameid=a.gameid and currentround=11) >= a.maxturns";
-	$badGameCount = db_select_query( $sql, SQL_SINGLE_VALUE );
+	$sql = "SELECT count(*) FROM farkle_games a WHERE winningplayer = 0 AND (SELECT count(*) FROM farkle_games_players WHERE gameid = a.gameid AND currentround = 11) >= a.maxturns";
+	$badGameCount = db_query($sql, [], SQL_SINGLE_VALUE);
 
 	if( $badGameCount > 0 )
 		SendEmail( 'mikeschmoyer@gmail.com', "Farkle Server Issue - Bad Games", "Farkle Ten has detected games that are not finished but have no players with rounds left to player." );

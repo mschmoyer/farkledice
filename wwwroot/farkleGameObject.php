@@ -23,8 +23,8 @@ class FarkleGameInfo {
 	public $players = Array();
 
 	function __construct( $mGameId ) {
-		$sql = "select * from farkle_games where gameid=$mGameId";
-		$gd = db_select_query( $sql, SQL_SINGLE_ROW );
+		$sql = "SELECT * FROM farkle_games WHERE gameid = :gameid";
+		$gd = db_query($sql, [':gameid' => $mGameId], SQL_SINGLE_ROW);
 		
 		$this->gameid = $mGameId;
 		$this->mintostart = $gd['mintostart'];
@@ -45,10 +45,10 @@ class FarkleGameInfo {
 	
 	// This is an associative array based on PlayerId
 	function GetPlayerData() {
-		$sql = "select a.*, b.username, b.email
-			from farkle_games_players a, farkle_players b
-			where gameid=$this->gameid and a.playerid=b.playerid";
-		$pd = db_select_query( $sql, SQL_MULTI_ROW );
+		$sql = "SELECT a.*, b.username, b.email
+			FROM farkle_games_players a, farkle_players b
+			WHERE gameid = :gameid AND a.playerid = b.playerid";
+		$pd = db_query($sql, [':gameid' => $this->gameid], SQL_MULTI_ROW);
 		
 		$theArray = Array();
 		foreach( $pd as $p )

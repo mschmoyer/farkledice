@@ -67,6 +67,106 @@ function db_connect()
 	}
 }
 
+// =============================================================================
+// NEW PREPARED STATEMENT FUNCTIONS (use these for all new code)
+// =============================================================================
+
+/**
+ * Execute a SELECT query with prepared statement
+ *
+ * @param string $sql SQL with named parameters (:param) or positional (?)
+ * @param array $params Parameter values [':param' => value] or [value1, value2, ...]
+ * @param int $return_type SQL_SINGLE_VALUE, SQL_SINGLE_ROW, or SQL_MULTI_ROW
+ * @return mixed Query result based on return_type
+ */
+function db_query(string $sql, array $params = [], int $return_type = SQL_MULTI_ROW): mixed
+{
+	global $g_debug;
+	BaseUtil_Debug('Executing prepared query: ' . $sql, 7, "gray");
+	BaseUtil_Debug('With params: ' . json_encode($params), 7, "gray");
+
+	if ($g_debug >= 14) $theStartTime = microtime(true);
+
+	try {
+		$dbh = db_connect();
+		$stmt = $dbh->prepare($sql);
+		$stmt->execute($params);
+
+		if ($return_type == SQL_MULTI_ROW) {
+			$retval = $stmt->fetchAll(PDO::FETCH_ASSOC);
+		} elseif ($return_type == SQL_SINGLE_ROW) {
+			$retval = $stmt->fetch(PDO::FETCH_ASSOC);
+		} else {
+			// SQL_SINGLE_VALUE
+			$row = $stmt->fetch(PDO::FETCH_NUM);
+			$retval = $row ? $row[0] : null;
+		}
+
+		if ($g_debug >= 14) {
+			$theEndTime = microtime(true);
+			$theRunTime = (string)($theEndTime - $theStartTime);
+			BaseUtil_Debug("SQL result run time: $theRunTime seconds.", 7, "#AAF");
+		}
+
+		BaseUtil_Debug('SQL result in var dump below: ', 7, "gray");
+		if ($g_debug >= 14) var_dump($retval);
+
+		return $retval;
+	} catch (PDOException $e) {
+		BaseUtil_Error(__FUNCTION__ . ": SQL Error [" . $e->getCode() . "]: " . $e->getMessage() . "   SQL = $sql   Params = " . json_encode($params));
+		return null;
+	}
+}
+
+/**
+ * Execute an INSERT/UPDATE/DELETE with prepared statement
+ *
+ * @param string $sql SQL with named parameters (:param) or positional (?)
+ * @param array $params Parameter values
+ * @return int|false Number of affected rows, or false on error
+ */
+function db_execute(string $sql, array $params = []): int|false
+{
+	BaseUtil_Debug('Executing prepared command: ' . $sql, 7, "gray");
+	BaseUtil_Debug('With params: ' . json_encode($params), 7, "gray");
+
+	try {
+		$dbh = db_connect();
+		$stmt = $dbh->prepare($sql);
+		$stmt->execute($params);
+		$rowCount = $stmt->rowCount();
+		BaseUtil_Debug("SQL result: $rowCount rows affected", 7, "gray");
+		return $rowCount;
+	} catch (PDOException $e) {
+		BaseUtil_Error(__FUNCTION__ . ": SQL Error [" . $e->getCode() . "]: " . $e->getMessage() . "   SQL = $sql   Params = " . json_encode($params));
+		return false;
+	}
+}
+
+/**
+ * Execute an INSERT with prepared statement and return the last inserted ID
+ *
+ * @param string $sql SQL with named parameters (:param) or positional (?)
+ * @param array $params Parameter values
+ * @param string $sequence Optional sequence name for PostgreSQL (usually not needed)
+ * @return int|false The last inserted ID, or false on error
+ */
+function db_insert(string $sql, array $params = [], string $sequence = ''): int|false
+{
+	$result = db_execute($sql, $params);
+	if ($result === false) {
+		return false;
+	}
+	return db_insert_id($sequence);
+}
+
+// =============================================================================
+// LEGACY FUNCTIONS (deprecated - migrate to prepared statement versions above)
+// =============================================================================
+
+/**
+ * @deprecated Use db_query() with prepared statements instead
+ */
 function db_select_query($sql, $return_type = SQL_MULTI_ROW)
 {
 	global $g_debug;
@@ -105,6 +205,9 @@ function db_select_query($sql, $return_type = SQL_MULTI_ROW)
 	}
 }
 
+/**
+ * @deprecated Use db_execute() with prepared statements instead
+ */
 function db_command($sql)
 {
 	BaseUtil_Debug('Executing query: ' . $sql, 7, "gray");
@@ -119,6 +222,9 @@ function db_command($sql)
 	}
 }
 
+/**
+ * @deprecated Use db_execute() with prepared statements instead
+ */
 function db_insert_update_query($sql)
 {
 	global $g_debug;
@@ -139,15 +245,20 @@ function db_insert_update_query($sql)
 	}
 }
 
-function db_insert_id()
+function db_insert_id(string $sequence = ''): int
 {
 	try {
 		$dbh = db_connect();
 		// PostgreSQL uses sequences for auto-increment
 		// This gets the last value from the most recently used sequence
-		$result = $dbh->query("SELECT lastval()");
+		// If a specific sequence is provided, use currval() instead
+		if ($sequence) {
+			$result = $dbh->query("SELECT currval('$sequence')");
+		} else {
+			$result = $dbh->query("SELECT lastval()");
+		}
 		$row = $result->fetch(PDO::FETCH_NUM);
-		return $row ? $row[0] : 0;
+		return $row ? (int)$row[0] : 0;
 	} catch (PDOException $e) {
 		// If no sequence has been used yet, lastval() throws an error
 		// Return 0 in that case

@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.8.0",
+      "date": "2026-02-01",
+      "notes": [
+        "Security: Migrated all SQL queries to prepared statements for improved security",
+        "Database: Updated database abstraction layer with new helper functions (db_query, db_execute, db_insert)"
+      ]
+    },
+    {
       "version": "2.7.4",
       "date": "2025-02-01",
       "notes": [
