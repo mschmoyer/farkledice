@@ -89,11 +89,14 @@ function UserLogout()
 		var_dump( $_SESSION['farklesession'] );
 		
 		BaseUtil_Debug( __FUNCTION__ . ": Cookie vars now=", 7 );
-		var_dump( $_COOKIE['username'] ); 
-		var_dump( $_COOKIE['password'] ); 
-		var_dump( $_COOKIE['farklesession'] ); 
+		var_dump( $_COOKIE['username'] );
+		var_dump( $_COOKIE['password'] );
+		var_dump( $_COOKIE['farklesession'] );
 	}
-	
+
+	// Regenerate CSRF token on logout for security
+	csrf_regenerate();
+
 	return 1;
 }
 
@@ -149,16 +152,19 @@ function RegenerateDevice( $sessionid, $playerid )
 function LoginSuccess( $pInfo, $remember=1 )
 {
 	BaseUtil_Debug( "User " . $pInfo['username'] . " logged in.", 7 );
-	
+
 	$_SESSION['username'] = $pInfo['username'];
 	$_SESSION['playerid'] = $pInfo['playerid'];
 	if( isset($pInfo['adminlevel']) ) $_SESSION['adminlevel'] = $pInfo['adminlevel'];
-	
+
 	// Update IP address and mark as active on login
 	$remoteIP = $_SERVER['REMOTE_ADDR'];
 	$sql = "UPDATE farkle_players SET remoteaddr = :remoteaddr, lastplayed = NOW() WHERE playerid = :playerid";
 	$rc = db_execute($sql, [':remoteaddr' => $remoteIP, ':playerid' => $pInfo['playerid']]);
-	
+
+	// Regenerate CSRF token on login for security
+	csrf_regenerate();
+
 	return 1;
 }
 
@@ -209,7 +215,7 @@ function UserLogin( $user, $pass, $remember=1 )
 
 	$sql = "SELECT username, playerid, adminlevel, sessionid
 		FROM farkle_players
-		WHERE (MD5(username) = :user OR MD5(LOWER(email)) = :user2) AND password = CONCAT(:pass, MD5(salt))";
+		WHERE (MD5(username) = :user OR MD5(LOWER(email)) = :user2) AND password = CONCAT(:pass::text, MD5(salt))";
 
 	$pInfo = db_query($sql, [':user' => $user, ':user2' => $user, ':pass' => $pass], SQL_SINGLE_ROW);
 	if( $pInfo )
@@ -271,7 +277,7 @@ function UserRegister( $user, $pass, $email, $remember = 0, $registeringGuest = 
 	if( stripos( $sess_user, 'guest') === 0 )
 	{
 		// Logged in as a guest, so just transfer their information over to the guest account.
-		$sql = "UPDATE farkle_players SET username = :username, password = CONCAT(:pass, MD5(:salt)),
+		$sql = "UPDATE farkle_players SET username = :username, password = CONCAT(:pass::text, MD5(:salt::text)),
 			email = :email, salt = :salt2 WHERE playerid = :playerid";
 		$params = [
 			':username' => $user,
@@ -288,7 +294,7 @@ function UserRegister( $user, $pass, $email, $remember = 0, $registeringGuest = 
 		// Allow new user
 		$remoteIp = $_SERVER['REMOTE_ADDR'];
 		$sql = "INSERT INTO farkle_players (username, password, email, salt, lastplayed, createdate, remoteaddr)
-			VALUES (:username, CONCAT(:pass, MD5(:salt)), :email, :salt2, NOW(), NOW(), :remoteaddr)";
+			VALUES (:username, CONCAT(:pass::text, MD5(:salt::text)), :email, :salt2, NOW(), NOW(), :remoteaddr)";
 		$params = [
 			':username' => $user,
 			':pass' => $pass,
@@ -355,7 +361,7 @@ function ResetPassword( $code, $pass )
 	$playerid = db_query($sql, [':code' => $code], SQL_SINGLE_VALUE);
 	if( !empty($playerid) )
 	{
-		$sql = "UPDATE farkle_players SET password = CONCAT(:pass, MD5(:salt)) WHERE playerid = :playerid";
+		$sql = "UPDATE farkle_players SET password = CONCAT(:pass::text, MD5(:salt::text)) WHERE playerid = :playerid";
 		db_execute($sql, [':pass' => $pass, ':salt' => $salt, ':playerid' => $playerid]);
 		return Array('Success'=>'1');
 	}

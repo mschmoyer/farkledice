@@ -102,7 +102,35 @@
 			//var_dump($_SESSION);
 		}
 	}
-	
+
+	/**
+	 * Generate or retrieve CSRF token for current session
+	 */
+	function csrf_token(): string {
+		if (empty($_SESSION['csrf_token'])) {
+			$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+		}
+		return $_SESSION['csrf_token'];
+	}
+
+	/**
+	 * Verify CSRF token using timing-safe comparison
+	 */
+	function csrf_verify(string $token): bool {
+		if (empty($_SESSION['csrf_token']) || empty($token)) {
+			return false;
+		}
+		return hash_equals($_SESSION['csrf_token'], $token);
+	}
+
+	/**
+	 * Regenerate CSRF token (call on login/logout)
+	 */
+	function csrf_regenerate(): string {
+		$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+		return $_SESSION['csrf_token'];
+	}
+
 	// Define the root include folder and add it to the path.
 	// Also determine what folder we are in for template_dir
 	$dir = getcwd();
@@ -224,9 +252,8 @@
 	// $_SESSION['testserver'] = 0;
 
 	// Pass app version to templates
-	$smarty->assign('app_version', APP_VERSION); 
-	
-	
+	$smarty->assign('app_version', APP_VERSION);
+
 	// set the cache_lifetime for index.tpl to 1 hour
 	//$smarty->cache_lifetime = 3600;
 	

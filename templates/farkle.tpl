@@ -1,6 +1,9 @@
 
 {include file="header.tpl" title="Farkle Ten"}
 
+<!-- CSRF Token for AJAX requests -->
+<input type="hidden" value="{$csrf_token}" id="csrf_token">
+
 <img class="imagebutton homeimage mobileButton" id="imgHomeIcon" alt="Show Farkle Lobby"
 	src="/images/home.png" onClick="HomeIconClick()">
 
