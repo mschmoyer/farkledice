@@ -9,11 +9,8 @@
 
 */
 
-	// Application Version (Major.Minor.Revision)
-	// Major: Breaking changes or major milestones
-	// Minor: New features and significant changes
-	// Revision: Bug fixes and small tweaks
-	define('APP_VERSION', '2.7.4');
+	// Application Version - defined in separate file for cleaner PRs
+	require_once __DIR__ . '/version.php';
 
 	// Redirect apex domain to www subdomain (for custom domain setup)
 	if (isset($_SERVER['HTTP_HOST'])) {
