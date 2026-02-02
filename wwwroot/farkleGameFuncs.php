@@ -877,23 +877,25 @@ function GetDiceOnTheTable( $playerid, $gameid, $roundnum, $setnum )
 	$handNum = db_query($sql, [':gameid' => $gameid, ':playerid' => $playerid, ':roundnum' => $roundnum, ':setnum' => $setnum], SQL_SINGLE_VALUE);
 	if( empty($handNum) ) return Array( $diceOnTable );
 
-	// This complex query with many subqueries - we need to use the same params multiple times
+	// Native PDO prepared statements don't allow reusing parameter names, so each subquery needs unique names
 	$params = [
-		':gameid' => $gameid,
-		':playerid' => $playerid,
-		':roundnum' => $roundnum,
-		':handnum' => $handNum,
-		':setnum' => $setnum
+		':gameid_d1' => $gameid, ':playerid_d1' => $playerid, ':roundnum_d1' => $roundnum, ':handnum_d1' => $handNum,
+		':gameid_d2' => $gameid, ':playerid_d2' => $playerid, ':roundnum_d2' => $roundnum, ':handnum_d2' => $handNum,
+		':gameid_d3' => $gameid, ':playerid_d3' => $playerid, ':roundnum_d3' => $roundnum, ':handnum_d3' => $handNum,
+		':gameid_d4' => $gameid, ':playerid_d4' => $playerid, ':roundnum_d4' => $roundnum, ':handnum_d4' => $handNum,
+		':gameid_d5' => $gameid, ':playerid_d5' => $playerid, ':roundnum_d5' => $roundnum, ':handnum_d5' => $handNum,
+		':gameid_d6' => $gameid, ':playerid_d6' => $playerid, ':roundnum_d6' => $roundnum, ':handnum_d6' => $handNum,
+		':gameid_w' => $gameid, ':playerid_w' => $playerid, ':roundnum_w' => $roundnum, ':setnum' => $setnum
 	];
 	$sql = "SELECT
-		CASE WHEN d1<>0 THEN d1 ELSE (SELECT max(d1save) FROM farkle_sets WHERE gameid = :gameid AND playerid = :playerid AND roundnum = :roundnum AND handnum = :handnum AND d1save BETWEEN 1 AND 6) END d1,
-		CASE WHEN d2<>0 THEN d2 ELSE (SELECT max(d2save) FROM farkle_sets WHERE gameid = :gameid AND playerid = :playerid AND roundnum = :roundnum AND handnum = :handnum AND d2save BETWEEN 1 AND 6) END d2,
-		CASE WHEN d3<>0 THEN d3 ELSE (SELECT max(d3save) FROM farkle_sets WHERE gameid = :gameid AND playerid = :playerid AND roundnum = :roundnum AND handnum = :handnum AND d3save BETWEEN 1 AND 6) END d3,
-		CASE WHEN d4<>0 THEN d4 ELSE (SELECT max(d4save) FROM farkle_sets WHERE gameid = :gameid AND playerid = :playerid AND roundnum = :roundnum AND handnum = :handnum AND d4save BETWEEN 1 AND 6) END d4,
-		CASE WHEN d5<>0 THEN d5 ELSE (SELECT max(d5save) FROM farkle_sets WHERE gameid = :gameid AND playerid = :playerid AND roundnum = :roundnum AND handnum = :handnum AND d5save BETWEEN 1 AND 6) END d5,
-		CASE WHEN d6<>0 THEN d6 ELSE (SELECT max(d6save) FROM farkle_sets WHERE gameid = :gameid AND playerid = :playerid AND roundnum = :roundnum AND handnum = :handnum AND d6save BETWEEN 1 AND 6) END d6
+		CASE WHEN d1<>0 THEN d1 ELSE (SELECT max(d1save) FROM farkle_sets WHERE gameid = :gameid_d1 AND playerid = :playerid_d1 AND roundnum = :roundnum_d1 AND handnum = :handnum_d1 AND d1save BETWEEN 1 AND 6) END d1,
+		CASE WHEN d2<>0 THEN d2 ELSE (SELECT max(d2save) FROM farkle_sets WHERE gameid = :gameid_d2 AND playerid = :playerid_d2 AND roundnum = :roundnum_d2 AND handnum = :handnum_d2 AND d2save BETWEEN 1 AND 6) END d2,
+		CASE WHEN d3<>0 THEN d3 ELSE (SELECT max(d3save) FROM farkle_sets WHERE gameid = :gameid_d3 AND playerid = :playerid_d3 AND roundnum = :roundnum_d3 AND handnum = :handnum_d3 AND d3save BETWEEN 1 AND 6) END d3,
+		CASE WHEN d4<>0 THEN d4 ELSE (SELECT max(d4save) FROM farkle_sets WHERE gameid = :gameid_d4 AND playerid = :playerid_d4 AND roundnum = :roundnum_d4 AND handnum = :handnum_d4 AND d4save BETWEEN 1 AND 6) END d4,
+		CASE WHEN d5<>0 THEN d5 ELSE (SELECT max(d5save) FROM farkle_sets WHERE gameid = :gameid_d5 AND playerid = :playerid_d5 AND roundnum = :roundnum_d5 AND handnum = :handnum_d5 AND d5save BETWEEN 1 AND 6) END d5,
+		CASE WHEN d6<>0 THEN d6 ELSE (SELECT max(d6save) FROM farkle_sets WHERE gameid = :gameid_d6 AND playerid = :playerid_d6 AND roundnum = :roundnum_d6 AND handnum = :handnum_d6 AND d6save BETWEEN 1 AND 6) END d6
 	FROM farkle_sets
-	WHERE gameid = :gameid AND playerid = :playerid AND roundnum = :roundnum AND setnum = :setnum";
+	WHERE gameid = :gameid_w AND playerid = :playerid_w AND roundnum = :roundnum_w AND setnum = :setnum";
 	$diceOnTable = db_query($sql, $params, SQL_SINGLE_ROW);
 	return ConvertTableToDiceArray( $diceOnTable );
 }
