@@ -459,7 +459,7 @@ a:hover {color: #ffffff; text-decoration: underline; }
 	color: gray;
 }
 .gamePlayersDiv {
-	margin: 10px 0 10px 0; 
+	margin: 10px 0 20px 0;
 }
 .playerCard
 {
@@ -1021,9 +1021,6 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a3a3a3', end
 		left: 65%;
 		font-size: 24px;
 		height: 30px; 
-	}
-	.gamePlayersDiv {
-		margin: 3px 0 3px 0; 
 	}
 	.playerCard
 	{
