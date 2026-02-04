@@ -1,6 +1,13 @@
 {
   "releases": [
     {
+      "version": "3.0.4",
+      "date": "2026-02-04",
+      "notes": [
+        "Additional performance improvements - reduced server polling for better efficiency"
+      ]
+    },
+    {
       "version": "3.0.3",
       "date": "2026-02-04",
       "notes": [
