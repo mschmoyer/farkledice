@@ -175,10 +175,15 @@ function FinishStaleGames( $test=0 )
 		 
 		if( $test )
 		{
-			$debug = str_replace( '\n', '<br>', $g_StaleMsgContent ); 
-			echo $debug; 
+			$debug = str_replace( '\n', '<br>', $g_StaleMsgContent );
+			echo $debug;
+			echo __FUNCTION__ . ": Finished $gamesFinished games.\n";
 		}
-		echo __FUNCTION__ . ": Finished $gamesFinished games.\n"; 
+		else
+		{
+			// Use debug logging instead of echo to avoid polluting JSON responses
+			BaseUtil_Debug( __FUNCTION__ . ": Finished $gamesFinished games.", 1 );
+		}
 	}
 }
 
