@@ -498,20 +498,21 @@ function Leaderboard_RecordEligibleGame($playerId, $gameId, $score, $roundsPlaye
 	// Get today's date in Central Time
 	$today = db_query("SELECT (NOW() AT TIME ZONE 'America/Chicago')::DATE", [], SQL_SINGLE_VALUE);
 
-	// Count existing eligible games today
-	$sql = "SELECT COUNT(*) FROM farkle_lb_daily_games WHERE playerid = :playerid AND lb_date = :today";
-	$count = db_query($sql, [':playerid' => $playerId, ':today' => $today], SQL_SINGLE_VALUE);
-	$gameSeq = (int)$count + 1;
-
-	// Insert the game record (counted only if within 20-game cap)
-	$counted = ($gameSeq <= 20) ? 'TRUE' : 'FALSE';
+	// Atomically compute game_seq and insert in a single statement to avoid race conditions
 	$sql = "INSERT INTO farkle_lb_daily_games (playerid, gameid, lb_date, game_seq, game_score, counted)
-		VALUES (:playerid, :gameid, :lb_date, :game_seq, :game_score, $counted)";
+		SELECT :playerid, :gameid, :lb_date,
+			COALESCE(MAX(game_seq), 0) + 1,
+			:game_score,
+			COALESCE(MAX(game_seq), 0) + 1 <= 20
+		FROM farkle_lb_daily_games
+		WHERE playerid = :playerid2 AND lb_date = :lb_date2
+		ON CONFLICT (playerid, gameid) DO NOTHING";
 	db_execute($sql, [
 		':playerid' => $playerId,
+		':playerid2' => $playerId,
 		':gameid' => $gameId,
 		':lb_date' => $today,
-		':game_seq' => $gameSeq,
+		':lb_date2' => $today,
 		':game_score' => $score
 	]);
 
