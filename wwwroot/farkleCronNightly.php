@@ -63,6 +63,11 @@
 	echo "Active Games: $activeGames"; 
 	
 	SendPushNotification( 1, $alert, $sound="newGameTone.aif" );
-	
+
+	// Leaderboard 2.0: Nightly maintenance
+	Leaderboard_ComputeAllTimeScores();
+	Leaderboard_SnapshotRanks();
+	Leaderboard_Cleanup();
+
 	exit(0);
 ?>

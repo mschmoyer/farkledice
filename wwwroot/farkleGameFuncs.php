@@ -14,7 +14,8 @@ require_once('farkleDiceScoring.php');
 require_once('farklePageFuncs.php');
 require_once('farkleTournament.php');
 require_once('iphone_funcs.php');
-require_once('farkleLevel.php'); 
+require_once('farkleLevel.php');
+require_once('farkleLeaderboard.php');
 
 // Who a game will be against
 define( 'GAME_WITH_RANDOM', 		0);		// Game against a random opponent
@@ -831,6 +832,16 @@ function FarkleSendUpdate( $playerid, $gameid )
 	}
 	$turnDataForReturning['show_emoji_picker'] = $showEmojiPicker;
 
+	// Include leaderboard feedback when game just finished
+	if( $turnDataForReturning['winningplayer'] > 0 && $memberOfGame )
+	{
+		$lbFeedback = Leaderboard_GetPostGameFeedback( $playerid );
+		if( $lbFeedback )
+		{
+			$turnDataForReturning['leaderboard_feedback'] = $lbFeedback;
+		}
+	}
+
 	return Array( $turnDataForReturning, $playerData, $setData, $diceOnTable, Ach_GetNewAchievement( $playerid ), $gameid, GetNewLevel( $playerid ), GetGameActivityLog( $gameid ) );
 }
 
@@ -1425,6 +1436,9 @@ function FarkleWinGame( $gameid, $winnerid, $reason = "", $sendEmail=1, $achieve
 			$sql = "UPDATE farkle_players SET wins = wins + 1 WHERE playerid = :playerid";
 			$result = db_execute($sql, [':playerid' => $winnerid]);
 
+			// Update win streak
+			db_execute("UPDATE farkle_players SET current_win_streak = current_win_streak + 1, best_win_streak = GREATEST(best_win_streak, current_win_streak + 1) WHERE playerid = :pid", [':pid' => $winnerid]);
+
 			BaseUtil_Debug( "Player $winnerid won game $gameid. Reason=[$reason]. GameWith=".GameWithToString($gameData['gamewith']).", MaxTurns={$gameData['maxturns']}", 1);
 
 			// 5xp for win + 1xp per player beyond the 2nd.
@@ -1436,6 +1450,9 @@ function FarkleWinGame( $gameid, $winnerid, $reason = "", $sendEmail=1, $achieve
 			$sql = "UPDATE farkle_players SET losses = losses + 1
 				WHERE playerid IN (SELECT playerid FROM farkle_games_players WHERE gameid = :gameid AND playerid != :winnerid)";
 			$result = db_execute($sql, [':gameid' => $gameid, ':winnerid' => $winnerid]);
+
+			// Reset loser win streaks
+			db_execute("UPDATE farkle_players SET current_win_streak = 0 WHERE playerid IN (SELECT playerid FROM farkle_games_players WHERE gameid = :gameid AND playerid != :winnerid)", [':gameid' => $gameid, ':winnerid' => $winnerid]);
 
 			// Check if the player has earned the unique games achievement.
 			Ach_CheckVsPlayers( $winnerid );
@@ -1472,6 +1489,14 @@ function FarkleWinGame( $gameid, $winnerid, $reason = "", $sendEmail=1, $achieve
 			}
 			// Award the winner the achievement for winning a tournament round.
 			Ach_AwardAchievement( $winnerid, ACH_TOURNEY_WINRND );
+		}
+	}
+
+	// Leaderboard 2.0: Record eligible game for all players
+	$lb2Players = db_query("SELECT gp.playerid, gp.playerscore, gp.playerround FROM farkle_games_players gp WHERE gp.gameid = :gameid", [':gameid' => $gameid], SQL_MULTI_ROW);
+	if ($lb2Players) {
+		foreach ($lb2Players as $lb2Row) {
+			Leaderboard_RecordEligibleGame($lb2Row['playerid'], $gameid, $lb2Row['playerscore'], $lb2Row['playerround'], (int)$gameData['gamewith']);
 		}
 	}
 }

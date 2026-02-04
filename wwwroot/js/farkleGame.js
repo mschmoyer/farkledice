@@ -350,8 +350,43 @@ function FarkleGameDisplayEnded() {
 			ShowEmojiPicker( gGameData.gameid );
 		}, 1000 );
 	}
+
+	// Show leaderboard feedback toast if available
+	if( gGameData.leaderboard_feedback ) {
+		setTimeout( function() {
+			showLeaderboardToast( gGameData.leaderboard_feedback );
+		}, 1500 );
+	}
 }
 
+
+function showLeaderboardToast( feedback ) {
+	if( !feedback || !feedback.is_eligible ) return;
+
+	var lb2Toast = document.getElementById('lb2Toast');
+	if( !lb2Toast ) return;
+
+	var toastText = '';
+	if( feedback.games_remaining == 0 ) {
+		toastText = 'All 20 daily games played! Your score: ' + addCommas(feedback.daily_score);
+	} else if( feedback.rank_in_top10 > 0 ) {
+		toastText = 'Ranked #' + feedback.rank_in_top10 + ' in your daily top 10! ' + feedback.games_remaining + ' games remaining.';
+	} else {
+		toastText = "Didn't crack your top 10. " + feedback.games_remaining + ' games remaining.';
+	}
+
+	var lb2ToastText = document.getElementById('lb2ToastText');
+	if( lb2ToastText ) {
+		lb2ToastText.textContent = toastText;
+	} else {
+		lb2Toast.textContent = toastText;
+	}
+	lb2Toast.style.display = 'block';
+
+	setTimeout( function() {
+		lb2Toast.style.display = 'none';
+	}, 5000 );
+}
 
 function FarkleGameUpdateRoundScore() {
 	var totalScore = gRoundScore + gTurnScore;

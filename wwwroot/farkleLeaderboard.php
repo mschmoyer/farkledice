@@ -8,6 +8,7 @@
 */
 require_once('../includes/baseutil.php');
 require_once('dbutil.php');
+require_once('farkleLeaderboardStats.php');
 require_once('farkleGameFuncs.php'); 
 
 // This parameter will tell us if the page did something to dirty the leaderboard (such as this player won)
@@ -457,5 +458,987 @@ function Leaderboard_RefreshDaily()
 	if( $mvpPlayerid )
 		Ach_AwardAchievement( $mvpPlayerid, ACH_LB_HIGHESTRND );
 
+}
+
+// ============================================================
+// Leaderboard 2.0: Daily Score Functions
+// ============================================================
+
+/**
+ * Record an eligible game for daily leaderboard tracking.
+ * Called after each game finishes for every player in the game.
+ *
+ * @param int $playerId The player to record for
+ * @param int $gameId The completed game
+ * @param int $score The player's final score
+ * @param int $roundsPlayed Number of rounds played
+ * @param int $gameWith Game type (0=random, 1=friends, 2=solo)
+ */
+function Leaderboard_RecordEligibleGame($playerId, $gameId, $score, $roundsPlayed, $gameWith)
+{
+	// Skip solo games
+	if ($gameWith == GAME_WITH_SOLO) {
+		return;
+	}
+
+	// Skip games where any opponent is a bot
+	$sql = "SELECT COUNT(*) FROM farkle_games_players gp
+		JOIN farkle_players p ON gp.playerid = p.playerid
+		WHERE gp.gameid = :gameid AND p.is_bot = true AND gp.playerid != :playerid";
+	$botCount = db_query($sql, [':gameid' => $gameId, ':playerid' => $playerId], SQL_SINGLE_VALUE);
+	if ($botCount > 0) {
+		return;
+	}
+
+	// Skip low scores or very short games
+	if ($score < 1000 || $roundsPlayed < 3) {
+		return;
+	}
+
+	// Get today's date in Central Time
+	$today = db_query("SELECT (NOW() AT TIME ZONE 'America/Chicago')::DATE", [], SQL_SINGLE_VALUE);
+
+	// Atomically compute game_seq and insert in a single statement to avoid race conditions
+	$sql = "INSERT INTO farkle_lb_daily_games (playerid, gameid, lb_date, game_seq, game_score, counted)
+		SELECT :playerid, :gameid, :lb_date,
+			COALESCE(MAX(game_seq), 0) + 1,
+			:game_score,
+			COALESCE(MAX(game_seq), 0) + 1 <= 20
+		FROM farkle_lb_daily_games
+		WHERE playerid = :playerid2 AND lb_date = :lb_date2
+		ON CONFLICT (playerid, gameid) DO NOTHING";
+	db_execute($sql, [
+		':playerid' => $playerId,
+		':playerid2' => $playerId,
+		':gameid' => $gameId,
+		':lb_date' => $today,
+		':lb_date2' => $today,
+		':game_score' => $score
+	]);
+
+	// Recompute daily score
+	Leaderboard_RecomputeDailyScore($playerId, $today);
+}
+
+/**
+ * Recompute a player's daily leaderboard score for a given date.
+ * Takes the top 10 scores from their first 20 eligible games.
+ *
+ * @param int $playerId The player
+ * @param string $date The date (YYYY-MM-DD)
+ */
+function Leaderboard_RecomputeDailyScore($playerId, $date)
+{
+	// Get top 10 scores from first 20 games
+	$sql = "SELECT game_score FROM farkle_lb_daily_games
+		WHERE playerid = :playerid AND lb_date = :lb_date AND game_seq <= 20
+		ORDER BY game_score DESC LIMIT 10";
+	$topScores = db_query($sql, [':playerid' => $playerId, ':lb_date' => $date], SQL_MULTI_ROW);
+
+	$top10Score = 0;
+	if ($topScores) {
+		foreach ($topScores as $row) {
+			$top10Score += (int)$row['game_score'];
+		}
+	}
+
+	// Get total games played (within 20-game cap)
+	$sql = "SELECT COUNT(*) FROM farkle_lb_daily_games
+		WHERE playerid = :playerid AND lb_date = :lb_date AND game_seq <= 20";
+	$gamesPlayed = (int)db_query($sql, [':playerid' => $playerId, ':lb_date' => $date], SQL_SINGLE_VALUE);
+
+	$qualifies = ($gamesPlayed >= 3);
+
+	// Update counted flags: first reset all, then mark top 10
+	db_execute("UPDATE farkle_lb_daily_games SET counted = FALSE WHERE playerid = :playerid AND lb_date = :lb_date",
+		[':playerid' => $playerId, ':lb_date' => $date]);
+
+	db_execute("UPDATE farkle_lb_daily_games SET counted = TRUE WHERE id IN (
+		SELECT id FROM farkle_lb_daily_games
+		WHERE playerid = :playerid AND lb_date = :lb_date AND game_seq <= 20
+		ORDER BY game_score DESC LIMIT 10
+	)", [':playerid' => $playerId, ':lb_date' => $date]);
+
+	// Upsert into daily scores
+	$sql = "INSERT INTO farkle_lb_daily_scores (playerid, lb_date, games_played, top10_score, qualifies)
+		VALUES (:playerid, :lb_date, :games_played, :top10_score, :qualifies)
+		ON CONFLICT (playerid, lb_date) DO UPDATE SET
+			games_played = EXCLUDED.games_played,
+			top10_score = EXCLUDED.top10_score,
+			qualifies = EXCLUDED.qualifies";
+	db_execute($sql, [
+		':playerid' => $playerId,
+		':lb_date' => $date,
+		':games_played' => $gamesPlayed,
+		':top10_score' => $top10Score,
+		':qualifies' => $qualifies ? 'true' : 'false'
+	]);
+}
+
+/**
+ * Recompute weekly scores for all players who have daily scores this week.
+ * Takes each player's top 5 qualifying daily scores from the current week (Mon-Sun).
+ * Called hourly from cron.
+ */
+function Leaderboard_ComputeWeeklyScores()
+{
+	// Get Monday of current week and end of week (next Monday) in Central Time
+	$weekStart = db_query("SELECT date_trunc('week', (NOW() AT TIME ZONE 'America/Chicago'))::DATE", [], SQL_SINGLE_VALUE);
+	$weekEnd = db_query("SELECT (date_trunc('week', (NOW() AT TIME ZONE 'America/Chicago')) + INTERVAL '7 days')::DATE", [], SQL_SINGLE_VALUE);
+
+	$sql = "
+	INSERT INTO farkle_lb_weekly_scores (playerid, week_start, daily_scores_used, top5_score, qualifies)
+	SELECT
+		sub.playerid,
+		:week_start,
+		sub.days_used,
+		sub.top5,
+		(sub.days_used >= 3) as qualifies
+	FROM (
+		SELECT
+			playerid,
+			COUNT(*) as days_used,
+			SUM(daily_score) as top5
+		FROM (
+			SELECT
+				playerid,
+				top10_score as daily_score,
+				ROW_NUMBER() OVER (PARTITION BY playerid ORDER BY top10_score DESC) as rn
+			FROM farkle_lb_daily_scores
+			WHERE lb_date >= :week_start2
+			  AND lb_date < :week_end
+			  AND qualifies = TRUE
+		) ranked
+		WHERE rn <= 5
+		GROUP BY playerid
+	) sub
+	ON CONFLICT (playerid, week_start) DO UPDATE SET
+		daily_scores_used = EXCLUDED.daily_scores_used,
+		top5_score = EXCLUDED.top5_score,
+		qualifies = EXCLUDED.qualifies
+	";
+
+	db_execute($sql, [
+		':week_start' => $weekStart,
+		':week_start2' => $weekStart,
+		':week_end' => $weekEnd
+	]);
+}
+
+/**
+ * Recompute all-time leaderboard scores for all players from their complete daily score history.
+ * Called nightly from cron.
+ */
+function Leaderboard_ComputeAllTimeScores()
+{
+	// Compute daily-based stats (kept for historical tracking)
+	$sql = "
+	INSERT INTO farkle_lb_alltime (playerid, qualifying_days, total_daily_score, avg_daily_score, best_day_score, qualifies, last_updated)
+	SELECT
+		playerid,
+		COUNT(*) as qualifying_days,
+		SUM(top10_score) as total_daily_score,
+		AVG(top10_score) as avg_daily_score,
+		MAX(top10_score) as best_day_score,
+		FALSE,
+		NOW()
+	FROM farkle_lb_daily_scores
+	WHERE qualifies = TRUE
+	GROUP BY playerid
+	ON CONFLICT (playerid) DO UPDATE SET
+		qualifying_days = EXCLUDED.qualifying_days,
+		total_daily_score = EXCLUDED.total_daily_score,
+		avg_daily_score = EXCLUDED.avg_daily_score,
+		best_day_score = EXCLUDED.best_day_score,
+		last_updated = NOW()
+	";
+	db_execute($sql);
+
+	// Compute per-game stats (primary metric: avg game score, qualifying = 50+ games)
+	$sql = "
+	UPDATE farkle_lb_alltime a SET
+		avg_game_score = sub.avg_game_score,
+		best_game_score = sub.best_game_score,
+		total_games = sub.total_games,
+		qualifies = (sub.total_games >= 50)
+	FROM (
+		SELECT playerid,
+			ROUND(AVG(game_score), 2) as avg_game_score,
+			MAX(game_score) as best_game_score,
+			COUNT(*) as total_games
+		FROM farkle_lb_daily_games
+		GROUP BY playerid
+	) sub
+	WHERE a.playerid = sub.playerid
+	";
+	db_execute($sql);
+}
+
+/**
+ * Snapshot current ranks into prev_rank for movement arrows.
+ * For daily: copies yesterday's rank as prev_rank on today's rows.
+ * For weekly: snapshots current week ranks as prev_rank.
+ * For alltime: snapshots current ranks as prev_rank.
+ * Called nightly from cron.
+ */
+function Leaderboard_SnapshotRanks()
+{
+	$today = db_query("SELECT (NOW() AT TIME ZONE 'America/Chicago')::DATE", [], SQL_SINGLE_VALUE);
+	$yesterday = db_query("SELECT ((NOW() AT TIME ZONE 'America/Chicago')::DATE - INTERVAL '1 day')::DATE", [], SQL_SINGLE_VALUE);
+
+	// Update today's daily prev_rank from yesterday's rank
+	$sql = "
+	UPDATE farkle_lb_daily_scores ds_today
+	SET prev_rank = ds_yesterday.final_rank
+	FROM (
+		SELECT playerid, ROW_NUMBER() OVER (ORDER BY top10_score DESC) as final_rank
+		FROM farkle_lb_daily_scores
+		WHERE lb_date = :yesterday AND qualifies = TRUE
+	) ds_yesterday
+	WHERE ds_today.playerid = ds_yesterday.playerid
+	  AND ds_today.lb_date = :today
+	";
+	db_execute($sql, [':yesterday' => $yesterday, ':today' => $today]);
+
+	// Snapshot weekly ranks: store current rank as prev_rank for current week
+	$weekStart = db_query("SELECT date_trunc('week', (NOW() AT TIME ZONE 'America/Chicago'))::DATE", [], SQL_SINGLE_VALUE);
+	$prevWeekStart = db_query("SELECT (date_trunc('week', (NOW() AT TIME ZONE 'America/Chicago')) - INTERVAL '7 days')::DATE", [], SQL_SINGLE_VALUE);
+
+	$sql = "
+	UPDATE farkle_lb_weekly_scores ws_current
+	SET prev_rank = ws_prev.final_rank
+	FROM (
+		SELECT playerid, ROW_NUMBER() OVER (ORDER BY top5_score DESC) as final_rank
+		FROM farkle_lb_weekly_scores
+		WHERE week_start = :prev_week AND qualifies = TRUE
+	) ws_prev
+	WHERE ws_current.playerid = ws_prev.playerid
+	  AND ws_current.week_start = :current_week
+	";
+	db_execute($sql, [':prev_week' => $prevWeekStart, ':current_week' => $weekStart]);
+
+	// Snapshot alltime ranks: copy current computed rank into prev_rank
+	$sql = "
+	UPDATE farkle_lb_alltime at_main
+	SET prev_rank = ranked.current_rank
+	FROM (
+		SELECT playerid, ROW_NUMBER() OVER (ORDER BY avg_daily_score DESC) as current_rank
+		FROM farkle_lb_alltime
+		WHERE qualifies = TRUE
+	) ranked
+	WHERE at_main.playerid = ranked.playerid
+	";
+	db_execute($sql);
+}
+
+/**
+ * Clean up old daily game detail records.
+ * Keeps 90 days of game-level detail; daily scores stay forever.
+ * Called nightly from cron.
+ */
+function Leaderboard_Cleanup()
+{
+	db_execute("DELETE FROM farkle_lb_daily_games WHERE lb_date < (NOW() AT TIME ZONE 'America/Chicago')::DATE - INTERVAL '90 days'");
+}
+
+/**
+ * Get a player's daily leaderboard progress for today.
+ *
+ * @param int $playerId The player
+ * @return array Associative array with games_played, games_max, daily_score, top_scores, qualifies
+ */
+function Leaderboard_GetDailyProgress($playerId)
+{
+	// Get today's date in Central Time
+	$today = db_query("SELECT (NOW() AT TIME ZONE 'America/Chicago')::DATE", [], SQL_SINGLE_VALUE);
+
+	// Get daily score summary
+	$sql = "SELECT games_played, top10_score, qualifies FROM farkle_lb_daily_scores
+		WHERE playerid = :playerid AND lb_date = :lb_date";
+	$summary = db_query($sql, [':playerid' => $playerId, ':lb_date' => $today], SQL_SINGLE_ROW);
+
+	// Get individual game scores (within 20-game cap, sorted by score desc)
+	$sql = "SELECT game_score, counted FROM farkle_lb_daily_games
+		WHERE playerid = :playerid AND lb_date = :lb_date AND game_seq <= 20
+		ORDER BY game_score DESC";
+	$gameScores = db_query($sql, [':playerid' => $playerId, ':lb_date' => $today], SQL_MULTI_ROW);
+
+	if (!$summary) {
+		return [
+			'games_played' => 0,
+			'games_max' => 20,
+			'daily_score' => 0,
+			'top_scores' => [],
+			'qualifies' => false
+		];
+	}
+
+	$topScores = [];
+	if ($gameScores) {
+		foreach ($gameScores as $gs) {
+			$topScores[] = (int)$gs['game_score'];
+		}
+	}
+
+	return [
+		'games_played' => (int)$summary['games_played'],
+		'games_max' => 20,
+		'daily_score' => (int)$summary['top10_score'],
+		'top_scores' => $topScores,
+		'qualifies' => (bool)$summary['qualifies']
+	];
+}
+
+// ============================================================
+// Leaderboard 2.0: Board Query Functions
+// ============================================================
+
+/**
+ * Get leaderboard data for a specific tier and scope.
+ *
+ * @param int $playerId The requesting player
+ * @param string $tier 'daily', 'weekly', or 'alltime'
+ * @param string $scope 'friends' or 'everyone'
+ * @return array Leaderboard response with entries and myScore
+ */
+/**
+ * Build the featured stat data for the leaderboard response.
+ */
+function Leaderboard_BuildFeaturedStat($date)
+{
+	$featured = LeaderboardStats_GetFeaturedStat();
+	$topEntries = LeaderboardStats_GetTopForDate($featured['type'], $date, 1);
+
+	$leader = '';
+	if (!empty($topEntries)) {
+		$top = $topEntries[0];
+		$val = is_numeric($top['stat_value']) ? round((float)$top['stat_value'], 1) : $top['stat_value'];
+		$leader = $top['username'] . ' — ' . $val;
+	}
+
+	return [
+		'type' => $featured['type'],
+		'title' => $featured['name'],
+		'label' => "Today's Featured Stat",
+		'leader' => $leader
+	];
+}
+
+/**
+ * Get all player stat values for a given stat type and date.
+ * Returns associative array keyed by playerid.
+ */
+function Leaderboard_GetStatValuesForDate($statType, $date)
+{
+	$sql = "SELECT playerid, stat_value FROM farkle_lb_stats
+		WHERE stat_type = :stat_type AND lb_date = :lb_date";
+	$rows = db_query($sql, [':stat_type' => $statType, ':lb_date' => $date], SQL_MULTI_ROW);
+
+	$values = [];
+	if ($rows) {
+		foreach ($rows as $row) {
+			$val = (float)$row['stat_value'];
+			// Format: round to 1 decimal for rates/consistency, integer for scores/streaks
+			if ($statType === 'farkle_rate' || $statType === 'consistency') {
+				$values[(int)$row['playerid']] = round($val, 1);
+			} else {
+				$values[(int)$row['playerid']] = (int)$val;
+			}
+		}
+	}
+	return $values;
+}
+
+function Leaderboard_GetBoard($playerId, $tier, $scope)
+{
+	// Validate inputs
+	if (!in_array($tier, ['daily', 'weekly', 'alltime'])) {
+		$tier = 'daily';
+	}
+	if (!in_array($scope, ['friends', 'everyone'])) {
+		$scope = 'friends';
+	}
+
+	switch ($tier) {
+		case 'daily':
+			return Leaderboard_GetBoard_Daily($playerId, $scope);
+		case 'weekly':
+			return Leaderboard_GetBoard_Weekly($playerId, $scope);
+		case 'alltime':
+			return Leaderboard_GetBoard_Alltime($playerId, $scope);
+		default:
+			return ['entries' => [], 'myScore' => null, 'tier' => $tier, 'scope' => $scope];
+	}
+}
+
+/**
+ * Get daily leaderboard data.
+ *
+ * @param int $playerId The requesting player
+ * @param string $scope 'friends' or 'everyone'
+ * @return array
+ */
+function Leaderboard_GetBoard_Daily($playerId, $scope)
+{
+	$today = db_query("SELECT (NOW() AT TIME ZONE 'America/Chicago')::DATE", [], SQL_SINGLE_VALUE);
+
+	if ($scope === 'friends') {
+		$sql = "SELECT ds.playerid, p.username, ds.games_played, ds.top10_score, ds.rank, ds.prev_rank
+			FROM farkle_lb_daily_scores ds
+			JOIN farkle_players p ON ds.playerid = p.playerid
+			WHERE ds.lb_date = :today
+			  AND ds.qualifies = TRUE
+			  AND (ds.playerid = :pid OR ds.playerid IN (
+			    SELECT CASE WHEN f.playerid = :pid2 THEN f.friendid ELSE f.playerid END
+			    FROM farkle_friends f
+			    WHERE (f.playerid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
+			  ))
+			ORDER BY ds.top10_score DESC
+			LIMIT 25";
+		$rows = db_query($sql, [
+			':today' => $today,
+			':pid' => $playerId,
+			':pid2' => $playerId,
+			':pid3' => $playerId,
+			':pid4' => $playerId
+		], SQL_MULTI_ROW);
+	} else {
+		$sql = "SELECT ds.playerid, p.username, ds.games_played, ds.top10_score, ds.rank, ds.prev_rank
+			FROM farkle_lb_daily_scores ds
+			JOIN farkle_players p ON ds.playerid = p.playerid
+			WHERE ds.lb_date = :today
+			  AND ds.qualifies = TRUE
+			ORDER BY ds.top10_score DESC
+			LIMIT 25";
+		$rows = db_query($sql, [':today' => $today], SQL_MULTI_ROW);
+	}
+
+	$entries = [];
+	if ($rows) {
+		$rank = 1;
+		foreach ($rows as $row) {
+			$entries[] = [
+				'playerId' => (int)$row['playerid'],
+				'username' => $row['username'],
+				'score' => (int)$row['top10_score'],
+				'gamesPlayed' => (int)$row['games_played'],
+				'rank' => $rank,
+				'prevRank' => $row['prev_rank'] !== null ? (int)$row['prev_rank'] : null,
+				'isMe' => ((int)$row['playerid'] === (int)$playerId)
+			];
+			$rank++;
+		}
+	}
+
+	// Get myScore separately if not in top 25
+	$myScore = Leaderboard_GetMyScore_Daily($playerId, $today, $entries, $scope);
+
+	// Get featured stat and attach per-player values
+	$featuredStat = Leaderboard_BuildFeaturedStat($today);
+	$statValues = Leaderboard_GetStatValuesForDate($featuredStat['type'], $today);
+	for ($i = 0; $i < count($entries); $i++) {
+		$pid = $entries[$i]['playerId'];
+		$entries[$i]['statValue'] = isset($statValues[$pid]) ? $statValues[$pid] : null;
+	}
+	if ($myScore) {
+		$pid = $myScore['playerId'];
+		$myScore['statValue'] = isset($statValues[$pid]) ? $statValues[$pid] : null;
+	}
+
+	return [
+		'entries' => $entries,
+		'myScore' => $myScore,
+		'featuredStat' => $featuredStat,
+		'tier' => 'daily',
+		'scope' => $scope
+	];
+}
+
+/**
+ * Get the current player's daily score data.
+ *
+ * @param int $playerId
+ * @param string $today
+ * @param array $entries Already-fetched entries to check if player is included
+ * @param string $scope
+ * @return array
+ */
+function Leaderboard_GetMyScore_Daily($playerId, $today, $entries, $scope)
+{
+	// Check if already in the entries
+	foreach ($entries as $entry) {
+		if ($entry['isMe']) {
+			return $entry;
+		}
+	}
+
+	// Query the player's own data
+	$sql = "SELECT ds.playerid, p.username, ds.games_played, ds.top10_score, ds.qualifies, ds.rank, ds.prev_rank
+		FROM farkle_lb_daily_scores ds
+		JOIN farkle_players p ON ds.playerid = p.playerid
+		WHERE ds.playerid = :playerid AND ds.lb_date = :today";
+	$row = db_query($sql, [':playerid' => $playerId, ':today' => $today], SQL_SINGLE_ROW);
+
+	if (!$row) {
+		return [
+			'playerId' => (int)$playerId,
+			'username' => isset($_SESSION['username']) ? $_SESSION['username'] : '',
+			'score' => 0,
+			'gamesPlayed' => 0,
+			'rank' => null,
+			'prevRank' => null,
+			'isMe' => true
+		];
+	}
+
+	// Compute the player's actual rank within the chosen scope
+	if ($scope === 'everyone') {
+		$sql = "SELECT COUNT(*) + 1 FROM farkle_lb_daily_scores
+			WHERE lb_date = :today AND qualifies = TRUE AND top10_score > :score";
+		$myRank = (int)db_query($sql, [':today' => $today, ':score' => (int)$row['top10_score']], SQL_SINGLE_VALUE);
+	} else {
+		$sql = "SELECT COUNT(*) + 1 FROM farkle_lb_daily_scores ds
+			WHERE ds.lb_date = :today AND ds.qualifies = TRUE AND ds.top10_score > :score
+			AND (ds.playerid = :pid OR ds.playerid IN (
+			    SELECT CASE WHEN f.playerid = :pid2 THEN f.friendid ELSE f.playerid END
+			    FROM farkle_friends f
+			    WHERE (f.playerid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
+			))";
+		$myRank = (int)db_query($sql, [
+			':today' => $today,
+			':score' => (int)$row['top10_score'],
+			':pid' => $playerId,
+			':pid2' => $playerId,
+			':pid3' => $playerId,
+			':pid4' => $playerId
+		], SQL_SINGLE_VALUE);
+	}
+
+	return [
+		'playerId' => (int)$row['playerid'],
+		'username' => $row['username'],
+		'score' => (int)$row['top10_score'],
+		'gamesPlayed' => (int)$row['games_played'],
+		'rank' => (bool)$row['qualifies'] ? $myRank : null,
+		'prevRank' => $row['prev_rank'] !== null ? (int)$row['prev_rank'] : null,
+		'isMe' => true
+	];
+}
+
+/**
+ * Get weekly leaderboard data.
+ *
+ * @param int $playerId The requesting player
+ * @param string $scope 'friends' or 'everyone'
+ * @return array
+ */
+function Leaderboard_GetBoard_Weekly($playerId, $scope)
+{
+	$weekStart = db_query("SELECT date_trunc('week', (NOW() AT TIME ZONE 'America/Chicago'))::DATE", [], SQL_SINGLE_VALUE);
+
+	if ($scope === 'friends') {
+		$sql = "SELECT ws.playerid, p.username, ws.daily_scores_used, ws.top5_score, ws.rank, ws.prev_rank
+			FROM farkle_lb_weekly_scores ws
+			JOIN farkle_players p ON ws.playerid = p.playerid
+			WHERE ws.week_start = :week_start
+			  AND ws.qualifies = TRUE
+			  AND (ws.playerid = :pid OR ws.playerid IN (
+			    SELECT CASE WHEN f.playerid = :pid2 THEN f.friendid ELSE f.playerid END
+			    FROM farkle_friends f
+			    WHERE (f.playerid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
+			  ))
+			ORDER BY ws.top5_score DESC
+			LIMIT 25";
+		$rows = db_query($sql, [
+			':week_start' => $weekStart,
+			':pid' => $playerId,
+			':pid2' => $playerId,
+			':pid3' => $playerId,
+			':pid4' => $playerId
+		], SQL_MULTI_ROW);
+	} else {
+		$sql = "SELECT ws.playerid, p.username, ws.daily_scores_used, ws.top5_score, ws.rank, ws.prev_rank
+			FROM farkle_lb_weekly_scores ws
+			JOIN farkle_players p ON ws.playerid = p.playerid
+			WHERE ws.week_start = :week_start
+			  AND ws.qualifies = TRUE
+			ORDER BY ws.top5_score DESC
+			LIMIT 25";
+		$rows = db_query($sql, [':week_start' => $weekStart], SQL_MULTI_ROW);
+	}
+
+	$entries = [];
+	if ($rows) {
+		$rank = 1;
+		foreach ($rows as $row) {
+			$entries[] = [
+				'playerId' => (int)$row['playerid'],
+				'username' => $row['username'],
+				'score' => (int)$row['top5_score'],
+				'daysPlayed' => (int)$row['daily_scores_used'],
+				'rank' => $rank,
+				'prevRank' => $row['prev_rank'] !== null ? (int)$row['prev_rank'] : null,
+				'isMe' => ((int)$row['playerid'] === (int)$playerId)
+			];
+			$rank++;
+		}
+	}
+
+	// Get myScore separately if not in top 25
+	$myScore = Leaderboard_GetMyScore_Weekly($playerId, $weekStart, $entries, $scope);
+
+	// Get day-by-day breakdown for current player
+	$dayScores = Leaderboard_GetWeekDayScores($playerId, $weekStart);
+
+	// Get featured stat and attach per-player values
+	$today = db_query("SELECT (NOW() AT TIME ZONE 'America/Chicago')::DATE", [], SQL_SINGLE_VALUE);
+	$featuredStat = Leaderboard_BuildFeaturedStat($today);
+	$statValues = Leaderboard_GetStatValuesForDate($featuredStat['type'], $today);
+	for ($i = 0; $i < count($entries); $i++) {
+		$pid = $entries[$i]['playerId'];
+		$entries[$i]['statValue'] = isset($statValues[$pid]) ? $statValues[$pid] : null;
+	}
+	if ($myScore) {
+		$pid = $myScore['playerId'];
+		$myScore['statValue'] = isset($statValues[$pid]) ? $statValues[$pid] : null;
+	}
+
+	return [
+		'entries' => $entries,
+		'myScore' => $myScore,
+		'dayScores' => $dayScores,
+		'featuredStat' => $featuredStat,
+		'tier' => 'weekly',
+		'scope' => $scope
+	];
+}
+
+/**
+ * Get the current player's weekly score data.
+ *
+ * @param int $playerId
+ * @param string $weekStart
+ * @param array $entries
+ * @param string $scope
+ * @return array
+ */
+function Leaderboard_GetMyScore_Weekly($playerId, $weekStart, $entries, $scope)
+{
+	// Check if already in the entries
+	foreach ($entries as $entry) {
+		if ($entry['isMe']) {
+			return $entry;
+		}
+	}
+
+	$sql = "SELECT ws.playerid, p.username, ws.daily_scores_used, ws.top5_score, ws.qualifies, ws.rank, ws.prev_rank
+		FROM farkle_lb_weekly_scores ws
+		JOIN farkle_players p ON ws.playerid = p.playerid
+		WHERE ws.playerid = :playerid AND ws.week_start = :week_start";
+	$row = db_query($sql, [':playerid' => $playerId, ':week_start' => $weekStart], SQL_SINGLE_ROW);
+
+	if (!$row) {
+		return [
+			'playerId' => (int)$playerId,
+			'username' => isset($_SESSION['username']) ? $_SESSION['username'] : '',
+			'score' => 0,
+			'daysPlayed' => 0,
+			'rank' => null,
+			'prevRank' => null,
+			'isMe' => true
+		];
+	}
+
+	// Compute actual rank within scope
+	if ($scope === 'everyone') {
+		$sql = "SELECT COUNT(*) + 1 FROM farkle_lb_weekly_scores
+			WHERE week_start = :week_start AND qualifies = TRUE AND top5_score > :score";
+		$myRank = (int)db_query($sql, [':week_start' => $weekStart, ':score' => (int)$row['top5_score']], SQL_SINGLE_VALUE);
+	} else {
+		$sql = "SELECT COUNT(*) + 1 FROM farkle_lb_weekly_scores ws
+			WHERE ws.week_start = :week_start AND ws.qualifies = TRUE AND ws.top5_score > :score
+			AND (ws.playerid = :pid OR ws.playerid IN (
+			    SELECT CASE WHEN f.playerid = :pid2 THEN f.friendid ELSE f.playerid END
+			    FROM farkle_friends f
+			    WHERE (f.playerid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
+			))";
+		$myRank = (int)db_query($sql, [
+			':week_start' => $weekStart,
+			':score' => (int)$row['top5_score'],
+			':pid' => $playerId,
+			':pid2' => $playerId,
+			':pid3' => $playerId,
+			':pid4' => $playerId
+		], SQL_SINGLE_VALUE);
+	}
+
+	return [
+		'playerId' => (int)$row['playerid'],
+		'username' => $row['username'],
+		'score' => (int)$row['top5_score'],
+		'daysPlayed' => (int)$row['daily_scores_used'],
+		'rank' => (bool)$row['qualifies'] ? $myRank : null,
+		'prevRank' => $row['prev_rank'] !== null ? (int)$row['prev_rank'] : null,
+		'isMe' => true
+	];
+}
+
+/**
+ * Get day-by-day daily scores for the current week (Mon-Sun) for a player.
+ *
+ * @param int $playerId
+ * @param string $weekStart Monday date of the current week
+ * @return array Array of day score objects
+ */
+function Leaderboard_GetWeekDayScores($playerId, $weekStart)
+{
+	$today = db_query("SELECT (NOW() AT TIME ZONE 'America/Chicago')::DATE", [], SQL_SINGLE_VALUE);
+	$dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+	// Get week end date
+	$weekEnd = db_query("SELECT (:week_start::DATE + INTERVAL '7 days')::DATE", [':week_start' => $weekStart], SQL_SINGLE_VALUE);
+
+	// Get all daily scores for this player in the current week (Mon through Sun)
+	$sql = "SELECT lb_date, top10_score, qualifies FROM farkle_lb_daily_scores
+		WHERE playerid = :playerid
+		AND lb_date >= :week_start
+		AND lb_date < :week_end
+		ORDER BY lb_date";
+	$rows = db_query($sql, [
+		':playerid' => $playerId,
+		':week_start' => $weekStart,
+		':week_end' => $weekEnd
+	], SQL_MULTI_ROW);
+
+	// Index by date for easy lookup
+	$scoresByDate = [];
+	if ($rows) {
+		foreach ($rows as $row) {
+			$scoresByDate[$row['lb_date']] = $row;
+		}
+	}
+
+	// Generate each day of the week using date arithmetic
+	$dayDates = db_query("SELECT generate_series(0, 6) as day_offset,
+		(:week_start::DATE + generate_series(0, 6) * INTERVAL '1 day')::DATE as day_date",
+		[':week_start' => $weekStart], SQL_MULTI_ROW);
+
+	$dayScores = [];
+	if ($dayDates) {
+		foreach ($dayDates as $idx => $dayRow) {
+			$dayDate = $dayRow['day_date'];
+			$state = 'future';
+			$score = 0;
+
+			if ($dayDate === $today) {
+				$state = 'today';
+			} elseif ($dayDate < $today) {
+				$state = 'played';
+			}
+
+			if (isset($scoresByDate[$dayDate])) {
+				$score = (int)$scoresByDate[$dayDate]['top10_score'];
+				if ($state === 'future') {
+					$state = 'played'; // Has data, so it was played
+				}
+			} elseif ($state === 'played') {
+				$state = 'missed'; // Past day with no data
+			}
+
+			$dayScores[] = [
+				'day' => $dayNames[$idx],
+				'date' => $dayDate,
+				'score' => $score,
+				'state' => $state
+			];
+		}
+	}
+
+	return $dayScores;
+}
+
+/**
+ * Get all-time leaderboard data.
+ *
+ * @param int $playerId The requesting player
+ * @param string $scope 'friends' or 'everyone'
+ * @return array
+ */
+function Leaderboard_GetBoard_Alltime($playerId, $scope)
+{
+	if ($scope === 'friends') {
+		$sql = "SELECT at.playerid, p.username, at.avg_game_score, at.best_game_score,
+				at.total_games, at.rank, at.prev_rank
+			FROM farkle_lb_alltime at
+			JOIN farkle_players p ON at.playerid = p.playerid
+			WHERE at.qualifies = TRUE
+			  AND (at.playerid = :pid OR at.playerid IN (
+			    SELECT CASE WHEN f.playerid = :pid2 THEN f.friendid ELSE f.playerid END
+			    FROM farkle_friends f
+			    WHERE (f.playerid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
+			  ))
+			ORDER BY at.avg_game_score DESC
+			LIMIT 25";
+		$rows = db_query($sql, [
+			':pid' => $playerId,
+			':pid2' => $playerId,
+			':pid3' => $playerId,
+			':pid4' => $playerId
+		], SQL_MULTI_ROW);
+	} else {
+		$sql = "SELECT at.playerid, p.username, at.avg_game_score, at.best_game_score,
+				at.total_games, at.rank, at.prev_rank
+			FROM farkle_lb_alltime at
+			JOIN farkle_players p ON at.playerid = p.playerid
+			WHERE at.qualifies = TRUE
+			ORDER BY at.avg_game_score DESC
+			LIMIT 25";
+		$rows = db_query($sql, [], SQL_MULTI_ROW);
+	}
+
+	$entries = [];
+	if ($rows) {
+		$rank = 1;
+		foreach ($rows as $row) {
+			$entries[] = [
+				'playerId' => (int)$row['playerid'],
+				'username' => $row['username'],
+				'avgGameScore' => round((float)$row['avg_game_score']),
+				'bestGameScore' => (int)$row['best_game_score'],
+				'totalGames' => (int)$row['total_games'],
+				'rank' => $rank,
+				'prevRank' => $row['prev_rank'] !== null ? (int)$row['prev_rank'] : null,
+				'isMe' => ((int)$row['playerid'] === (int)$playerId)
+			];
+			$rank++;
+		}
+	}
+
+	// Get myScore separately if not in top 25
+	$myScore = Leaderboard_GetMyScore_Alltime($playerId, $entries, $scope);
+
+	return [
+		'entries' => $entries,
+		'myScore' => $myScore,
+		'tier' => 'alltime',
+		'scope' => $scope
+	];
+}
+
+/**
+ * Get the current player's all-time score data.
+ *
+ * @param int $playerId
+ * @param array $entries
+ * @param string $scope
+ * @return array
+ */
+function Leaderboard_GetMyScore_Alltime($playerId, $entries, $scope)
+{
+	// Check if already in the entries
+	foreach ($entries as $entry) {
+		if ($entry['isMe']) {
+			return $entry;
+		}
+	}
+
+	$sql = "SELECT at.playerid, p.username, at.avg_game_score, at.best_game_score,
+			at.total_games, at.qualifies, at.rank, at.prev_rank
+		FROM farkle_lb_alltime at
+		JOIN farkle_players p ON at.playerid = p.playerid
+		WHERE at.playerid = :playerid";
+	$row = db_query($sql, [':playerid' => $playerId], SQL_SINGLE_ROW);
+
+	if (!$row) {
+		return [
+			'playerId' => (int)$playerId,
+			'username' => isset($_SESSION['username']) ? $_SESSION['username'] : '',
+			'avgGameScore' => 0,
+			'bestGameScore' => 0,
+			'totalGames' => 0,
+			'rank' => null,
+			'prevRank' => null,
+			'isMe' => true
+		];
+	}
+
+	// Compute actual rank within scope
+	if ($scope === 'everyone') {
+		$sql = "SELECT COUNT(*) + 1 FROM farkle_lb_alltime
+			WHERE qualifies = TRUE AND avg_game_score > :score";
+		$myRank = (int)db_query($sql, [':score' => (float)$row['avg_game_score']], SQL_SINGLE_VALUE);
+	} else {
+		$sql = "SELECT COUNT(*) + 1 FROM farkle_lb_alltime at
+			WHERE at.qualifies = TRUE AND at.avg_game_score > :score
+			AND (at.playerid = :pid OR at.playerid IN (
+			    SELECT CASE WHEN f.playerid = :pid2 THEN f.friendid ELSE f.playerid END
+			    FROM farkle_friends f
+			    WHERE (f.playerid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
+			))";
+		$myRank = (int)db_query($sql, [
+			':score' => (float)$row['avg_game_score'],
+			':pid' => $playerId,
+			':pid2' => $playerId,
+			':pid3' => $playerId,
+			':pid4' => $playerId
+		], SQL_SINGLE_VALUE);
+	}
+
+	return [
+		'playerId' => (int)$row['playerid'],
+		'username' => $row['username'],
+		'avgGameScore' => round((float)$row['avg_game_score']),
+		'bestGameScore' => (int)$row['best_game_score'],
+		'totalGames' => (int)$row['total_games'],
+		'rank' => (bool)$row['qualifies'] ? $myRank : null,
+		'prevRank' => $row['prev_rank'] !== null ? (int)$row['prev_rank'] : null,
+		'isMe' => true
+	];
+}
+/**
+ * Get post-game leaderboard feedback for the player.
+ * Called after a game finishes to show a toast with the player's daily progress.
+ *
+ * @param int $playerId The player
+ * @return array|null Feedback data or null if not eligible
+ */
+function Leaderboard_GetPostGameFeedback($playerId)
+{
+	$today = db_query("SELECT (NOW() AT TIME ZONE 'America/Chicago')::DATE as today", [], SQL_SINGLE_ROW);
+	if (!$today) return null;
+	$today = $today['today'];
+
+	// Get the player's daily progress
+	$progress = Leaderboard_GetDailyProgress($playerId);
+	if (!$progress || $progress['games_played'] == 0) return null;
+
+	// Get the last game's rank in their top 10
+	$lastGame = db_query(
+		"SELECT game_score, game_seq, counted FROM farkle_lb_daily_games WHERE playerid = :pid AND lb_date = :today ORDER BY created_at DESC LIMIT 1",
+		[':pid' => $playerId, ':today' => $today],
+		SQL_SINGLE_ROW
+	);
+
+	if (!$lastGame) return null;
+
+	$rankInTop10 = 0;
+	$counted = ($lastGame['counted'] === 't' || $lastGame['counted'] === true || $lastGame['counted'] == 1);
+	if ($counted) {
+		// Find its rank among top 10
+		$topScores = $progress['top_scores'];
+		for ($i = 0; $i < count($topScores); $i++) {
+			if ($topScores[$i] == $lastGame['game_score']) {
+				$rankInTop10 = $i + 1;
+				break;
+			}
+		}
+	}
+
+	return [
+		'is_eligible' => true,
+		'rank_in_top10' => $rankInTop10,
+		'games_remaining' => max(0, 20 - $progress['games_played']),
+		'daily_score' => $progress['daily_score']
+	];
 }
 ?>

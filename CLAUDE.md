@@ -389,6 +389,16 @@ See `docker/init.sql` for complete schema. Migration: `scripts/migrate-db.php`
 - `farkle_tournaments` - Tournament data (tournamentid, name, status ENUM: upcoming/active/completed, start_date, end_date)
 - `farkle_tournament_participants` - Tournament players (tournamentid, playerid, score, rank)
 
+**Leaderboard 2.0 Tables:**
+- `farkle_lb_daily_games` - Per-game tracking within 20-game daily cap (playerid, gameid, lb_date, game_seq, game_score, counted)
+- `farkle_lb_daily_scores` - Aggregated daily scores (playerid, lb_date, games_played, top10_score, qualifies, rank, prev_rank)
+- `farkle_lb_weekly_scores` - Aggregated weekly scores, best 5 of 7 days (playerid, week_start, daily_scores_used, top5_score, qualifies, rank)
+- `farkle_lb_alltime` - Career all-time leaderboard (playerid, avg_game_score, best_game_score, total_games, qualifies, rank)
+- `farkle_lb_stats` - Rotating stat highlights (playerid, lb_date, stat_type, stat_value, stat_detail)
+
+**Modified columns:**
+- `farkle_players` - Added: current_win_streak, best_win_streak
+
 ### Game Constants
 
 **Game Modes:**
@@ -456,27 +466,37 @@ docker exec farkle_web vendor/bin/phpunit --testdox
 |-------|-------|-------------|
 | **Unit/DiceScoringTest** | 58 | All dice scoring combinations |
 | **Integration/GameFlowTest** | 7 | Game creation, 10-round gameplay |
+| **Integration/GameModesTest** | 5 | Random, solo, bot, friend game modes |
 | **Integration/LobbyTest** | 15 | Lobby info, active games, player data |
 | **Integration/ProfileTest** | 19 | Profile stats, titles, achievements |
+| **Integration/LeaderboardTest** | 23 | Legacy leaderboard refresh, timezone handling |
+| **Integration/Leaderboard2Test** | 38 | LB2: eligibility, daily/weekly/alltime, stats, cleanup |
+| **Integration/CronOperationsTest** | 11 | Cron jobs, stale games, cleanup |
+| **Integration/TournamentTest** | 1 | Tournament creation |
 
-**Total: 99 tests**
+**Total: 177 tests**
 
 ### Test Structure
 
 ```
 tests/
-├── bootstrap.php           # Test setup and autoloading
-├── TestCase.php            # Base class for unit tests
-├── DatabaseTestCase.php    # Base class for DB tests (with transaction rollback)
+├── bootstrap.php              # Test setup and autoloading
+├── TestCase.php               # Base class for unit tests
+├── DatabaseTestCase.php       # Base class for DB tests (with transaction rollback)
 ├── Unit/
-│   └── DiceScoringTest.php # Pure unit tests, no database
+│   └── DiceScoringTest.php    # Pure unit tests, no database
 ├── Integration/
-│   ├── GameFlowTest.php    # Game creation and play flow
-│   ├── LobbyTest.php       # Lobby functionality
-│   └── ProfileTest.php     # Player profile functionality
+│   ├── CronOperationsTest.php # Cron job tests
+│   ├── GameFlowTest.php       # Game creation and play flow
+│   ├── GameModesTest.php      # Game mode tests
+│   ├── Leaderboard2Test.php   # Leaderboard 2.0 tests
+│   ├── LeaderboardTest.php    # Legacy leaderboard tests
+│   ├── LobbyTest.php         # Lobby functionality
+│   ├── ProfileTest.php       # Player profile functionality
+│   └── TournamentTest.php    # Tournament tests
 └── Fixtures/
-    ├── TestPlayers.php     # Test player data
-    └── DiceScenarios.php   # Dice roll scenarios
+    ├── TestPlayers.php        # Test player data
+    └── DiceScenarios.php      # Dice roll scenarios
 ```
 
 ### Writing New Tests

@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farkle Ten — Leaderboard 2.0 Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Verdana, 'Lucida Grande', sans-serif;
+    background: #1a5c1a;
+    background-image: repeating-conic-gradient(rgba(0,0,0,0.03) 0% 25%, transparent 0% 50%);
+    background-size: 8px 8px;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+    min-height: 100vh;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  /* ── Header ── */
+  .lb-header {
+    text-align: center;
+    padding: 12px 0 6px;
+  }
+  .lb-header h1 {
+    font-size: 20px;
+    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    margin-bottom: 4px;
+  }
+
+  /* ── Daily Game Counter ── */
+  .daily-counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 8px 0 12px;
+    padding: 8px 14px;
+    background: rgba(0,0,0,0.35);
+    border-radius: 20px;
+    font-size: 12px;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .daily-counter .counter-label { color: #ccc; }
+  .daily-counter .counter-value {
+    font-weight: bold;
+    font-size: 14px;
+    color: #FFD700;
+  }
+  .daily-counter .counter-bar {
+    width: 80px;
+    height: 8px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .daily-counter .counter-bar-fill {
+    height: 100%;
+    background: linear-gradient(to right, #4CAF50, #8BC34A);
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 0;
+  }
+  .tab {
+    flex: 1;
+    padding: 8px 4px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: bold;
+    background: #EAFFBA;
+    color: #333;
+    border: 1px solid #000;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s, background 0.2s;
+  }
+  .tab:hover { opacity: 0.9; }
+  .tab.active {
+    background: #fff;
+    color: #000;
+    opacity: 1;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ── Toggle (Friends / Everyone) ── */
+  .toggle-row {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0 6px;
+  }
+  .segmented-toggle {
+    display: inline-flex;
+    background: rgba(0,0,0,0.3);
+    border-radius: 20px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .seg-btn {
+    padding: 5px 16px;
+    font-size: 12px;
+    font-weight: bold;
+    border: none;
+    border-radius: 18px;
+    cursor: pointer;
+    background: transparent;
+    color: #ccc;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .seg-btn.active {
+    background: #fff;
+    color: #000;
+  }
+  .seg-btn:hover:not(.active) { color: #fff; }
+
+  /* ── Board Container ── */
+  .board {
+    background: rgba(0,0,80,0.3);
+    border: 1px solid #000;
+    border-radius: 0 0 8px 8px;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* ── Stat Spotlight Banner ── */
+  .stat-banner {
+    background: linear-gradient(135deg, rgba(241,218,54,0.7), rgba(255,165,0,0.5));
+    padding: 8px 12px;
+    text-align: center;
+    border-bottom: 1px solid rgba(0,0,0,0.2);
+  }
+  .stat-banner .stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #333;
+    font-weight: bold;
+  }
+  .stat-banner .stat-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #000;
+    margin: 2px 0;
+  }
+  .stat-banner .stat-leader {
+    font-size: 11px;
+    color: #222;
+  }
+
+  /* ── Post-Game Feedback ── */
+  .post-game-toast {
+    margin: 10px 12px;
+    padding: 10px 14px;
+    background: rgba(76,175,80,0.25);
+    border: 1px solid rgba(76,175,80,0.5);
+    border-radius: 8px;
+    font-size: 12px;
+    text-align: center;
+    animation: fadeSlideIn 0.4s ease;
+  }
+  .post-game-toast .toast-score {
+    font-size: 18px;
+    font-weight: bold;
+    color: #8BC34A;
+  }
+  .post-game-toast .toast-rank {
+    color: #FFD700;
+    font-weight: bold;
+  }
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Leaderboard Table ── */
+  .lb-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .lb-table thead th {
+    text-align: left;
+    padding: 6px 8px;
+    font-size: 11px;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .lb-table thead th:last-child { text-align: right; }
+  .lb-table thead th.col-stat { text-align: center; }
+
+  .lb-row {
+    transition: background 0.2s;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .lb-row:nth-child(odd) { background: rgba(50,50,255,0.15); }
+  .lb-row:nth-child(even) { background: rgba(80,80,255,0.1); }
+  .lb-row:hover { background: rgba(100,100,255,0.25); }
+
+  .lb-row.me {
+    background: rgba(255,215,0,0.2) !important;
+    border-left: 3px solid #FFD700;
+  }
+
+  .lb-row td {
+    padding: 10px 8px;
+    font-size: 13px;
+    vertical-align: middle;
+    text-shadow: 1px 1px 0 #000;
+  }
+
+  /* Rank column */
+  .col-rank {
+    width: 36px;
+    text-align: center;
+    font-weight: bold;
+  }
+  .rank-1 { color: #FFD700; font-size: 16px; }
+  .rank-2 { color: #C0C0C0; font-size: 15px; }
+  .rank-3 { color: #CD7F32; font-size: 15px; }
+
+  /* Player column */
+  .col-player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .player-name {
+    font-weight: bold;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .player-label {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    white-space: nowrap;
+    font-weight: bold;
+  }
+  .label-hot { background: #FF6600; color: #fff; }
+  .label-close { background: rgba(255,255,255,0.2); color: #FFD700; }
+  .label-lead { background: rgba(76,175,80,0.4); color: #8BC34A; }
+  .label-catching { background: rgba(255,165,0,0.3); color: #FFA500; }
+
+  .player-games {
+    font-size: 10px;
+    color: #888;
+    margin-top: 1px;
+  }
+
+  /* Arrow column */
+  .col-arrow {
+    width: 28px;
+    text-align: center;
+    font-size: 14px;
+  }
+  .arrow-up { color: #4CAF50; }
+  .arrow-down { color: #f44336; }
+  .arrow-same { color: #666; }
+
+  /* Score column */
+  .col-score {
+    text-align: right;
+    font-weight: bold;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  /* Stat column */
+  .col-stat {
+    text-align: center;
+    font-size: 11px;
+    color: #FFD700;
+    white-space: nowrap;
+  }
+  .col-stat .stat-value { font-weight: bold; font-size: 13px; display: block; }
+  .col-stat .stat-sublabel { font-size: 9px; color: #999; }
+
+  /* ── Your Score Card ── */
+  .your-score-card {
+    margin: 0;
+    padding: 12px;
+    background: rgba(0,0,0,0.25);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .your-score-card .ysc-left {
+    font-size: 11px;
+    color: #aaa;
+  }
+  .your-score-card .ysc-left strong {
+    color: #FFD700;
+    font-size: 16px;
+    display: block;
+    margin-top: 2px;
+  }
+  .your-score-card .ysc-right {
+    text-align: right;
+    font-size: 11px;
+    color: #aaa;
+  }
+  .your-score-card .ysc-right strong {
+    color: #fff;
+    font-size: 14px;
+    display: block;
+  }
+
+  /* ── Section Dividers ── */
+  .section-label {
+    padding: 10px 12px 4px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #888;
+    font-weight: bold;
+  }
+
+  /* ── Weekly Board specifics ── */
+  .weekly-badges {
+    display: flex;
+    gap: 6px;
+    padding: 10px 12px;
+    overflow-x: auto;
+  }
+  .week-day-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+  .week-day-badge.played {
+    background: rgba(76,175,80,0.3);
+    border: 1px solid rgba(76,175,80,0.5);
+    color: #8BC34A;
+  }
+  .week-day-badge.today {
+    background: rgba(255,215,0,0.25);
+    border: 1px solid rgba(255,215,0,0.5);
+    color: #FFD700;
+  }
+  .week-day-badge.future {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #555;
+  }
+  .week-day-badge .day-label { font-size: 8px; color: inherit; opacity: 0.7; }
+  .week-day-badge .day-score { font-size: 10px; margin-top: 1px; }
+
+  /* ── All-Time specifics ── */
+  .rating-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #000;
+    font-weight: bold;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-shadow: none;
+  }
+
+  /* ── Head-to-Head Card (small friend groups) ── */
+  .h2h-card {
+    margin: 10px 12px;
+    padding: 14px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    text-align: center;
+  }
+  .h2h-vs {
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 6px 0;
+  }
+  .h2h-players {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 10px;
+  }
+  .h2h-player {
+    flex: 1;
+    text-align: center;
+  }
+  .h2h-player .h2h-name {
+    font-weight: bold;
+    font-size: 15px;
+    text-shadow: 1px 1px 0 #000;
+  }
+  .h2h-player .h2h-score {
+    font-size: 22px;
+    font-weight: bold;
+    margin: 4px 0;
+  }
+  .h2h-player .h2h-score.winning { color: #8BC34A; }
+  .h2h-player .h2h-score.losing { color: #f44336; }
+  .h2h-player .h2h-detail { font-size: 10px; color: #888; }
+
+  /* ── Bottom nav ── */
+  .bottom-nav {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 0;
+  }
+  .btn {
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: bold;
+    border: 1px solid #000;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    text-shadow: #666 1px 1px;
+  }
+  .btn-red {
+    background: linear-gradient(to bottom, #FFD3D4, #FF9698, #e06060);
+    color: #000;
+  }
+  .btn-green {
+    background: linear-gradient(to bottom, #C9CEAB, #8EB92A);
+    color: #000;
+  }
+
+  /* ── Mockup Label ── */
+  .mockup-label {
+    text-align: center;
+    padding: 16px 0 8px;
+    font-size: 10px;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  /* ── Tab Content Switching ── */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── Responsive ── */
+  @media (max-width: 380px) {
+    .tab { font-size: 11px; padding: 6px 2px; }
+    .player-name { font-size: 12px; }
+    .col-score { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="mockup-label">Leaderboard 2.0 Mockup</div>
+
+  <!-- Header -->
+  <div class="lb-header">
+    <h1>Leaderboard</h1>
+  </div>
+
+  <!-- Daily Game Counter (always visible) -->
+  <div class="daily-counter">
+    <span class="counter-label">Daily Games:</span>
+    <span class="counter-value">14 / 20</span>
+    <div class="counter-bar">
+      <div class="counter-bar-fill" style="width: 70%"></div>
+    </div>
+    <span class="counter-label">Top 10: <strong style="color:#8BC34A">68,400</strong></span>
+  </div>
+
+  <!-- Board Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('daily')">Daily</div>
+    <div class="tab" onclick="switchTab('weekly')">Weekly</div>
+    <div class="tab" onclick="switchTab('alltime')">All-Time</div>
+  </div>
+
+  <div class="board">
+
+    <!-- Friends / Everyone Toggle -->
+    <div class="toggle-row">
+      <div class="segmented-toggle">
+        <button class="seg-btn active" onclick="switchView(this)">Friends</button>
+        <button class="seg-btn" onclick="switchView(this)">Everyone</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- DAILY TAB                           -->
+    <!-- ═══════════════════════════════════ -->
+    <div class="tab-content active" id="tab-daily">
+
+      <!-- Stat Spotlight Banner -->
+      <div class="stat-banner">
+        <div class="stat-label">Today's Featured Stat</div>
+        <div class="stat-title">Hot Dice — Highest Single Turn</div>
+        <div class="stat-leader">Leader: Sarah with 4,200 in one turn</div>
+      </div>
+
+      <!-- Post-game toast (shown after completing a game) -->
+      <div class="post-game-toast">
+        You scored <span class="toast-score">7,850</span> — ranked
+        <span class="toast-rank">#4 in your daily top 10!</span>
+        <div style="margin-top: 4px; color: #888; font-size: 11px;">6 games remaining today</div>
+      </div>
+
+      <!-- Leaderboard Table -->
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th></th>
+            <th>Player</th>
+            <th class="col-stat">Hot Dice</th>
+            <th style="text-align: right">Daily Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="lb-row">
+            <td class="col-rank rank-1">1</td>
+            <td class="col-arrow"><span class="arrow-up">&#9650;</span></td>
+            <td>
+              <div class="col-player">
+                <div>
+                  <div class="player-name">Sarah</div>
+                  <div class="player-games">18/20 games</div>
+                </div>
+                <span class="player-label label-hot">On a heater</span>
+              </div>
+            </td>
+            <td class="col-stat">
+              <span class="stat-value">4,200</span>
+            </td>
+            <td class="col-score">74,200</td>
+          </tr>
+
+          <tr class="lb-row me">
+            <td class="col-rank rank-2">2</td>
+            <td class="col-arrow"><span class="arrow-up">&#9650;</span></td>
+            <td>
+              <div class="col-player">
+                <div>
+                  <div class="player-name">You</div>
+                  <div class="player-games">14/20 games</div>
+                </div>
+                <span class="player-label label-close">Right behind you</span>
+              </div>
+            </td>
+            <td class="col-stat">
+              <span class="stat-value">3,600</span>
+            </td>
+            <td class="col-score">68,400</td>
+          </tr>
+
+          <tr class="lb-row">
+            <td class="col-rank rank-3">3</td>
+            <td class="col-arrow"><span class="arrow-same">&#9644;</span></td>
+            <td>
+              <div class="col-player">
+                <div>
+                  <div class="player-name">Dad</div>
+                  <div class="player-games">20/20 games</div>
+                </div>
+                <span class="player-label label-lead">All done</span>
+              </div>
+            </td>
+            <td class="col-stat">
+              <span class="stat-value">2,800</span>
+            </td>
+            <td class="col-score">62,100</td>
+          </tr>
+
+          <tr class="lb-row">
+            <td class="col-rank">4</td>
+            <td class="col-arrow"><span class="arrow-down">&#9660;</span></td>
+            <td>
+              <div class="col-player">
+                <div>
+                  <div class="player-name">Uncle Steve</div>
+                  <div class="player-games">8/20 games</div>
+                </div>
+                <span class="player-label label-catching">Catching up...</span>
+              </div>
+            </td>
+            <td class="col-stat">
+              <span class="stat-value">2,100</span>
+            </td>
+            <td class="col-score">41,800</td>
+          </tr>
+
+          <tr class="lb-row">
+            <td class="col-rank">5</td>
+            <td class="col-arrow"><span class="arrow-down">&#9660;</span></td>
+            <td>
+              <div class="col-player">
+                <div>
+                  <div class="player-name">Mom</div>
+                  <div class="player-games">3/20 games</div>
+                </div>
+              </div>
+            </td>
+            <td class="col-stat">
+              <span class="stat-value">1,900</span>
+            </td>
+            <td class="col-score">22,350</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Your Score Summary -->
+      <div class="your-score-card">
+        <div class="ysc-left">
+          Your Daily Rank
+          <strong>#2 of 5 friends</strong>
+        </div>
+        <div class="ysc-right">
+          Gap to #1
+          <strong style="color: #f44336;">-5,800</strong>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- WEEKLY TAB                          -->
+    <!-- ═══════════════════════════════════ -->
+    <div class="tab-content" id="tab-weekly">
+
+      <div class="stat-banner">
+        <div class="stat-label">This Week's Featured Stat</div>
+        <div class="stat-title">Comeback King — Largest Deficit Overcome</div>
+        <div class="stat-leader">Leader: Dad trailed by 3,200 and won</div>
+      </div>
+
+      <!-- Week day badges -->
+      <div class="section-label">Your Week (Best 5 of 7 count)</div>
+      <div class="weekly-badges">
+        <div class="week-day-badge played">
+          <span class="day-label">Mon</span>
+          <span class="day-score">71.2K</span>
+        </div>
+        <div class="week-day-badge played">
+          <span class="day-label">Tue</span>
+          <span class="day-score">65.8K</span>
+        </div>
+        <div class="week-day-badge played">
+          <span class="day-label">Wed</span>
+          <span class="day-score">58.4K</span>
+        </div>
+        <div class="week-day-badge played">
+          <span class="day-label">Thu</span>
+          <span class="day-score">72.0K</span>
+        </div>
+        <div class="week-day-badge today">
+          <span class="day-label">Fri</span>
+          <span class="day-score">68.4K</span>
+        </div>
+        <div class="week-day-badge future">
+          <span class="day-label">Sat</span>
+          <span class="day-score">—</span>
+        </div>
+        <div class="week-day-badge future">
+          <span class="day-label">Sun</span>
+          <span class="day-score">—</span>
+        </div>
+      </div>
+
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th></th>
+            <th>Player</th>
+            <th class="col-stat">Comeback</th>
+            <th style="text-align: right">Weekly Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="lb-row">
+            <td class="col-rank rank-1">1</td>
+            <td class="col-arrow"><span class="arrow-same">&#9644;</span></td>
+            <td>
+              <div class="col-player">
+                <div>
+                  <div class="player-name">Dad</div>
+                  <div class="player-games">5 days played</div>
+                </div>
+              </div>
+            </td>
+            <td class="col-stat">
+              <span class="stat-value">3,200</span>
+            </td>
+            <td class="col-score">352,100</td>
+          </tr>
+
+          <tr class="lb-row me">
+            <td class="col-rank rank-2">2</td>
+            <td class="col-arrow"><span class="arrow-up">&#9650;</span></td>
+            <td>
+              <div class="col-player">
+                <div>
+                  <div class="player-name">You</div>
+                  <div class="player-games">5 days played</div>
+                </div>
+                <span class="player-label label-catching">Gaining</span>
+              </div>
+            </td>
+            <td class="col-stat">
+              <span class="stat-value">2,400</span>
+            </td>
+            <td class="col-score">345,800</td>
+          </tr>
+
+          <tr class="lb-row">
+            <td class="col-rank rank-3">3</td>
+            <td class="col-arrow"><span class="arrow-down">&#9660;</span></td>
+            <td>
+              <div class="col-player">
+                <div>
+                  <div class="player-name">Sarah</div>
+                  <div class="player-games">4 days played</div>
+                </div>
+              </div>
+            </td>
+            <td class="col-stat">
+              <span class="stat-value">1,800</span>
+            </td>
+            <td class="col-score">298,400</td>
+          </tr>
+
+          <tr class="lb-row">
+            <td class="col-rank">4</td>
+            <td class="col-arrow"><span class="arrow-same">&#9644;</span></td>
+            <td>
+              <div class="col-player">
+                <div>
+                  <div class="player-name">Uncle Steve</div>
+                  <div class="player-games">3 days played</div>
+                </div>
+              </div>
+            </td>
+            <td class="col-stat">
+              <span class="stat-value">900</span>
+            </td>
+            <td class="col-score">195,200</td>
+          </tr>
+
+          <tr class="lb-row">
+            <td class="col-rank">5</td>
+            <td class="col-arrow"><span class="arrow-up">&#9650;</span></td>
+            <td>
+              <div class="col-player">
+                <div>
+                  <div class="player-name">Mom</div>
+                  <div class="player-games">2 days played</div>
+                </div>
+              </div>
+            </td>
+            <td class="col-stat">
+              <span class="stat-value">—</span>
+            </td>
+            <td class="col-score">138,600</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="your-score-card">
+        <div class="ysc-left">
+          Your Weekly Rank
+          <strong>#2 of 5 friends</strong>
+        </div>
+        <div class="ysc-right">
+          Gap to #1
+          <strong style="color: #f44336;">-6,300</strong>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- ALL-TIME TAB                        -->
+    <!-- ═══════════════════════════════════ -->
+    <div class="tab-content" id="tab-alltime">
+
+      <div class="section-label" style="padding-bottom: 8px;">Career Rating — Average Daily Score (min 30 days)</div>
+
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Player</th>
+            <th class="col-stat">Best Day</th>
+            <th style="text-align: right">Rating</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="lb-row">
+            <td class="col-rank rank-1">1</td>
+            <td>
+              <div class="col-player">
+                <div>
+                  <div class="player-name">Dad</div>
+                  <div class="player-games">142 days played</div>
+                </div>
+              </div>
+            </td>
+            <td class="col-stat">
+              <span class="stat-value">84,200</span>
+            </td>
+            <td class="col-score"><span class="rating-badge">68,450</span></td>
+          </tr>
+
+          <tr class="lb-row me">
+            <td class="col-rank rank-2">2</td>
+            <td>
+              <div class="col-player">
+                <div>
+                  <div class="player-name">You</div>
+                  <div class="player-games">98 days played</div>
+                </div>
+              </div>
+            </td>
+            <td class="col-stat">
+              <span class="stat-value">81,600</span>
+            </td>
+            <td class="col-score"><span class="rating-badge">65,200</span></td>
+          </tr>
+
+          <tr class="lb-row">
+            <td class="col-rank rank-3">3</td>
+            <td>
+              <div class="col-player">
+                <div>
+                  <div class="player-name">Sarah</div>
+                  <div class="player-games">76 days played</div>
+                </div>
+              </div>
+            </td>
+            <td class="col-stat">
+              <span class="stat-value">79,100</span>
+            </td>
+            <td class="col-score"><span class="rating-badge">62,800</span></td>
+          </tr>
+
+          <tr class="lb-row">
+            <td class="col-rank">4</td>
+            <td>
+              <div class="col-player">
+                <div>
+                  <div class="player-name">Uncle Steve</div>
+                  <div class="player-games">64 days played</div>
+                </div>
+              </div>
+            </td>
+            <td class="col-stat">
+              <span class="stat-value">72,400</span>
+            </td>
+            <td class="col-score"><span class="rating-badge">58,100</span></td>
+          </tr>
+
+          <tr class="lb-row">
+            <td class="col-rank">5</td>
+            <td>
+              <div class="col-player">
+                <div>
+                  <div class="player-name">Mom</div>
+                  <div class="player-games">38 days played</div>
+                </div>
+              </div>
+            </td>
+            <td class="col-stat">
+              <span class="stat-value">68,900</span>
+            </td>
+            <td class="col-score"><span class="rating-badge">52,400</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="your-score-card">
+        <div class="ysc-left">
+          Your All-Time Rank
+          <strong>#2 of 5 friends</strong>
+        </div>
+        <div class="ysc-right">
+          Career High Day
+          <strong style="color: #8BC34A;">81,600</strong>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Head-to-Head Card (example for small groups) -->
+  <div style="margin-top: 14px;">
+    <div class="section-label">Head-to-Head This Week</div>
+    <div class="h2h-card">
+      <div class="h2h-players">
+        <div class="h2h-player">
+          <div class="h2h-name">You</div>
+          <div class="h2h-score winning">4</div>
+          <div class="h2h-detail">wins this week</div>
+        </div>
+        <div style="font-size: 20px; color: #666; font-weight: bold;">vs</div>
+        <div class="h2h-player">
+          <div class="h2h-name">Dad</div>
+          <div class="h2h-score losing">3</div>
+          <div class="h2h-detail">wins this week</div>
+        </div>
+      </div>
+      <div style="margin-top: 10px; font-size: 11px; color: #888;">
+        All-time: Dad leads 142 – 128
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <button class="btn btn-red">Back</button>
+  </div>
+
+</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['daily','weekly','alltime'][i] === tab);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function switchView(btn) {
+  btn.parentElement.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+</script>
+
+</body>
+</html>

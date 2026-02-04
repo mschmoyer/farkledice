@@ -58,7 +58,9 @@ CREATE TABLE IF NOT EXISTS farkle_players (
   emoji_reactions VARCHAR(200) DEFAULT '',
   is_bot BOOLEAN DEFAULT false,
   bot_algorithm VARCHAR(50) DEFAULT NULL,
-  personality_id INTEGER DEFAULT NULL
+  personality_id INTEGER DEFAULT NULL,
+  current_win_streak INTEGER DEFAULT 0,
+  best_win_streak INTEGER DEFAULT 0
 );
 
 -- Create players devices table for session management
@@ -166,8 +168,10 @@ CREATE TABLE IF NOT EXISTS farkle_friends (
   sourceid INTEGER NOT NULL,
   friendid INTEGER NOT NULL,
   removed SMALLINT DEFAULT 0,
+  playerid INTEGER,
   status friend_status DEFAULT 'pending',
   created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  id SERIAL,
   PRIMARY KEY (sourceid, friendid)
 );
 
@@ -274,6 +278,80 @@ CREATE TABLE IF NOT EXISTS siteinfo (
   paramname VARCHAR(100) NOT NULL,
   paramvalue TEXT DEFAULT NULL
 );
+
+-- Leaderboard 2.0 Tables
+
+-- Per-game tracking within daily 20-game cap
+CREATE TABLE IF NOT EXISTS farkle_lb_daily_games (
+    id SERIAL PRIMARY KEY,
+    playerid INT NOT NULL,
+    gameid INT NOT NULL,
+    lb_date DATE NOT NULL,
+    game_seq INT NOT NULL,
+    game_score INT NOT NULL,
+    counted BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(playerid, gameid),
+    UNIQUE(playerid, lb_date, game_seq)
+);
+CREATE INDEX IF NOT EXISTS idx_lb_daily_games_player_date ON farkle_lb_daily_games(playerid, lb_date);
+CREATE INDEX IF NOT EXISTS idx_lb_daily_games_date ON farkle_lb_daily_games(lb_date);
+
+-- Aggregated daily leaderboard scores
+CREATE TABLE IF NOT EXISTS farkle_lb_daily_scores (
+    playerid INT NOT NULL,
+    lb_date DATE NOT NULL,
+    games_played INT NOT NULL DEFAULT 0,
+    top10_score INT NOT NULL DEFAULT 0,
+    qualifies BOOLEAN DEFAULT FALSE,
+    rank INT,
+    prev_rank INT,
+    PRIMARY KEY (playerid, lb_date)
+);
+CREATE INDEX IF NOT EXISTS idx_lb_daily_scores_date_score ON farkle_lb_daily_scores(lb_date, top10_score DESC);
+
+-- Aggregated weekly leaderboard scores
+CREATE TABLE IF NOT EXISTS farkle_lb_weekly_scores (
+    playerid INT NOT NULL,
+    week_start DATE NOT NULL,
+    daily_scores_used INT NOT NULL DEFAULT 0,
+    top5_score INT NOT NULL DEFAULT 0,
+    qualifies BOOLEAN DEFAULT FALSE,
+    rank INT,
+    prev_rank INT,
+    PRIMARY KEY (playerid, week_start)
+);
+CREATE INDEX IF NOT EXISTS idx_lb_weekly_scores_week ON farkle_lb_weekly_scores(week_start, top5_score DESC);
+
+-- Career/all-time leaderboard
+CREATE TABLE IF NOT EXISTS farkle_lb_alltime (
+    playerid INT NOT NULL UNIQUE,
+    qualifying_days INT NOT NULL DEFAULT 0,
+    total_daily_score BIGINT NOT NULL DEFAULT 0,
+    avg_daily_score NUMERIC(10,2) NOT NULL DEFAULT 0,
+    best_day_score INT DEFAULT 0,
+    avg_game_score NUMERIC(10,2) NOT NULL DEFAULT 0,
+    best_game_score INT DEFAULT 0,
+    total_games INT NOT NULL DEFAULT 0,
+    qualifies BOOLEAN DEFAULT FALSE,
+    rank INT,
+    prev_rank INT,
+    last_updated TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_lb_alltime_avg ON farkle_lb_alltime(avg_daily_score DESC) WHERE qualifies = TRUE;
+CREATE INDEX IF NOT EXISTS idx_lb_alltime_avg_game ON farkle_lb_alltime(avg_game_score DESC) WHERE qualifies = TRUE;
+
+-- Rotating stat highlights
+CREATE TABLE IF NOT EXISTS farkle_lb_stats (
+    id SERIAL PRIMARY KEY,
+    playerid INT NOT NULL,
+    lb_date DATE NOT NULL,
+    stat_type VARCHAR(30) NOT NULL,
+    stat_value NUMERIC(12,4) NOT NULL,
+    stat_detail TEXT,
+    UNIQUE(playerid, lb_date, stat_type)
+);
+CREATE INDEX IF NOT EXISTS idx_lb_stats_type_date ON farkle_lb_stats(stat_type, lb_date, stat_value DESC);
 
 -- Insert default siteinfo values
 INSERT INTO siteinfo (paramid, paramname, paramvalue) VALUES

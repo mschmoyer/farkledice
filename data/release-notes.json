@@ -1,6 +1,27 @@
 {
   "releases": [
     {
+      "version": "3.0.0",
+      "date": "2026-02-03",
+      "notes": [
+        "*** LEADERBOARD 2.0 - A complete redesign of competitive play! ***",
+        "",
+        "DAILY LEADERBOARD: Play up to 20 games per day. Your best 10 scores are summed into a daily score. Play at least 3 games to qualify for the daily board.",
+        "",
+        "WEEKLY LEADERBOARD: Your best 5 daily scores each week (Mon-Sun) are combined into a weekly score. Play at least 3 qualifying days to rank.",
+        "",
+        "ALL-TIME LEADERBOARD: Your career Average Game Score across all eligible games. Play 50+ games to earn your all-time ranking. Best single game score also tracked.",
+        "",
+        "FEATURED STATS: A new stat highlights each day, rotating through Hot Dice (best single round), Farkle Rate (lowest farkle %), Comeback King (biggest deficit overcome), Hot Streak (win streak), and Consistency (steadiest scorer).",
+        "",
+        "Friends-first view with rivalry labels, rank movement arrows, and head-to-head cards when playing with 2-3 friends",
+        "Post-game toast shows your leaderboard impact after each eligible game",
+        "Daily game counter in lobby tracks your progress toward the 20-game cap",
+        "Win streak tracking added to player profiles",
+        "Solo games and bot games are excluded from leaderboard rankings"
+      ]
+    },
+    {
       "version": "2.8.3",
       "date": "2026-02-02",
       "notes": [

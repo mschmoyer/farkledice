@@ -1,138 +1,85 @@
 <!-- LEADER BOARD -->
 <div id="divLeaderBoard" class="pagelayout" align="center" style="display: none;">
 
-	{*<table width="320px"><tr><td>
-		<input type="button" class="mobileButton" buttoncolor="orange"
-			value="<<" onClick="ShowLeaderboardData(1)" style="width: 55px;">
-	</td><td align="center">
-		<b id="lbTitle">Most Wins</b>
-	</td><td align="right">
-		<input type="button" class="mobileButton" buttoncolor="orange"
-			value=">>" onClick="ShowLeaderboardData(-1)" style="width: 55px;">
-	</td></tr></table>*}
+	<!-- Daily Game Counter (always visible) -->
+	<div id="daily-game-counter" class="lb2-daily-counter">
+		<span class="counter-label">Daily Games:</span>
+		<span class="counter-value" id="lb2CounterText">0 / 20</span>
+		<div class="counter-bar">
+			<div class="counter-bar-fill" id="lb2CounterBar" style="width: 0%"></div>
+		</div>
+		<span class="counter-label">Score: <strong id="lb2CounterScore" style="color:#8BC34A">0</strong></span>
+	</div>
 
-	<div align="center">
+	<!-- Board Tabs: Daily | Weekly | All-Time -->
+	<table class="pageWidth" style="font-size: 12px;"><tr>
+		<td class="farkleTab" id="tabLB2Daily" selected="" width="33%"
+			onClick="switchLeaderboardTier('daily')">Daily</td>
+		<td class="farkleTab" id="tabLB2Weekly" width="33%"
+			onClick="switchLeaderboardTier('weekly')">Weekly</td>
+		<td class="farkleTab" id="tabLB2Alltime" width="33%"
+			onClick="switchLeaderboardTier('alltime')">All-Time</td>
+	</tr></table>
 
-		<table class="pageWidth" style="font-size: 12px;"><tr>
-			<td class="farkleTab" id="tabLBToday"  selected="" width="25%"
-				onClick="ShowLBTab( 'Today' );">Daily</td>
-			<td class="farkleTab" id="tabLBWins" width="25%"
-				onClick="ShowLBTab( 'Wins' );">Wins</td>
-			<td class="farkleTab" id="tabLB10Round"  width="25%"
-				onClick="ShowLBTab( '10Round' );">10 Round</td>
-			<td class="farkleTab" id="tabLBAchieves"  width="25%"
-				onClick="ShowLBTab( 'Achieves' );">Achievements</td>
-		</tr></table>
+	<div class="regularBox" style="margin: 0px; background-color: transparent;">
 
-		<div class="lbTab regularBox" id="tblLBToday" style="margin: 0px; background-color: transparent;">
-
-			<div class="regularBox" style="background-color: rgba(241,218,54,0.6);">
-				<img src="/images/star.png"> <span style="margin: -5px;"><b>Yesterday's MVP</b></span> <img src="/images/star.png">
-				<h2 style="margin: 0px;"><span class="shadowed" id="lbMVPName"></span></h2>
-				<p id="lbMVPStats" style="margin: 5px 0 0 0; font-size: 12px; color: #333;"></p>
+		<!-- Friends / Everyone Toggle -->
+		<div style="text-align: center; padding: 8px 0;">
+			<div class="segmented-toggle" id="lb2ScopeToggle">
+				<button class="segment-btn active" id="btnLB2Friends" onclick="switchLeaderboardScope('friends')">Friends</button>
+				<button class="segment-btn" id="btnLB2Everyone" onclick="switchLeaderboardScope('everyone')">Everyone</button>
 			</div>
-
-			<div style="margin: 15px 0; text-align: center;">
-				<div class="segmented-toggle" id="dayToggle">
-					<button class="segment-btn active" id="btnToday" onclick="switchDayView('today')">Today</button>
-					<button class="segment-btn" id="btnYesterday" onclick="switchDayView('yesterday')">Yesterday</button>
-				</div>
-			</div>
-
-			<p><i id="lblLbDateLabel">Showing stats for </i><span id="lblLbTodayDate"></span></p>
-
-			{*<!-- <div id="farkleMeter" style="width: 200px; height: 160px;"></div> -->*}
-
-			<h3 style="margin: 2px;">Highest Game Scores</h3>
-
-			<table class="pageWidth tabLeaderboard" id="tblLbTodayHighScores" cellpadding="3px" cellspacing="0px" style="width: 98%">
-				<thead><tr header="">
-					<th style="text-align: left;">Rank</th>
-					<th style="text-align: left;">Player</th>
-					<th style="text-align: left;">Score</th>
-				</tr></thead>
-				<tbody></tbody>
-			</table>
-
-			<h3 style="margin: 15px 0 8px; 0">Best Win Ratio</h3>
-			<p style="margin: 0 0 5px 0; font-size: 11px; color: #666;">Min 3 games. Avg opponents beaten per game.</p>
-			<table class="pageWidth tabLeaderboard" id="tblLbTodayWins" cellpadding="3px" cellspacing="0px" style="width: 98%">
-				<thead><tr header="">
-					<th style="text-align: left;">Rank</th>
-					<th style="text-align: left;">Player</th>
-					<th style="text-align: left;">Ratio</th>
-					<th style="text-align: left;">Games</th>
-				</tr></thead>
-				<tbody></tbody>
-			</table>
-
-			<h3 style="margin: 15px 0 8px; 0">Best Rounds</h3>
-			<table class="pageWidth tabLeaderboard" id="tblLbTodayBestRounds" cellpadding="3px" cellspacing="0px" style="width: 98%">
-				<thead><tr header="">
-					<th style="text-align: left;">Rank</th>
-					<th style="text-align: left;">Player</th>
-					<th style="text-align: left;">Score</th>
-				</tr></thead>
-				<tbody></tbody>
-			</table>
-
-			<h3 style="margin: 15px 0 8px; 0">Most Farkles</h3>
-			<table class="pageWidth tabLeaderboard" id="tblLbTodayFarkles" cellpadding="3px" cellspacing="0px" style="width: 98%">
-				<thead><tr header="">
-					<th style="text-align: left;">Rank</th>
-					<th style="text-align: left;">Player</th>
-					<th style="text-align: left;">Farkles</th>
-				</tr></thead>
-				<tbody></tbody>
-			</table>
-			<br/>
 		</div>
 
-		<table class="lbTab pageWidth tabLeaderboard" id="tblLBWins" cellpadding="3px" cellspacing="0px" style="display: none;">
-			<thead><tr header="">
-				<th style="text-align: left;">Rank</th>
+		<!-- Rotating Stat Banner (daily/weekly only) -->
+		<div id="lb2StatBanner" class="lb2-stat-banner" style="display:none;">
+			<div class="lb2-stat-label" id="lb2StatLabel">Today's Featured Stat</div>
+			<div class="lb2-stat-title" id="lb2StatTitle"></div>
+			<div class="lb2-stat-leader" id="lb2StatLeader"></div>
+		</div>
+
+		<!-- Post-game feedback toast -->
+		<div id="lb2Toast" class="lb2-toast" style="display:none;">
+			<span id="lb2ToastText"></span>
+		</div>
+
+		<!-- Weekly day badges (weekly tab only) -->
+		<div id="lb2WeeklyBadges" class="lb2-weekly-badges" style="display:none;">
+			<div class="lb2-section-label">Your Week (Best 5 of 7 count)</div>
+			<div id="lb2DayBadgeRow" class="lb2-day-badge-row"></div>
+		</div>
+
+		<!-- All-time description -->
+		<div id="lb2AlltimeDesc" class="lb2-section-label" style="display:none;">
+			Career Rating — Avg Game Score (min 50 games)
+		</div>
+
+		<!-- Main leaderboard table -->
+		<table class="pageWidth tabLeaderboard lb2-table" id="tblLB2Main" cellpadding="3px" cellspacing="0px" style="width: 98%">
+			<thead><tr header="" id="lb2TableHeader">
+				<th style="text-align: left; width: 30px;"></th>
+				<th style="text-align: left; width: 24px;"></th>
 				<th style="text-align: left;">Player</th>
-				<th style="text-align: left;">Wins</th>
-				<th style="text-align: left;">W/L</th>
+				<th style="text-align: center;" id="lb2StatCol">Stat</th>
+				<th style="text-align: right;" id="lb2ScoreCol">Score</th>
 			</tr></thead>
-			<tbody></tbody>
+			<tbody id="lb2TableBody"></tbody>
 		</table>
 
-		<table class="lbTab pageWidth tabLeaderboard" id="tblLB10Round" cellpadding="3px" cellspacing="0px" style="display: none;">
-			<thead><tr header="">
-				<th style="text-align: left;">Rank</th>
-				<th style="text-align: left;">Player</th>
-				<th style="text-align: left;">Score</th>
-			</tr></thead>
-			<tbody></tbody>
-		</table>
+		<!-- Head-to-head card (2-3 friends) -->
+		<div id="lb2H2HCard" class="lb2-h2h-card" style="display:none;"></div>
 
-		{*<!--<table class="lbTab pageWidth tabLeaderboard" id="tblLBavground" cellpadding="3px" cellspacing="0px" style="display: none;">
-			<thead><tr header="">
-				<th>Rank</th>
-				<th>Player</th>
-				<th>Score</th>
-			</tr></thead>
-			<tbody></tbody>
-		</table> -->*}
-
-		<table class="lbTab pageWidth tabLeaderboard" id="tblLBAchieves" cellpadding="3px" cellspacing="0px" style="display: none;">
-			<thead><tr header="">
-				<th style="text-align: left;">Rank</th>
-				<th style="text-align: left;">Player</th>
-				<th style="text-align: left;">Points</th>
-				{*<th>Prestige</th>*}
-			</tr></thead>
-			<tbody></tbody>
-		</table>
-
-		<div id="divLBItem0"></div>
-
-		<div id="divLBItem1"></div>
-
-		<div id="divLBItem2"></div>
-
-		<div id="divLBItem3"></div>
+		<!-- Your score summary bar -->
+		<div id="lb2ScoreBar" class="lb2-score-bar">
+			<div class="lb2-score-bar-left">
+				<span style="color:#aaa;" id="lb2RankLabel">Your Rank</span>
+				<strong id="lb2RankValue" style="color:#FFD700;"></strong>
+			</div>
+			<div class="lb2-score-bar-right">
+				<span style="color:#aaa;" id="lb2GapLabel">Gap to #1</span>
+				<strong id="lb2GapValue"></strong>
+			</div>
+		</div>
 
 	</div>
 
