@@ -128,30 +128,37 @@ function GetLeaderBoard()
 	// Games played in the last 30 days. 
 	
 	BaseUtil_Debug( "GetLeaderBoard: Entered.", 1 );
-	
+
+	// Use static variable caching instead of session storage
+	static $cacheData = null;
+	static $cacheTime = 0;
+
 	$i=0;
 	$lbData = Array();
 	$maxRows = 25;
 	$playerAgeOutDays = 30;
 	$limitClause = " LIMIT $maxRows";
-	
-	// Check to see if leaderboard data needs refreshing. 
+
+	// Check to see if leaderboard data needs refreshing.
 	Leaderboard_RefreshData();
-	
+
 	// Return cached data if it was recorded in the last 3 minutes.
-	if( isset($_SESSION['farkle']['lb']) && isset($_SESSION['farkle']['lbTimestamp']) )
+	if( $cacheData !== null && $cacheTime > 0 )
 	{
-		if( (time() - $_SESSION['farkle']['lbTimestamp']) < 60*3 && !$g_leaderboardDirty ) // 3 minutes
+		if( (time() - $cacheTime) < 60*3 && !$g_leaderboardDirty ) // 3 minutes
 		{
-			return $_SESSION['farkle']['lb'];
+			return $cacheData;
 		}
 	}
-	
-	$g_leaderboardDirty = 0; // No longer dirty since we just gave you data. 
+
+	$g_leaderboardDirty = 0; // No longer dirty since we just gave you data.
+
+	// Initialize cache array
+	$lbCache = array(); 
 	
 	$sql = "SELECT paramvalue FROM siteinfo WHERE paramid = :paramid";
 	$dayOfWeek = db_query($sql, [':paramid' => 3], SQL_SINGLE_VALUE);
-	$_SESSION['farkle']['lb']['dayOfWeek'] = $dayOfWeek;
+	$lbCache['dayOfWeek'] = $dayOfWeek;
 	// Today Stats
 
 	$maxRows = 3;
@@ -162,7 +169,7 @@ function GetLeaderBoard()
 		FROM farkle_lbdata
 		WHERE lbindex = :lbindex AND lbrank <= :maxrows
 		ORDER BY lbrank";
-		$_SESSION['farkle']['lb'][0][$i] = db_query($sql, [':lbindex' => $i, ':maxrows' => $maxRows], SQL_MULTI_ROW);
+		$lbCache[0][$i] = db_query($sql, [':lbindex' => $i, ':maxrows' => $maxRows], SQL_MULTI_ROW);
 	}
 
 	// Daily stat: best rounds (lbindex 6, stored at index 3)
@@ -170,7 +177,7 @@ function GetLeaderBoard()
 		FROM farkle_lbdata
 		WHERE lbindex = :lbindex AND lbrank <= :maxrows
 		ORDER BY lbrank";
-	$_SESSION['farkle']['lb'][0][3] = db_query($sql, [':lbindex' => 6, ':maxrows' => $maxRows], SQL_MULTI_ROW);
+	$lbCache[0][3] = db_query($sql, [':lbindex' => 6, ':maxrows' => $maxRows], SQL_MULTI_ROW);
 
 	// Yesterday's stats (lbindex 10, 11, 12, 16)
 	// High scores (10), farkles (11), win ratio (12)
@@ -181,7 +188,7 @@ function GetLeaderBoard()
 			FROM farkle_lbdata
 			WHERE lbindex = :lbindex AND lbrank <= :maxrows
 			ORDER BY lbrank";
-		$_SESSION['farkle']['lb']['yesterday'][$i] = db_query($sql, [':lbindex' => $yesterdayIndex, ':maxrows' => $maxRows], SQL_MULTI_ROW);
+		$lbCache['yesterday'][$i] = db_query($sql, [':lbindex' => $yesterdayIndex, ':maxrows' => $maxRows], SQL_MULTI_ROW);
 	}
 
 	// Yesterday's best rounds (lbindex 16)
@@ -189,7 +196,7 @@ function GetLeaderBoard()
 		FROM farkle_lbdata
 		WHERE lbindex = :lbindex AND lbrank <= :maxrows
 		ORDER BY lbrank";
-	$_SESSION['farkle']['lb']['yesterday'][3] = db_query($sql, [':lbindex' => 16, ':maxrows' => $maxRows], SQL_MULTI_ROW);
+	$lbCache['yesterday'][3] = db_query($sql, [':lbindex' => 16, ':maxrows' => $maxRows], SQL_MULTI_ROW);
 
 	$maxRows = 25;
 	for( $i=1; $i<4; $i++ )
@@ -201,12 +208,12 @@ function GetLeaderBoard()
 		WHERE lbindex = :lbindex AND lbrank <= :maxrows
 		ORDER BY lbrank
 		LIMIT :limitrows";
-		$_SESSION['farkle']['lb'][$i] = db_query($sql, [':lbindex' => $lbIndex, ':maxrows' => $maxRows, ':limitrows' => $maxRows], SQL_MULTI_ROW);
+		$lbCache[$i] = db_query($sql, [':lbindex' => $lbIndex, ':maxrows' => $maxRows, ':limitrows' => $maxRows], SQL_MULTI_ROW);
 
 		// This will stuff our player onto the end of the leaderboards if they are not in the top 25 (displacing #25)
 		$found=0;
-		if( !empty($_SESSION['farkle']['lb'][$i]) && is_array($_SESSION['farkle']['lb'][$i]) ) {
-			foreach( $_SESSION['farkle']['lb'][$i] as $j )
+		if( !empty($lbCache[$i]) && is_array($lbCache[$i]) ) {
+			foreach( $lbCache[$i] as $j )
 				if( $j['playerid'] == $_SESSION['playerid'] )
 					$found=1;
 		}
@@ -215,20 +222,22 @@ function GetLeaderBoard()
 			$sql = "SELECT username, playerid, playerlevel, first_int, second_int,
 				first_string, second_string, lbrank
 				FROM farkle_lbdata WHERE lbindex = :lbindex AND playerid = :playerid";
-			$_SESSION['farkle']['lb'][$i][$maxRows-1] = db_query($sql, [':lbindex' => $lbIndex, ':playerid' => $_SESSION['playerid']], SQL_SINGLE_ROW);
+			$lbCache[$i][$maxRows-1] = db_query($sql, [':lbindex' => $lbIndex, ':playerid' => $_SESSION['playerid']], SQL_SINGLE_ROW);
 		}
-		
+
 		if( $i==2 )
 		{
-			// Award the highest 10-round award. 
-			if( isset($_SESSION['farkle']['lb'][$i][0]['playerid']) )
-				Ach_AwardAchievement( $_SESSION['farkle']['lb'][$i][0]['playerid'], ACH_LB_HIGHESTRND );
+			// Award the highest 10-round award.
+			if( isset($lbCache[$i][0]['playerid']) )
+				Ach_AwardAchievement( $lbCache[$i][0]['playerid'], ACH_LB_HIGHESTRND );
 		}
 	}
-	
-	$_SESSION['farkle']['lbTimestamp'] = time();
-	
-	return $_SESSION['farkle']['lb'];
+
+	// Store in static cache
+	$cacheData = $lbCache;
+	$cacheTime = time();
+
+	return $lbCache;
 }
 
 function Leaderboard_RefreshData( $force = false )

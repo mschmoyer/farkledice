@@ -473,8 +473,9 @@ docker exec farkle_web vendor/bin/phpunit --testdox
 | **Integration/Leaderboard2Test** | 38 | LB2: eligibility, daily/weekly/alltime, stats, cleanup |
 | **Integration/CronOperationsTest** | 11 | Cron jobs, stale games, cleanup |
 | **Integration/TournamentTest** | 1 | Tournament creation |
+| **Integration/PerformanceTest** | 9 | PDO persistent connections, session optimization, caching |
 
-**Total: 177 tests**
+**Total: 186 tests**
 
 ### Test Structure
 
@@ -491,9 +492,10 @@ tests/
 │   ├── GameModesTest.php      # Game mode tests
 │   ├── Leaderboard2Test.php   # Leaderboard 2.0 tests
 │   ├── LeaderboardTest.php    # Legacy leaderboard tests
-│   ├── LobbyTest.php         # Lobby functionality
-│   ├── ProfileTest.php       # Player profile functionality
-│   └── TournamentTest.php    # Tournament tests
+│   ├── LobbyTest.php          # Lobby functionality
+│   ├── PerformanceTest.php    # Performance optimizations
+│   ├── ProfileTest.php        # Player profile functionality
+│   └── TournamentTest.php     # Tournament tests
 └── Fixtures/
     ├── TestPlayers.php        # Test player data
     └── DiceScenarios.php      # Dice roll scenarios

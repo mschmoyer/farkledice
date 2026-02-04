@@ -1,6 +1,13 @@
 {
   "releases": [
     {
+      "version": "3.0.3",
+      "date": "2026-02-04",
+      "notes": [
+        "Performance improvements made"
+      ]
+    },
+    {
       "version": "3.0.2",
       "date": "2026-02-04",
       "notes": [

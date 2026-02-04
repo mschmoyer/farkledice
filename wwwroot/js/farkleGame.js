@@ -190,10 +190,17 @@ function FarkleGameUpdateHook() {
 
 function GameTimerTick( repeat ) {
 	ConsoleDebug( 'GameTimerTick: Game ticks: ' + timer_ticks + ', repeat?' + repeat );
+
+	// Solo games don't need polling - player controls all turns
+	if( gGameData && gGameData.gamewith == GAME_WITH_SOLO ) {
+		ConsoleDebug( 'GameTimerTick: Solo game detected - skipping polling' );
+		return;
+	}
+
 	if( repeat ) {
 		timer_ticks++;
 		if( timer_ticks < 30 ) {
-			clearTimeout( gGameTimer );	
+			clearTimeout( gGameTimer );
 			gGameTimer = setTimeout( function() { farkleGetUpdate( 1 ); }, 10000); // 10 second fast poll
 		} else {
 			GameGoIdle();

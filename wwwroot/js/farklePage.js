@@ -165,7 +165,32 @@ function pageInit( )
 		ConsoleDebug( 'No user logged in. Showing login screen.' );
 		ShowLogin();
 	}
-}	
+
+	// Pause polling when tab is hidden, resume when visible
+	// This dramatically reduces server load when users switch tabs
+	document.addEventListener('visibilitychange', function() {
+		if (document.hidden) {
+			ConsoleDebug('Tab hidden - pausing all polling');
+			// Clear all active timers
+			clearTimeout(gGameTimer);
+			clearTimeout(gLobbyTimer);
+			clearTimeout(gTournamentTimer);
+		} else {
+			ConsoleDebug('Tab visible - resuming polling with immediate update');
+			// Resume with immediate poll based on current view
+			if (gameWindowActive && gCurGameId > 0) {
+				// In game view - get immediate update
+				timer_ticks = 0; // Reset to fast polling
+				farkleGetUpdate(1);
+			} else if (lobbyActive) {
+				// In lobby view - get immediate update
+				gLobbyTimer_ticks = 0; // Reset to fast polling
+				GetLobbyInfo(1);
+			}
+			// Tournament polling will resume naturally if viewing tournament
+		}
+	});
+}
 
 function HideAllWindows()
 {
