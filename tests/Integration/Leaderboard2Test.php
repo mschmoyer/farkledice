@@ -1125,4 +1125,253 @@ class Leaderboard2Test extends DatabaseTestCase
         $this->assertNotEmpty($board['entries'], 'Daily board should have entries');
         $this->assertNotNull($board['myScore'], 'myScore should be present');
     }
+
+    // =====================================================
+    // WEEKLY FRIENDS SCOPE TESTS
+    // =====================================================
+
+    public function testGetBoard_WeeklyFriendsShowsAcceptedFriends(): void
+    {
+        // Create test players
+        $playerA = $this->player1Id;
+        $playerB = $this->player2Id;
+        $playerC = $this->createTestPlayer('lb2_weekly_pending_friend');
+        $playerD = $this->createTestPlayer('lb2_weekly_stranger');
+
+        // Make playerA and playerB accepted friends
+        $this->makeFriends($playerA, $playerB);
+
+        // Make playerA and playerC pending friends (should NOT appear in friends scope)
+        $this->execute(
+            "INSERT INTO farkle_friends (sourceid, friendid, playerid, status, removed)
+             VALUES (:p1, :p2, :p1b, 'pending', 0)
+             ON CONFLICT DO NOTHING",
+            [':p1' => $playerA, ':p2' => $playerC, ':p1b' => $playerA]
+        );
+
+        // playerD is not a friend at all (should NOT appear)
+
+        $weekStart = $this->queryValue("SELECT date_trunc('week', (NOW() AT TIME ZONE 'America/Chicago'))::DATE");
+
+        // All 4 players have qualifying weekly scores
+        foreach ([$playerA, $playerB, $playerC, $playerD] as $idx => $pid) {
+            $this->execute(
+                "INSERT INTO farkle_lb_weekly_scores (playerid, week_start, daily_scores_used, top5_score, qualifies)
+                 VALUES (:pid, :week_start, 5, :score, TRUE)",
+                [':pid' => $pid, ':week_start' => $weekStart, ':score' => 50000 - ($idx * 1000)]
+            );
+        }
+
+        // Call Leaderboard_GetBoard_Weekly with scope='friends' for player A
+        $result = Leaderboard_GetBoard_Weekly($playerA, 'friends');
+
+        // Assert playerA and playerB (accepted friend) appear in the results
+        $playerIds = array_map(fn($e) => $e['playerId'], $result['entries']);
+        $this->assertContains($playerA, $playerIds, 'Player A (self) should appear in weekly friends board');
+        $this->assertContains($playerB, $playerIds, 'Player B (accepted friend) should appear in weekly friends board');
+
+        // Assert that pending and non-friends do NOT appear
+        $this->assertNotContains($playerC, $playerIds, 'Player C (pending friend) should NOT appear in weekly friends board');
+        $this->assertNotContains($playerD, $playerIds, 'Player D (not a friend) should NOT appear in weekly friends board');
+    }
+
+    public function testGetBoard_WeeklyEveryoneShowsAllPlayers(): void
+    {
+        $playerA = $this->player1Id;
+        $playerB = $this->player2Id;
+        $playerC = $this->createTestPlayer('lb2_weekly_everyone_test');
+
+        $weekStart = $this->queryValue("SELECT date_trunc('week', (NOW() AT TIME ZONE 'America/Chicago'))::DATE");
+
+        // No friendship needed for everyone scope
+        foreach ([$playerA, $playerB, $playerC] as $idx => $pid) {
+            $this->execute(
+                "INSERT INTO farkle_lb_weekly_scores (playerid, week_start, daily_scores_used, top5_score, qualifies)
+                 VALUES (:pid, :week_start, 5, :score, TRUE)",
+                [':pid' => $pid, ':week_start' => $weekStart, ':score' => 50000 - ($idx * 10000)]
+            );
+        }
+
+        $result = Leaderboard_GetBoard_Weekly($playerA, 'everyone');
+
+        $playerIds = array_map(fn($e) => $e['playerId'], $result['entries']);
+        $this->assertContains($playerC, $playerIds, 'All qualifying players should appear in weekly everyone scope');
+    }
+
+    // =====================================================
+    // ALL-TIME FRIENDS SCOPE TESTS
+    // =====================================================
+
+    public function testGetBoard_AlltimeFriendsShowsAcceptedFriends(): void
+    {
+        // Create test players
+        $playerA = $this->player1Id;
+        $playerB = $this->player2Id;
+        $playerC = $this->createTestPlayer('lb2_alltime_pending_friend');
+        $playerD = $this->createTestPlayer('lb2_alltime_stranger');
+
+        // Make playerA and playerB accepted friends
+        $this->makeFriends($playerA, $playerB);
+
+        // Make playerA and playerC pending friends (should NOT appear in friends scope)
+        $this->execute(
+            "INSERT INTO farkle_friends (sourceid, friendid, playerid, status, removed)
+             VALUES (:p1, :p2, :p1b, 'pending', 0)
+             ON CONFLICT DO NOTHING",
+            [':p1' => $playerA, ':p2' => $playerC, ':p1b' => $playerA]
+        );
+
+        // playerD is not a friend at all (should NOT appear)
+
+        // All 4 players have qualifying all-time scores (need 50+ games to qualify)
+        foreach ([$playerA, $playerB, $playerC, $playerD] as $idx => $pid) {
+            $this->execute(
+                "INSERT INTO farkle_lb_alltime (playerid, avg_game_score, best_game_score, total_games, qualifies)
+                 VALUES (:pid, :avg_score, :best_score, 60, TRUE)",
+                [':pid' => $pid, ':avg_score' => 6000 - ($idx * 500), ':best_score' => 10000]
+            );
+        }
+
+        // Call Leaderboard_GetBoard_Alltime with scope='friends' for player A
+        $result = Leaderboard_GetBoard_Alltime($playerA, 'friends');
+
+        // Assert playerA and playerB (accepted friend) appear in the results
+        $playerIds = array_map(fn($e) => $e['playerId'], $result['entries']);
+        $this->assertContains($playerA, $playerIds, 'Player A (self) should appear in alltime friends board');
+        $this->assertContains($playerB, $playerIds, 'Player B (accepted friend) should appear in alltime friends board');
+
+        // Assert that pending and non-friends do NOT appear
+        $this->assertNotContains($playerC, $playerIds, 'Player C (pending friend) should NOT appear in alltime friends board');
+        $this->assertNotContains($playerD, $playerIds, 'Player D (not a friend) should NOT appear in alltime friends board');
+    }
+
+    public function testGetBoard_AlltimeEveryoneShowsAllPlayers(): void
+    {
+        $playerA = $this->player1Id;
+        $playerB = $this->player2Id;
+        $playerC = $this->createTestPlayer('lb2_alltime_everyone_test');
+
+        // No friendship needed for everyone scope
+        foreach ([$playerA, $playerB, $playerC] as $idx => $pid) {
+            $this->execute(
+                "INSERT INTO farkle_lb_alltime (playerid, avg_game_score, best_game_score, total_games, qualifies)
+                 VALUES (:pid, :avg_score, :best_score, 60, TRUE)",
+                [':pid' => $pid, ':avg_score' => 6000 - ($idx * 500), ':best_score' => 10000]
+            );
+        }
+
+        $result = Leaderboard_GetBoard_Alltime($playerA, 'everyone');
+
+        $playerIds = array_map(fn($e) => $e['playerId'], $result['entries']);
+        $this->assertContains($playerC, $playerIds, 'All qualifying players should appear in alltime everyone scope');
+    }
+
+    // =====================================================
+    // MYSCORE RANK CALCULATIONS (PENDING FRIENDS)
+    // =====================================================
+
+    public function testMyScoreRank_DailyExcludesPendingFriends(): void
+    {
+        $playerA = $this->player1Id;
+        $playerB = $this->player2Id;
+        $playerC = $this->createTestPlayer('lb2_daily_rank_pending');
+
+        // Make playerA and playerB accepted friends
+        $this->makeFriends($playerA, $playerB);
+
+        // Make playerA and playerC pending friends
+        $this->execute(
+            "INSERT INTO farkle_friends (sourceid, friendid, playerid, status, removed)
+             VALUES (:p1, :p2, :p1b, 'pending', 0)
+             ON CONFLICT DO NOTHING",
+            [':p1' => $playerA, ':p2' => $playerC, ':p1b' => $playerA]
+        );
+
+        // Set up scores: C > A > B
+        $scores = [$playerA => 5000, $playerB => 4000, $playerC => 6000];
+        foreach ($scores as $pid => $score) {
+            $this->execute(
+                "INSERT INTO farkle_lb_daily_scores (playerid, lb_date, games_played, top10_score, qualifies)
+                 VALUES (:pid, :date, 5, :score, TRUE)",
+                [':pid' => $pid, ':date' => $this->today, ':score' => $score]
+            );
+        }
+
+        // Get board for playerA in friends scope
+        $result = Leaderboard_GetBoard_Daily($playerA, 'friends');
+
+        // PlayerA should be rank 1 (out of 2: A and B only, C is pending so excluded)
+        // Expected order: A (5000), B (4000)
+        $this->assertEquals(1, $result['myScore']['rank'], 'PlayerA should be rank 1 in friends scope (pending friend C excluded)');
+    }
+
+    public function testMyScoreRank_WeeklyExcludesPendingFriends(): void
+    {
+        $playerA = $this->player1Id;
+        $playerB = $this->player2Id;
+        $playerC = $this->createTestPlayer('lb2_weekly_rank_pending');
+
+        // Make playerA and playerB accepted friends
+        $this->makeFriends($playerA, $playerB);
+
+        // Make playerA and playerC pending friends
+        $this->execute(
+            "INSERT INTO farkle_friends (sourceid, friendid, playerid, status, removed)
+             VALUES (:p1, :p2, :p1b, 'pending', 0)
+             ON CONFLICT DO NOTHING",
+            [':p1' => $playerA, ':p2' => $playerC, ':p1b' => $playerA]
+        );
+
+        $weekStart = $this->queryValue("SELECT date_trunc('week', (NOW() AT TIME ZONE 'America/Chicago'))::DATE");
+
+        // Set up scores: C > A > B
+        $scores = [$playerA => 25000, $playerB => 20000, $playerC => 30000];
+        foreach ($scores as $pid => $score) {
+            $this->execute(
+                "INSERT INTO farkle_lb_weekly_scores (playerid, week_start, daily_scores_used, top5_score, qualifies)
+                 VALUES (:pid, :week_start, 5, :score, TRUE)",
+                [':pid' => $pid, ':week_start' => $weekStart, ':score' => $score]
+            );
+        }
+
+        // Get board for playerA in friends scope
+        $result = Leaderboard_GetBoard_Weekly($playerA, 'friends');
+
+        // PlayerA should be rank 1 (out of 2: A and B only, C is pending so excluded)
+        $this->assertEquals(1, $result['myScore']['rank'], 'PlayerA should be rank 1 in weekly friends scope (pending friend C excluded)');
+    }
+
+    public function testMyScoreRank_AlltimeExcludesPendingFriends(): void
+    {
+        $playerA = $this->player1Id;
+        $playerB = $this->player2Id;
+        $playerC = $this->createTestPlayer('lb2_alltime_rank_pending');
+
+        // Make playerA and playerB accepted friends
+        $this->makeFriends($playerA, $playerB);
+
+        // Make playerA and playerC pending friends
+        $this->execute(
+            "INSERT INTO farkle_friends (sourceid, friendid, playerid, status, removed)
+             VALUES (:p1, :p2, :p1b, 'pending', 0)
+             ON CONFLICT DO NOTHING",
+            [':p1' => $playerA, ':p2' => $playerC, ':p1b' => $playerA]
+        );
+
+        // Set up scores: C > A > B
+        $scores = [$playerA => 5500, $playerB => 5000, $playerC => 6000];
+        foreach ($scores as $pid => $avgScore) {
+            $this->execute(
+                "INSERT INTO farkle_lb_alltime (playerid, avg_game_score, best_game_score, total_games, qualifies)
+                 VALUES (:pid, :avg_score, :best_score, 60, TRUE)",
+                [':pid' => $pid, ':avg_score' => $avgScore, ':best_score' => 10000]
+            );
+        }
+
+        // Get board for playerA in friends scope
+        $result = Leaderboard_GetBoard_Alltime($playerA, 'friends');
+
+        // PlayerA should be rank 1 (out of 2: A and B only, C is pending so excluded)
+        $this->assertEquals(1, $result['myScore']['rank'], 'PlayerA should be rank 1 in alltime friends scope (pending friend C excluded)');
+    }
 }
