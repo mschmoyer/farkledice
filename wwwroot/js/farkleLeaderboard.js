@@ -613,7 +613,7 @@ function getPlayfulLabel(entry, board, rank) {
 	if (entry.gamesPlayed >= 20 && g_lb2.currentTier === 'daily')
 		return '<span class="lb2-label lb2-label-lead">All done</span>';
 	if (diff < 500)
-		return '<span class="lb2-label lb2-label-close">Right behind you</span>';
+		return '<span class="lb2-label lb2-label-close">Close!</span>';
 	if (entry.prevRank && rank < entry.prevRank - 1)
 		return '<span class="lb2-label lb2-label-catching">Catching up...</span>';
 	if (rank === 1)
