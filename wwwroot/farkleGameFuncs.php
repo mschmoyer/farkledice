@@ -16,6 +16,7 @@ require_once('farkleTournament.php');
 require_once('iphone_funcs.php');
 require_once('farkleLevel.php');
 require_once('farkleLeaderboard.php');
+require_once('farkleLeaderboardStats.php');
 
 // Who a game will be against
 define( 'GAME_WITH_RANDOM', 		0);		// Game against a random opponent
@@ -1495,8 +1496,25 @@ function FarkleWinGame( $gameid, $winnerid, $reason = "", $sendEmail=1, $achieve
 	// Leaderboard 2.0: Record eligible game for all players
 	$lb2Players = db_query("SELECT gp.playerid, gp.playerscore, gp.playerround FROM farkle_games_players gp WHERE gp.gameid = :gameid", [':gameid' => $gameid], SQL_MULTI_ROW);
 	if ($lb2Players) {
+		$maxScore = 0;
 		foreach ($lb2Players as $lb2Row) {
 			Leaderboard_RecordEligibleGame($lb2Row['playerid'], $gameid, $lb2Row['playerscore'], $lb2Row['playerround'], (int)$gameData['gamewith']);
+			if ($lb2Row['playerscore'] > $maxScore) {
+				$maxScore = $lb2Row['playerscore'];
+			}
+		}
+
+		// Compute rotating stats with throttling:
+		// - Every 5 minutes (300 seconds)
+		// - OR if any player scored > 7500 (exceptional performance likely to affect leaderboard)
+		$lastComputation = (int)db_query("SELECT paramvalue FROM siteinfo WHERE paramid = 50", [], SQL_SINGLE_VALUE);
+		$now = time();
+		$timeSinceLastComputation = $now - $lastComputation;
+		$shouldCompute = ($timeSinceLastComputation >= 300) || ($maxScore > 7500);
+
+		if ($shouldCompute) {
+			LeaderboardStats_ComputeAll();
+			db_execute("UPDATE siteinfo SET paramvalue = :now WHERE paramid = 50", [':now' => $now]);
 		}
 	}
 }

@@ -271,6 +271,8 @@ CREATE TABLE IF NOT EXISTS farkle_rounds (
 );
 
 CREATE INDEX IF NOT EXISTS idx_rounds_playerid_gameid ON farkle_rounds(playerid, gameid);
+CREATE INDEX IF NOT EXISTS idx_rounds_datetime ON farkle_rounds(rounddatetime);
+CREATE INDEX IF NOT EXISTS idx_rounds_datetime_playerid ON farkle_rounds(rounddatetime, playerid);
 
 -- Create siteinfo table (system configuration)
 CREATE TABLE IF NOT EXISTS siteinfo (
@@ -358,7 +360,8 @@ INSERT INTO siteinfo (paramid, paramname, paramvalue) VALUES
   (1, 'last_leaderboard_refresh', '0'),
   (2, 'last_daily_leaderboard_refresh', '0'),
   (3, 'day_of_week', 'Monday'),
-  (4, 'last_cleanup', '0')
+  (4, 'last_cleanup', '0'),
+  (50, 'last_stats_computation', '0')
 ON CONFLICT (paramid) DO NOTHING;
 
 -- Insert a test user (password is 'test123' - MD5 hashed with salt)

@@ -5,16 +5,20 @@
 	require_once('dbutil.php');
 	require_once('farklePageFuncs.php');
 	require_once('farkleLeaderboard.php');
-	require_once('farkleLevel.php'); 
-	
+	require_once('farkleLeaderboardStats.php');
+	require_once('farkleLevel.php');
+
 	// START CRON JOB CODE
 	echo "Started - " . date('h:i:s A') . "\n\r";
-	$alert = ""; 
+	$alert = "";
 	$_SESSION['playerid'] = 0;
 	//$gEmailEnabled = false;
-	
-	// refresh the daily leaderboard charts. 
+
+	// refresh the daily leaderboard charts.
 	Leaderboard_RefreshDaily();
+
+	// Compute rotating stats for today
+	LeaderboardStats_ComputeAll();
 
 	FinishStaleGames( 0 );
 	
