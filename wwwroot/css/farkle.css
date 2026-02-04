@@ -1460,7 +1460,6 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a3a3a3', end
 }
 .lb2-table thead th:last-child { text-align: right; }
 #lb2StatCol { text-align: center; }
-#lb2StatCol:empty { display: none; }
 
 /* ── Leaderboard Table Rows ── */
 .lb2-row {

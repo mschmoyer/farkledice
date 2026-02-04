@@ -493,7 +493,7 @@ function RenderLeaderboard2() {
 		if (statCol) {
 			// Extract short name from "Hot Dice -- Highest Single Round" → "Hot Dice"
 			var shortName = data.featuredStat.title ? data.featuredStat.title.split(' -- ')[0] : 'Stat';
-			statCol.textContent = (g_lb2.currentTier === 'alltime') ? '' : shortName;
+			statCol.textContent = shortName;
 		}
 	}
 
@@ -548,14 +548,10 @@ function RenderBoard(board) {
 			gamesInfo = '<div class="lb2-player-games">' + (entry.totalGames || '') + ' games · best: ' + formatNumber(entry.bestGameScore || 0) + '</div>';
 		}
 
-		// Stat cell (featured stat value if available) - only for daily/weekly
+		// Stat cell (featured stat value if available)
 		var statHtml = '';
-		var statCellHtml = '';
-		if (g_lb2.currentTier !== 'alltime') {
-			if (entry.statValue !== null && entry.statValue !== undefined) {
-				statHtml = '<span class="lb2-stat-value">' + entry.statValue + '</span>';
-			}
-			statCellHtml = '<td class="lb2-col-stat">' + statHtml + '</td>';
+		if (entry.statValue !== null && entry.statValue !== undefined) {
+			statHtml = '<span class="lb2-stat-value">' + entry.statValue + '</span>';
 		}
 
 		// Score cell
@@ -570,7 +566,7 @@ function RenderBoard(board) {
 			'<td class="lb2-rank' + rankClass + '">' + rank + '</td>' +
 			'<td class="lb2-col-arrow">' + arrowHtml + '</td>' +
 			'<td><div class="lb2-player-col"><div><div class="lb2-player-name">' + escapeHtml(entry.username || '') + '</div>' + gamesInfo + '</div>' + label + '</div></td>' +
-			statCellHtml +
+			'<td class="lb2-col-stat">' + statHtml + '</td>' +
 			'<td class="lb2-col-score">' + scoreHtml + '</td>';
 
 		tbody.appendChild(tr);
@@ -597,30 +593,7 @@ function getArrowHtml(rank, prevRank) {
  * Return a playful label span for a board entry relative to the current player.
  */
 function getPlayfulLabel(entry, board, rank) {
-	if (entry.isMe) return ''; // no label for yourself
-
-	// Find my entry
-	var myEntry = null;
-	for (var i = 0; i < board.length; i++) {
-		if (board[i].isMe) { myEntry = board[i]; break; }
-	}
-	if (!myEntry) return '';
-
-	var entryScore = entry.score || entry.avgGameScore || 0;
-	var myScore = myEntry.score || myEntry.avgGameScore || 0;
-	var diff = Math.abs(entryScore - myScore);
-
-	if (entry.gamesPlayed >= 20 && g_lb2.currentTier === 'daily')
-		return '<span class="lb2-label lb2-label-lead">All done</span>';
-	if (diff < 500)
-		return '<span class="lb2-label lb2-label-close">Close!</span>';
-	if (entry.prevRank && rank < entry.prevRank - 1)
-		return '<span class="lb2-label lb2-label-catching">Catching up...</span>';
-	if (rank === 1)
-		return '<span class="lb2-label lb2-label-lead">Pace setter</span>';
-	if (entryScore > myScore && diff > 1500)
-		return '<span class="lb2-label lb2-label-lead">Comfortable lead</span>';
-
+	// Playful labels removed to keep table compact
 	return '';
 }
 
