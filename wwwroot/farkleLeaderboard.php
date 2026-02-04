@@ -1002,7 +1002,7 @@ function Leaderboard_GetMyScore_Daily($playerId, $today, $entries, $scope)
 			AND (ds.playerid = :pid OR ds.playerid IN (
 			    SELECT CASE WHEN f.sourceid = :pid2 THEN f.friendid ELSE f.sourceid END
 			    FROM farkle_friends f
-			    WHERE (f.sourceid = :pid3 OR f.friendid = :pid4) AND f.removed = 0
+			    WHERE (f.sourceid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
 			))";
 		$myRank = (int)db_query($sql, [
 			':today' => $today,
@@ -1160,7 +1160,7 @@ function Leaderboard_GetMyScore_Weekly($playerId, $weekStart, $entries, $scope)
 			AND (ws.playerid = :pid OR ws.playerid IN (
 			    SELECT CASE WHEN f.sourceid = :pid2 THEN f.friendid ELSE f.sourceid END
 			    FROM farkle_friends f
-			    WHERE (f.sourceid = :pid3 OR f.friendid = :pid4) AND f.removed = 0
+			    WHERE (f.sourceid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
 			))";
 		$myRank = (int)db_query($sql, [
 			':week_start' => $weekStart,
@@ -1373,7 +1373,7 @@ function Leaderboard_GetMyScore_Alltime($playerId, $entries, $scope)
 			AND (at.playerid = :pid OR at.playerid IN (
 			    SELECT CASE WHEN f.sourceid = :pid2 THEN f.friendid ELSE f.sourceid END
 			    FROM farkle_friends f
-			    WHERE (f.sourceid = :pid3 OR f.friendid = :pid4) AND f.removed = 0
+			    WHERE (f.sourceid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
 			))";
 		$myRank = (int)db_query($sql, [
 			':score' => (float)$row['avg_game_score'],

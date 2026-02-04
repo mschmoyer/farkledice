@@ -1,6 +1,22 @@
 {
   "releases": [
     {
+      "version": "3.0.2",
+      "date": "2026-02-04",
+      "notes": [
+        "Fixed leaderboard friends filter to correctly exclude pending/blocked friends from rank calculations",
+        "Added comprehensive tests for weekly and all-time friends scope filtering"
+      ]
+    },
+    {
+      "version": "3.0.1",
+      "date": "2026-02-04",
+      "notes": [
+        "Score animation performance hotfix",
+        "Faster leaderboard refresh intervals"
+      ]
+    },
+    {
       "version": "3.0.0",
       "date": "2026-02-03",
       "notes": [
