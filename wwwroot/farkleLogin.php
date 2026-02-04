@@ -89,11 +89,14 @@ function UserLogout()
 		var_dump( $_SESSION['farklesession'] );
 		
 		BaseUtil_Debug( __FUNCTION__ . ": Cookie vars now=", 7 );
-		var_dump( $_COOKIE['username'] ); 
-		var_dump( $_COOKIE['password'] ); 
-		var_dump( $_COOKIE['farklesession'] ); 
+		var_dump( $_COOKIE['username'] );
+		var_dump( $_COOKIE['password'] );
+		var_dump( $_COOKIE['farklesession'] );
 	}
-	
+
+	// Regenerate CSRF token on logout for security
+	csrf_regenerate();
+
 	return 1;
 }
 
@@ -149,16 +152,16 @@ function RegenerateDevice( $sessionid, $playerid )
 function LoginSuccess( $pInfo, $remember=1 )
 {
 	BaseUtil_Debug( "User " . $pInfo['username'] . " logged in.", 7 );
-	
+
 	$_SESSION['username'] = $pInfo['username'];
 	$_SESSION['playerid'] = $pInfo['playerid'];
 	if( isset($pInfo['adminlevel']) ) $_SESSION['adminlevel'] = $pInfo['adminlevel'];
-	
+
 	// Update IP address and mark as active on login
 	$remoteIP = $_SERVER['REMOTE_ADDR'];
 	$sql = "UPDATE farkle_players SET remoteaddr = :remoteaddr, lastplayed = NOW() WHERE playerid = :playerid";
 	$rc = db_execute($sql, [':remoteaddr' => $remoteIP, ':playerid' => $pInfo['playerid']]);
-	
+
 	return 1;
 }
 
@@ -216,6 +219,10 @@ function UserLogin( $user, $pass, $remember=1 )
 	{
 		LoginGenerateSession( $pInfo['playerid'] );
 		LoginSuccess( $pInfo, $remember );
+		// Regenerate CSRF token on explicit login for security
+		csrf_regenerate();
+		// Include new CSRF token so client can update
+		$pInfo['csrf_token'] = csrf_token();
 		return $pInfo;
 	}
 

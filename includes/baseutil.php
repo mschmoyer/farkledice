@@ -66,7 +66,8 @@
 	function BaseUtil_SessSet( $sessName = "FarkleOnline" )
 	{
 		global $g_debug;
-		if(!isset($_SESSION))
+		// Use session_status() instead of isset($_SESSION) for reliable check
+		if (session_status() === PHP_SESSION_NONE)
 		{
 			// Note: Database session handler is initialized in dbutil.php
 			// This ensures sessions are stored in the database for Heroku compatibility
@@ -87,9 +88,7 @@
 			ini_set('session.cookie_path', '/');  // Ensure cookie works across all paths including /admin/
 			ini_set('session.cookie_lifetime', 604800);  // Cookie also lasts 7 days
 
-			if (!session_id()) {
-				session_start();
-			}
+			session_start();
 
 			// Set testserver flag after session is started
 			if (!isset($_SESSION['testserver'])) {
@@ -102,7 +101,35 @@
 			//var_dump($_SESSION);
 		}
 	}
-	
+
+	/**
+	 * Generate or retrieve CSRF token for current session
+	 */
+	function csrf_token(): string {
+		if (empty($_SESSION['csrf_token'])) {
+			$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+		}
+		return $_SESSION['csrf_token'];
+	}
+
+	/**
+	 * Verify CSRF token using timing-safe comparison
+	 */
+	function csrf_verify(string $token): bool {
+		if (empty($_SESSION['csrf_token']) || empty($token)) {
+			return false;
+		}
+		return hash_equals($_SESSION['csrf_token'], $token);
+	}
+
+	/**
+	 * Regenerate CSRF token (call on login/logout)
+	 */
+	function csrf_regenerate(): string {
+		$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+		return $_SESSION['csrf_token'];
+	}
+
 	// Define the root include folder and add it to the path.
 	// Also determine what folder we are in for template_dir
 	$dir = getcwd();
@@ -224,9 +251,8 @@
 	// $_SESSION['testserver'] = 0;
 
 	// Pass app version to templates
-	$smarty->assign('app_version', APP_VERSION); 
-	
-	
+	$smarty->assign('app_version', APP_VERSION);
+
 	// set the cache_lifetime for index.tpl to 1 hour
 	//$smarty->cache_lifetime = 3600;
 	

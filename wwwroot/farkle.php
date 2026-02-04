@@ -9,6 +9,9 @@
 
 	$loginSucceeded = Farkle_SessSet();
 
+	// Assign CSRF token to Smarty for use in templates
+	$smarty->assign('csrf_token', csrf_token());
+
 
 	/*if( isset( $_REQUEST['device'] ) ) {
 		$smarty->assign('device', $_REQUEST['device'] ); 

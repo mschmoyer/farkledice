@@ -289,9 +289,9 @@ VALUES ('testuser', CONCAT(MD5('test123'), MD5('')), '', 'test@example.com', 1, 
 ON CONFLICT (username) DO NOTHING;
 
 -- Insert sample achievements
-INSERT INTO farkle_achievements (name, description, xp_reward) VALUES
-('First Win', 'Win your first game', 10),
-('Perfect Roll', 'Score 1500+ points in a single roll', 25),
-('Hot Streak', 'Win 5 games in a row', 50),
-('Farkle Master', 'Reach level 10', 100)
+INSERT INTO farkle_achievements (name, description, xp_reward, worth) VALUES
+('First Win', 'Win your first game', 10, 5),
+('Perfect Roll', 'Score 1500+ points in a single roll', 25, 10),
+('Hot Streak', 'Win 5 games in a row', 50, 15),
+('Farkle Master', 'Reach level 10', 100, 25)
 ON CONFLICT DO NOTHING;

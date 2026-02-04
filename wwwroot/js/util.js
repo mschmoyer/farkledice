@@ -4,26 +4,38 @@ var gDebugLevel = 0;
 function FarkleParseAjaxResponse( data ) {
 	farkleAlertHide();
 	if( !data )	{
-		// We got no response - bad. 
-		//farkleAlert( 'No response from server. Please contact admin@farkledice.com' ); 
-		return 0; 
+		// We got no response - bad.
+		//farkleAlert( 'No response from server. Please contact admin@farkledice.com' );
+		return 0;
 	} else {
 		var jsonData = farkleParseJSON( data );
+		if( jsonData.CSRFError ) {
+			farkleAlert( 'Your session has expired. The page will reload.', 'orange' );
+			setTimeout(function() {
+				location.reload();
+			}, 2000);
+			return 0;
+		}
 		if( jsonData.Error ) {
-			farkleAlert( jsonData.Error ); 
-			return 0; 
+			farkleAlert( jsonData.Error );
+			return 0;
 		}
 		if( jsonData.LoginRequired ) {
 			ShowLogin();
-			return 0; 
+			return 0;
 		}
-		return jsonData; 
+		return jsonData;
 	}
 }
 
 // Farkle-specific wrapper function
 function FarkleAjaxCall( func, params ) {
-	AjaxCallPost( gAjaxUrl, func, params); 
+	// Add CSRF token to all AJAX requests
+	var csrfInput = document.getElementById('csrf_token');
+	if (csrfInput && csrfInput.value) {
+		params += '&csrf_token=' + encodeURIComponent(csrfInput.value);
+	}
+	AjaxCallPost( gAjaxUrl, func, params);
 }
 
 function farkleParseJSON( data ) {

@@ -20,13 +20,44 @@
 
 	// Run background maintenance tasks (throttled to prevent overload)
 	// This replaces the need for cron jobs
-	BackgroundMaintenance(); 
-	
-	// Allow post or request. TBD: take GET away. 
+	BackgroundMaintenance();
+
+	// Allow post or request. TBD: take GET away.
 	if( isset( $_POST['action'] ) )
 		$p = $_POST;
 	else if( isset( $_GET['action'] ) )
 		$p = $_GET;
+
+	// CSRF Protection
+	// Actions that don't require CSRF tokens (login flow or read-only)
+	$csrf_exempt_actions = ['login', 'register', 'forgotpass', 'resetpass'];
+	$read_only_actions = ['getlobbyinfo', 'getfriends', 'getplayerinfo', 'getleaderboard',
+	                      'getnewgameinfo', 'farklegetupdate', 'getachievements'];
+
+	if (isset($p['action']) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+		$action = $p['action'];
+
+		if (!in_array($action, $csrf_exempt_actions) && !in_array($action, $read_only_actions)) {
+			$submitted_token = $p['csrf_token'] ?? '';
+
+			if (!csrf_verify($submitted_token)) {
+				if (empty($_SESSION['csrf_token'])) {
+					// Pre-deployment session migration: no token stored yet.
+					// Generate token for future requests; allow this one through.
+					// Safe because SameSite=Lax prevents cross-site POST requests.
+					csrf_token();
+				} else {
+					// Token exists but doesn't match - genuine CSRF failure
+					error_log("CSRF validation failed for action: {$action}");
+					echo json_encode([
+						'Error' => 'Session expired. Please refresh the page.',
+						'CSRFError' => true
+					]);
+					exit(0);
+				}
+			}
+		}
+	}
 	
 	// Looks like javascript could return "undefined" in playerid. Set to nothing. 
 	if( isset($p['playerid']) && $p['playerid'] == 'undefined' )

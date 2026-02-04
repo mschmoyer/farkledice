@@ -29,6 +29,10 @@ function Login() {
 				username = data.username;
 				playerid = data.playerid;
 				$('#txtPassword').val('');
+				// Update CSRF token after login
+				if( data.csrf_token ) {
+					$('#csrf_token').val(data.csrf_token);
+				}
 				// Show admin button if user is an admin
 				if( data.adminlevel && data.adminlevel > 0 ) {
 					$('#trLobbyAdmin').show();
@@ -119,12 +123,17 @@ function RegisterUser() {
 				{
 					username = data.username;
 					playerid = data.playerid;
-					
-					// Clear input after use. 
+
+					// Update CSRF token after registration
+					if( data.csrf_token ) {
+						$('#csrf_token').val(data.csrf_token);
+					}
+
+					// Clear input after use.
 					$('#txtRegUser').val('');
-					$('#txtRegPass').val('');					
+					$('#txtRegPass').val('');
 					$('#txtEmail').val('');
-					
+
 					ShowLobby();
 					return 1;
 				}
