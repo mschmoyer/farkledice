@@ -60,6 +60,8 @@ function db_connect()
 			PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 			PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
 			PDO::ATTR_EMULATE_PREPARES => false,
+			PDO::ATTR_PERSISTENT => true,  // Enable connection pooling across requests
+			PDO::ATTR_TIMEOUT => 5,         // 5 second connection timeout
 		]);
 		return $g_dbh;
 	} catch (PDOException $e) {

@@ -14,6 +14,7 @@ class DatabaseSessionHandler implements SessionHandlerInterface
 {
 	private $dbh;
 	private $maxlifetime;
+	private $previousData = [];
 
 	public function __construct($dbh)
 	{
@@ -66,6 +67,9 @@ class DatabaseSessionHandler implements SessionHandlerInterface
 				);
 				$update->execute([':session_id' => $session_id]);
 
+				// Store previous data for change detection
+				$this->previousData[$session_id] = $row['session_data'];
+
 				return $row['session_data'];
 			}
 
@@ -86,6 +90,12 @@ class DatabaseSessionHandler implements SessionHandlerInterface
 	public function write($session_id, $session_data): bool
 	{
 		try {
+			// Skip database write if data hasn't changed
+			if (isset($this->previousData[$session_id]) && $this->previousData[$session_id] === $session_data) {
+				error_log("Session write skipped (unchanged) for ID: $session_id");
+				return true;
+			}
+
 			error_log("Session write called for ID: $session_id, data length: " . strlen($session_data));
 
 			// Use INSERT ... ON CONFLICT to handle both insert and update
@@ -101,6 +111,9 @@ class DatabaseSessionHandler implements SessionHandlerInterface
 				':session_id' => $session_id,
 				':session_data' => $session_data
 			]);
+
+			// Update previous data for next comparison
+			$this->previousData[$session_id] = $session_data;
 
 			error_log("Session write successful");
 			return true;

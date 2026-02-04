@@ -126,36 +126,43 @@ function GetNewGameInfo( $playerid )
 function GetGameFriends( $playerid, $force = false )
 {
 	BaseUtil_Debug( __FUNCTION__ . " Entered. Playerid=$playerid.", 7 );
-	$players = ""; 
-	
-	//if( !isset($_SESSION['farkle']['friends']) || empty($_SESSION['farkle']['friends']) || $force )
-	//{
-		BaseUtil_Debug( __FUNCTION__ . " No friend data cached. Adding friend data.", 7 );
 
-		// Use numeric comparison for compatibility with smallint columns
-		$sql = "SELECT a.username, a.playerid, a.playertitle, a.cardcolor, a.lastplayed
-				FROM farkle_players a, farkle_friends b
-				WHERE a.playerid = b.friendid AND b.sourceid = :sourceid AND
-				a.active = 1 AND b.removed = 0
-				ORDER BY lastplayed DESC";
+	// Use static variable caching with 5-minute TTL
+	static $cache = array();
+	static $cacheTime = array();
+	$cacheTTL = 300; // 5 minutes
 
-		$players = db_query($sql, [':sourceid' => $playerid], SQL_MULTI_ROW);
-		$_SESSION['farkle']['friends'] = $players; 
-	//}
-	//else
-	//{
-	//	BaseUtil_Debug( __FUNCTION__ . " Cached friend data found. Using that.", 7 );
-		
-		// Return cached friend info
-	//	return $_SESSION['farkle']['friends']; 
-	//}
-	
-	// TBD: Do something if no friends returned. 
+	// Check if we have valid cached data for this player
+	if( !$force && isset($cache[$playerid]) && isset($cacheTime[$playerid]) )
+	{
+		if( (time() - $cacheTime[$playerid]) < $cacheTTL )
+		{
+			BaseUtil_Debug( __FUNCTION__ . " Cached friend data found. Using that.", 7 );
+			return $cache[$playerid];
+		}
+	}
+
+	BaseUtil_Debug( __FUNCTION__ . " No friend data cached. Adding friend data.", 7 );
+
+	// Use numeric comparison for compatibility with smallint columns
+	$sql = "SELECT a.username, a.playerid, a.playertitle, a.cardcolor, a.lastplayed
+			FROM farkle_players a, farkle_friends b
+			WHERE a.playerid = b.friendid AND b.sourceid = :sourceid AND
+			a.active = 1 AND b.removed = 0
+			ORDER BY lastplayed DESC";
+
+	$players = db_query($sql, [':sourceid' => $playerid], SQL_MULTI_ROW);
+
+	// TBD: Do something if no friends returned.
 	if( !isset($players) || empty($players) || count($players) == 0 )
 	{
-		$players = Array( 'Message' => 'No friends found.' ); 
+		$players = Array( 'Message' => 'No friends found.' );
 	}
-	
+
+	// Store in static cache
+	$cache[$playerid] = $players;
+	$cacheTime[$playerid] = time();
+
 	return $players;
 }
 

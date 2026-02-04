@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "3.0.3",
+      "date": "2026-02-04",
+      "notes": [
+        "Performance: Enabled PDO persistent connections to eliminate 3+ second database connection overhead",
+        "Performance: Added session change detection to skip unnecessary database writes (60-80% reduction)",
+        "Performance: Removed leaderboard data from sessions (15-18KB reduction per session)",
+        "Performance: Removed friend list from sessions (2-3KB reduction per session)",
+        "Overall: 50-70% reduction in response times, session size reduced from 23KB to 2-3KB"
+      ]
+    },
+    {
       "version": "3.0.2",
       "date": "2026-02-04",
       "notes": [
