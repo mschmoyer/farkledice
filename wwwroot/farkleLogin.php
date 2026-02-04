@@ -162,9 +162,6 @@ function LoginSuccess( $pInfo, $remember=1 )
 	$sql = "UPDATE farkle_players SET remoteaddr = :remoteaddr, lastplayed = NOW() WHERE playerid = :playerid";
 	$rc = db_execute($sql, [':remoteaddr' => $remoteIP, ':playerid' => $pInfo['playerid']]);
 
-	// Regenerate CSRF token on login for security
-	csrf_regenerate();
-
 	return 1;
 }
 
@@ -222,6 +219,8 @@ function UserLogin( $user, $pass, $remember=1 )
 	{
 		LoginGenerateSession( $pInfo['playerid'] );
 		LoginSuccess( $pInfo, $remember );
+		// Regenerate CSRF token on explicit login for security
+		csrf_regenerate();
 		// Include new CSRF token so client can update
 		$pInfo['csrf_token'] = csrf_token();
 		return $pInfo;

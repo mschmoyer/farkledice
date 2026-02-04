@@ -66,7 +66,8 @@
 	function BaseUtil_SessSet( $sessName = "FarkleOnline" )
 	{
 		global $g_debug;
-		if(!isset($_SESSION))
+		// Use session_status() instead of isset($_SESSION) for reliable check
+		if (session_status() === PHP_SESSION_NONE)
 		{
 			// Note: Database session handler is initialized in dbutil.php
 			// This ensures sessions are stored in the database for Heroku compatibility
@@ -87,9 +88,7 @@
 			ini_set('session.cookie_path', '/');  // Ensure cookie works across all paths including /admin/
 			ini_set('session.cookie_lifetime', 604800);  // Cookie also lasts 7 days
 
-			if (!session_id()) {
-				session_start();
-			}
+			session_start();
 
 			// Set testserver flag after session is started
 			if (!isset($_SESSION['testserver'])) {

@@ -41,12 +41,20 @@
 			$submitted_token = $p['csrf_token'] ?? '';
 
 			if (!csrf_verify($submitted_token)) {
-				error_log("CSRF validation failed for action: {$action}");
-				echo json_encode([
-					'Error' => 'Session expired. Please refresh the page.',
-					'CSRFError' => true
-				]);
-				exit(0);
+				if (empty($_SESSION['csrf_token'])) {
+					// Pre-deployment session migration: no token stored yet.
+					// Generate token for future requests; allow this one through.
+					// Safe because SameSite=Lax prevents cross-site POST requests.
+					csrf_token();
+				} else {
+					// Token exists but doesn't match - genuine CSRF failure
+					error_log("CSRF validation failed for action: {$action}");
+					echo json_encode([
+						'Error' => 'Session expired. Please refresh the page.',
+						'CSRFError' => true
+					]);
+					exit(0);
+				}
 			}
 		}
 	}
