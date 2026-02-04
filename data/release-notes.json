@@ -1,6 +1,13 @@
 {
   "releases": [
     {
+      "version": "3.0.4",
+      "date": "2026-02-04",
+      "notes": [
+        "Critical performance hotfix - sessions now properly optimized"
+      ]
+    },
+    {
       "version": "3.0.3",
       "date": "2026-02-04",
       "notes": [
