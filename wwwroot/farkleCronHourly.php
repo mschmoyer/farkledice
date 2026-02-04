@@ -7,6 +7,7 @@
 	require_once('farklePageFuncs.php');
 	require_once('farkleTournament.php');
 	require_once('farkleUtil.php');
+	require_once('farkleLeaderboard.php');
 	
 	// FUNCTIONS
 	
@@ -105,6 +106,9 @@
 
 	if( $badGameCount > 0 )
 		SendEmail( 'mikeschmoyer@gmail.com', "Farkle Server Issue - Bad Games", "Farkle Ten has detected games that are not finished but have no players with rounds left to player." );
-	
+
+	// Leaderboard 2.0: Recompute weekly scores
+	Leaderboard_ComputeWeeklyScores();
+
 	exit(0);
 ?>

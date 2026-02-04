@@ -69,6 +69,15 @@
 
 		<td class="lobbyButtonsColumn">
 
+			<!-- Leaderboard 2.0: Daily Game Counter -->
+			<div id="lobby-daily-counter" class="lb2-lobby-counter" style="display:none;">
+				<span id="lobbyCounterLabel">Daily Games: </span>
+				<span id="lobbyCounterValue" class="lb2-counter-highlight">0/20</span>
+				<span id="lobbyCounterSep"> | </span>
+				<span id="lobbyCounterScoreLabel">Top 10: </span>
+				<span id="lobbyCounterScoreValue" class="lb2-counter-highlight">0</span>
+			</div>
+
 			<table class="lobbyButtonsTable">
 
 			<tr><td>

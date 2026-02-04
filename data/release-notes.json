@@ -1,6 +1,20 @@
 {
   "releases": [
     {
+      "version": "2.9.0",
+      "date": "2026-02-03",
+      "notes": [
+        "NEW: Leaderboard 2.0 - Daily, Weekly, and All-Time leaderboards with game caps",
+        "Best 10 of your first 20 games each day count toward your daily score",
+        "Weekly board uses your best 5 daily scores, All-Time tracks career averages",
+        "Friends-first view with rivalry labels, movement arrows, and head-to-head cards",
+        "Rotating weekly featured stats: Hot Dice, Farkle Rate, Comeback King, and more",
+        "Post-game toast shows your leaderboard impact after each eligible game",
+        "Daily game counter in lobby tracks your progress toward the 20-game cap",
+        "Win streak tracking added to player profiles"
+      ]
+    },
+    {
       "version": "2.8.3",
       "date": "2026-02-02",
       "notes": [

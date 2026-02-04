@@ -1,0 +1,87 @@
+{
+  "id": "leaderboard2",
+  "title": "Leaderboard 2.0: Daily/Weekly/All-Time with Game Cap",
+  "created_at": "2026-02-03T00:00:00Z",
+  "status": "in_progress",
+
+  "tasks": [
+    {
+      "id": "task-001",
+      "description": "Create migration SQL + update docker/init.sql with 5 new tables, ALTER TABLE, indexes",
+      "status": "pending",
+      "phase": 1
+    },
+    {
+      "id": "task-002",
+      "description": "Run migration on local Docker database",
+      "status": "pending",
+      "phase": 1
+    },
+    {
+      "id": "task-003",
+      "description": "Add Leaderboard_RecordEligibleGame() and daily score computation functions to farkleLeaderboard.php, hook into FarkleWinGame()",
+      "status": "pending",
+      "phase": 1
+    },
+    {
+      "id": "task-004",
+      "description": "Add getdailyprogress API endpoint in farkle_fetch.php and Leaderboard_GetDailyProgress() function",
+      "status": "pending",
+      "phase": 1
+    },
+    {
+      "id": "task-005",
+      "description": "Add daily game counter to lobby template and farkleLobby.js",
+      "status": "pending",
+      "phase": 1
+    },
+    {
+      "id": "task-006",
+      "description": "Add getleaderboard2 API endpoint with Leaderboard_GetBoard() and Leaderboard_GetFriendBoard() functions",
+      "status": "pending",
+      "phase": 2
+    },
+    {
+      "id": "task-007",
+      "description": "Rewrite leaderboard template (farkle_div_leaderboard.tpl) with new 3-tab structure and all UI containers",
+      "status": "pending",
+      "phase": 2
+    },
+    {
+      "id": "task-008",
+      "description": "Rewrite farkleLeaderboard.js with new data model, rendering, tab/scope switching, friend rows, arrows, labels",
+      "status": "pending",
+      "phase": 2
+    },
+    {
+      "id": "task-009",
+      "description": "Add all new CSS classes for leaderboard rows, arrows, labels, badges, toast, counter, etc. to farkle.css",
+      "status": "pending",
+      "phase": 2
+    },
+    {
+      "id": "task-010",
+      "description": "Add weekly/alltime computation functions + cron job changes (farkleCronHourly.php, farkleCronNightly.php)",
+      "status": "pending",
+      "phase": 3
+    },
+    {
+      "id": "task-011",
+      "description": "Create farkleLeaderboardStats.php with rotating stat computation functions",
+      "status": "pending",
+      "phase": 3
+    },
+    {
+      "id": "task-012",
+      "description": "Add post-game leaderboard feedback toast in farkleGame.js + backend support",
+      "status": "pending",
+      "phase": 3
+    },
+    {
+      "id": "task-013",
+      "description": "Run tests, bump version, update release notes",
+      "status": "pending",
+      "phase": 3
+    }
+  ]
+}

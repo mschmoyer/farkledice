@@ -249,6 +249,9 @@ function DoLobbyUpdateEx( inputData )
 		$('#lblDoubleXP').hide();
 	}
 
+	// Update daily leaderboard counter in lobby
+	updateLobbyDailyCounter();
+
 	return 1;
 }
 
@@ -261,6 +264,32 @@ function LobbyUpdateXPBar( playerData ) {
 	//var negWidth = Math.max( maxWidth-barWidth - 2, 0 ); 
 	$('#xpBar').css('width', parseInt(xpPercent)+'%' );
 	$('#xpNeg').css('width', parseInt(xpNeg)+'%' );
+}
+
+function updateLobbyDailyCounter() {
+	AjaxCallPost2( gAjaxUrl, function() {
+		if( ajaxrequest2.responseText ) {
+			try {
+				var data = JSON.parse( ajaxrequest2.responseText );
+				if( data && !data.Error && !data.LoginRequired ) {
+					var counterValue = document.getElementById('lobbyCounterValue');
+					if( counterValue ) {
+						counterValue.textContent = data.games_played + '/20';
+					}
+					var scoreValue = document.getElementById('lobbyCounterScoreValue');
+					if( scoreValue ) {
+						scoreValue.textContent = addCommas(data.daily_score);
+					}
+					var counterDiv = document.getElementById('lobby-daily-counter');
+					if( counterDiv ) {
+						counterDiv.style.display = 'block';
+					}
+				}
+			} catch(e) {
+				ConsoleDebug('updateLobbyDailyCounter: JSON parse error: ' + e.message);
+			}
+		}
+	}, 'action=getdailyprogress' );
 }
 
 function LobbyGoIdle()
