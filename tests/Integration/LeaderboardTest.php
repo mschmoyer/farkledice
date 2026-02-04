@@ -652,11 +652,11 @@ class LeaderboardTest extends DatabaseTestCase
      */
     public function testAchievementPointsLeaderboardPopulates(): void
     {
-        // Get an achievement ID
-        $achievementId = $this->queryValue("SELECT achievementid FROM farkle_achievements LIMIT 1");
+        // Get an achievement ID with worth > 0
+        $achievementId = $this->queryValue("SELECT achievementid FROM farkle_achievements WHERE worth > 0 LIMIT 1");
 
         if (!$achievementId) {
-            $this->markTestSkipped('No achievements in database');
+            $this->markTestSkipped('No achievements with worth > 0 in database');
         }
 
         // Award achievement to test player

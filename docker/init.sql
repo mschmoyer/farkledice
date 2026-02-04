@@ -168,8 +168,10 @@ CREATE TABLE IF NOT EXISTS farkle_friends (
   sourceid INTEGER NOT NULL,
   friendid INTEGER NOT NULL,
   removed SMALLINT DEFAULT 0,
+  playerid INTEGER,
   status friend_status DEFAULT 'pending',
   created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  id SERIAL,
   PRIMARY KEY (sourceid, friendid)
 );
 
