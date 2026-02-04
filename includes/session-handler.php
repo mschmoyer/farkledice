@@ -96,6 +96,13 @@ class DatabaseSessionHandler implements SessionHandlerInterface
 				return true;
 			}
 
+			// Debug: log what changed
+			if (isset($this->previousData[$session_id])) {
+				$oldLen = strlen($this->previousData[$session_id]);
+				$newLen = strlen($session_data);
+				error_log("Session data changed for ID: $session_id (old: {$oldLen}B, new: {$newLen}B)");
+			}
+
 			error_log("Session write called for ID: $session_id, data length: " . strlen($session_data));
 
 			// Use INSERT ... ON CONFLICT to handle both insert and update

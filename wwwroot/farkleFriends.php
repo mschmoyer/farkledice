@@ -132,6 +132,11 @@ function GetGameFriends( $playerid, $force = false )
 	static $cacheTime = array();
 	$cacheTTL = 300; // 5 minutes
 
+	// CRITICAL: Remove old friend data from sessions (cleanup from previous version)
+	if (isset($_SESSION['farkle']['friends'])) {
+		unset($_SESSION['farkle']['friends']);
+	}
+
 	// Check if we have valid cached data for this player
 	if( !$force && isset($cache[$playerid]) && isset($cacheTime[$playerid]) )
 	{

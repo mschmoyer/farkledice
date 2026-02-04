@@ -133,6 +133,11 @@ function GetLeaderBoard()
 	static $cacheData = null;
 	static $cacheTime = 0;
 
+	// CRITICAL: Remove old leaderboard data from sessions (cleanup from previous version)
+	if (isset($_SESSION['farkle']['lb'])) {
+		unset($_SESSION['farkle']['lb']);
+	}
+
 	$i=0;
 	$lbData = Array();
 	$maxRows = 25;
