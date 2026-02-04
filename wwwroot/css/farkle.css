@@ -1459,7 +1459,8 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a3a3a3', end
 	border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 .lb2-table thead th:last-child { text-align: right; }
-.lb2-table thead th.lb2-col-stat { text-align: center; }
+#lb2StatCol { text-align: center; }
+#lb2StatCol:empty { display: none; }
 
 /* ── Leaderboard Table Rows ── */
 .lb2-row {
@@ -1522,7 +1523,7 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a3a3a3', end
 }
 .lb2-player-games {
 	font-size: 10px;
-	color: #888;
+	color: #bbb;
 	margin-top: 1px;
 }
 
@@ -1709,21 +1710,36 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a3a3a3', end
 		width: 60px;
 	}
 	.lb2-player-name {
-		font-size: 12px;
+		font-size: 11px;
+	}
+	.lb2-player-games {
+		font-size: 9px;
+		color: #bbb;
 	}
 	.lb2-col-score {
-		font-size: 12px;
+		font-size: 11px;
+		padding-right: 4px !important;
+	}
+	.lb2-col-stat {
+		font-size: 10px;
+	}
+	.lb2-col-stat .lb2-stat-value {
+		font-size: 11px;
 	}
 	.lb2-row td {
-		padding: 8px 6px;
-		font-size: 12px;
+		padding: 8px 4px;
+		font-size: 11px;
 	}
 	.lb2-rank {
-		width: 28px;
+		width: 24px;
+		font-size: 11px;
 	}
+	.lb2-rank-1 { font-size: 13px; }
+	.lb2-rank-2 { font-size: 12px; }
+	.lb2-rank-3 { font-size: 12px; }
 	.lb2-col-arrow {
-		width: 22px;
-		font-size: 12px;
+		width: 20px;
+		font-size: 11px;
 	}
 	.lb2-h2h-name {
 		font-size: 13px;

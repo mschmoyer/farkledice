@@ -548,10 +548,14 @@ function RenderBoard(board) {
 			gamesInfo = '<div class="lb2-player-games">' + (entry.totalGames || '') + ' games · best: ' + formatNumber(entry.bestGameScore || 0) + '</div>';
 		}
 
-		// Stat cell (featured stat value if available)
+		// Stat cell (featured stat value if available) - only for daily/weekly
 		var statHtml = '';
-		if (entry.statValue !== null && entry.statValue !== undefined) {
-			statHtml = '<span class="lb2-stat-value">' + entry.statValue + '</span>';
+		var statCellHtml = '';
+		if (g_lb2.currentTier !== 'alltime') {
+			if (entry.statValue !== null && entry.statValue !== undefined) {
+				statHtml = '<span class="lb2-stat-value">' + entry.statValue + '</span>';
+			}
+			statCellHtml = '<td class="lb2-col-stat">' + statHtml + '</td>';
 		}
 
 		// Score cell
@@ -566,7 +570,7 @@ function RenderBoard(board) {
 			'<td class="lb2-rank' + rankClass + '">' + rank + '</td>' +
 			'<td class="lb2-col-arrow">' + arrowHtml + '</td>' +
 			'<td><div class="lb2-player-col"><div><div class="lb2-player-name">' + escapeHtml(entry.username || '') + '</div>' + gamesInfo + '</div>' + label + '</div></td>' +
-			'<td class="lb2-col-stat">' + statHtml + '</td>' +
+			statCellHtml +
 			'<td class="lb2-col-score">' + scoreHtml + '</td>';
 
 		tbody.appendChild(tr);
@@ -583,7 +587,7 @@ function RenderBoard(board) {
  * Return HTML for the rank movement arrow indicator.
  */
 function getArrowHtml(rank, prevRank) {
-	if (prevRank === null || prevRank === undefined) return '<span class="lb2-arrow-new">NEW</span>';
+	if (prevRank === null || prevRank === undefined) return '';
 	if (rank < prevRank) return '<span class="lb2-arrow-up">&#9650;</span>';
 	if (rank > prevRank) return '<span class="lb2-arrow-down">&#9660;</span>';
 	return '<span class="lb2-arrow-same">&#9644;</span>';

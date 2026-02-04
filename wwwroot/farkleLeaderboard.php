@@ -889,9 +889,9 @@ function Leaderboard_GetBoard_Daily($playerId, $scope)
 			WHERE ds.lb_date = :today
 			  AND ds.qualifies = TRUE
 			  AND (ds.playerid = :pid OR ds.playerid IN (
-			    SELECT CASE WHEN f.playerid = :pid2 THEN f.friendid ELSE f.playerid END
+			    SELECT CASE WHEN f.sourceid = :pid2 THEN f.friendid ELSE f.sourceid END
 			    FROM farkle_friends f
-			    WHERE (f.playerid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
+			    WHERE (f.sourceid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
 			  ))
 			ORDER BY ds.top10_score DESC
 			LIMIT 25";
@@ -1000,9 +1000,9 @@ function Leaderboard_GetMyScore_Daily($playerId, $today, $entries, $scope)
 		$sql = "SELECT COUNT(*) + 1 FROM farkle_lb_daily_scores ds
 			WHERE ds.lb_date = :today AND ds.qualifies = TRUE AND ds.top10_score > :score
 			AND (ds.playerid = :pid OR ds.playerid IN (
-			    SELECT CASE WHEN f.playerid = :pid2 THEN f.friendid ELSE f.playerid END
+			    SELECT CASE WHEN f.sourceid = :pid2 THEN f.friendid ELSE f.sourceid END
 			    FROM farkle_friends f
-			    WHERE (f.playerid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
+			    WHERE (f.sourceid = :pid3 OR f.friendid = :pid4) AND f.removed = 0
 			))";
 		$myRank = (int)db_query($sql, [
 			':today' => $today,
@@ -1043,9 +1043,9 @@ function Leaderboard_GetBoard_Weekly($playerId, $scope)
 			WHERE ws.week_start = :week_start
 			  AND ws.qualifies = TRUE
 			  AND (ws.playerid = :pid OR ws.playerid IN (
-			    SELECT CASE WHEN f.playerid = :pid2 THEN f.friendid ELSE f.playerid END
+			    SELECT CASE WHEN f.sourceid = :pid2 THEN f.friendid ELSE f.sourceid END
 			    FROM farkle_friends f
-			    WHERE (f.playerid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
+			    WHERE (f.sourceid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
 			  ))
 			ORDER BY ws.top5_score DESC
 			LIMIT 25";
@@ -1158,9 +1158,9 @@ function Leaderboard_GetMyScore_Weekly($playerId, $weekStart, $entries, $scope)
 		$sql = "SELECT COUNT(*) + 1 FROM farkle_lb_weekly_scores ws
 			WHERE ws.week_start = :week_start AND ws.qualifies = TRUE AND ws.top5_score > :score
 			AND (ws.playerid = :pid OR ws.playerid IN (
-			    SELECT CASE WHEN f.playerid = :pid2 THEN f.friendid ELSE f.playerid END
+			    SELECT CASE WHEN f.sourceid = :pid2 THEN f.friendid ELSE f.sourceid END
 			    FROM farkle_friends f
-			    WHERE (f.playerid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
+			    WHERE (f.sourceid = :pid3 OR f.friendid = :pid4) AND f.removed = 0
 			))";
 		$myRank = (int)db_query($sql, [
 			':week_start' => $weekStart,
@@ -1273,9 +1273,9 @@ function Leaderboard_GetBoard_Alltime($playerId, $scope)
 			JOIN farkle_players p ON at.playerid = p.playerid
 			WHERE at.qualifies = TRUE
 			  AND (at.playerid = :pid OR at.playerid IN (
-			    SELECT CASE WHEN f.playerid = :pid2 THEN f.friendid ELSE f.playerid END
+			    SELECT CASE WHEN f.sourceid = :pid2 THEN f.friendid ELSE f.sourceid END
 			    FROM farkle_friends f
-			    WHERE (f.playerid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
+			    WHERE (f.sourceid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
 			  ))
 			ORDER BY at.avg_game_score DESC
 			LIMIT 25";
@@ -1371,9 +1371,9 @@ function Leaderboard_GetMyScore_Alltime($playerId, $entries, $scope)
 		$sql = "SELECT COUNT(*) + 1 FROM farkle_lb_alltime at
 			WHERE at.qualifies = TRUE AND at.avg_game_score > :score
 			AND (at.playerid = :pid OR at.playerid IN (
-			    SELECT CASE WHEN f.playerid = :pid2 THEN f.friendid ELSE f.playerid END
+			    SELECT CASE WHEN f.sourceid = :pid2 THEN f.friendid ELSE f.sourceid END
 			    FROM farkle_friends f
-			    WHERE (f.playerid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
+			    WHERE (f.sourceid = :pid3 OR f.friendid = :pid4) AND f.removed = 0
 			))";
 		$myRank = (int)db_query($sql, [
 			':score' => (float)$row['avg_game_score'],
