@@ -428,7 +428,7 @@ function switchLeaderboardTier(tier) {
 	if (scoreCol) {
 		if (tier === 'daily') scoreCol.textContent = 'Daily Score';
 		else if (tier === 'weekly') scoreCol.textContent = 'Weekly Score';
-		else scoreCol.textContent = 'Rating';
+		else scoreCol.textContent = 'Avg Game';
 	}
 
 	// Check cache age (60s), fetch if stale, else render from cache
@@ -539,7 +539,7 @@ function RenderBoard(board) {
 		} else if (g_lb2.currentTier === 'weekly') {
 			gamesInfo = '<div class="lb2-player-games">' + (entry.daysPlayed || '') + ' days played</div>';
 		} else {
-			gamesInfo = '<div class="lb2-player-games">' + (entry.qualifyingDays || '') + ' days played</div>';
+			gamesInfo = '<div class="lb2-player-games">' + (entry.totalGames || '') + ' games · best: ' + formatNumber(entry.bestGameScore || 0) + '</div>';
 		}
 
 		// Stat cell (featured stat value if available)
@@ -548,7 +548,7 @@ function RenderBoard(board) {
 		// Score cell
 		var scoreHtml = '';
 		if (g_lb2.currentTier === 'alltime') {
-			scoreHtml = '<span class="lb2-rating-badge">' + formatNumber(Math.round(entry.avgDailyScore || entry.score || 0)) + '</span>';
+			scoreHtml = '<span class="lb2-rating-badge">' + formatNumber(entry.avgGameScore || entry.score || 0) + '</span>';
 		} else {
 			scoreHtml = formatNumber(entry.score || 0);
 		}
@@ -593,8 +593,8 @@ function getPlayfulLabel(entry, board, rank) {
 	}
 	if (!myEntry) return '';
 
-	var entryScore = entry.score || entry.avgDailyScore || 0;
-	var myScore = myEntry.score || myEntry.avgDailyScore || 0;
+	var entryScore = entry.score || entry.avgGameScore || 0;
+	var myScore = myEntry.score || myEntry.avgGameScore || 0;
 	var diff = Math.abs(entryScore - myScore);
 
 	if (entry.gamesPlayed >= 20 && g_lb2.currentTier === 'daily')
@@ -643,8 +643,8 @@ function RenderH2HCard(board) {
 
 	var p1 = board[0];
 	var p2 = board[1];
-	var p1Score = p1.score || p1.avgDailyScore || 0;
-	var p2Score = p2.score || p2.avgDailyScore || 0;
+	var p1Score = p1.score || p1.avgGameScore || 0;
+	var p2Score = p2.score || p2.avgGameScore || 0;
 	card.style.display = '';
 	card.innerHTML = '<div class="lb2-h2h-players">' +
 		'<div class="lb2-h2h-player">' +
@@ -669,8 +669,8 @@ function RenderScoreBar(myScore, board) {
 	var rankEl = document.getElementById('lb2RankValue');
 	if (rankEl) rankEl.textContent = '#' + myRank + ' of ' + board.length;
 
-	var myScoreVal = myScore.score || myScore.avgDailyScore || 0;
-	var topScoreVal = board.length > 0 ? (board[0].score || board[0].avgDailyScore || 0) : 0;
+	var myScoreVal = myScore.score || myScore.avgGameScore || 0;
+	var topScoreVal = board.length > 0 ? (board[0].score || board[0].avgGameScore || 0) : 0;
 	var gap = (board.length > 0 && myRank > 1) ? Math.round(myScoreVal - topScoreVal) : 0;
 	var gapEl = document.getElementById('lb2GapValue');
 	if (gapEl) {

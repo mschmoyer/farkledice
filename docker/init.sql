@@ -328,12 +328,16 @@ CREATE TABLE IF NOT EXISTS farkle_lb_alltime (
     total_daily_score BIGINT NOT NULL DEFAULT 0,
     avg_daily_score NUMERIC(10,2) NOT NULL DEFAULT 0,
     best_day_score INT DEFAULT 0,
+    avg_game_score NUMERIC(10,2) NOT NULL DEFAULT 0,
+    best_game_score INT DEFAULT 0,
+    total_games INT NOT NULL DEFAULT 0,
     qualifies BOOLEAN DEFAULT FALSE,
     rank INT,
     prev_rank INT,
     last_updated TIMESTAMP DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_lb_alltime_avg ON farkle_lb_alltime(avg_daily_score DESC) WHERE qualifies = TRUE;
+CREATE INDEX IF NOT EXISTS idx_lb_alltime_avg_game ON farkle_lb_alltime(avg_game_score DESC) WHERE qualifies = TRUE;
 
 -- Rotating stat highlights
 CREATE TABLE IF NOT EXISTS farkle_lb_stats (

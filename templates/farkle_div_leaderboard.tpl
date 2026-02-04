@@ -51,7 +51,7 @@
 
 		<!-- All-time description -->
 		<div id="lb2AlltimeDesc" class="lb2-section-label" style="display:none;">
-			Career Rating — Avg Daily Score (min 10 days)
+			Career Rating — Avg Game Score (min 50 games)
 		</div>
 
 		<!-- Main leaderboard table -->

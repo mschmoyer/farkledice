@@ -144,8 +144,10 @@ FROM ranked r
 WHERE ws.playerid = r.playerid AND ws.week_start = r.week_start;
 
 -- ============================================================
--- Step 6: Compute all-time scores (career avg daily score)
+-- Step 6: Compute all-time scores (per-game avg + daily stats)
 -- ============================================================
+
+-- 6a: Insert daily-based stats
 WITH career AS (
     SELECT playerid,
            COUNT(*) as qualifying_days,
@@ -158,20 +160,35 @@ WITH career AS (
 )
 INSERT INTO farkle_lb_alltime (playerid, qualifying_days, total_daily_score, avg_daily_score, best_day_score, qualifies, last_updated)
 SELECT playerid, qualifying_days, total_daily_score, avg_daily_score, best_day_score,
-       qualifying_days >= 10, NOW()
+       FALSE, NOW()
 FROM career
 ON CONFLICT (playerid) DO UPDATE
 SET qualifying_days = EXCLUDED.qualifying_days,
     total_daily_score = EXCLUDED.total_daily_score,
     avg_daily_score = EXCLUDED.avg_daily_score,
     best_day_score = EXCLUDED.best_day_score,
-    qualifies = EXCLUDED.qualifies,
     last_updated = NOW();
 
--- Rank all-time
+-- 6b: Compute per-game stats (primary metric: avg game score, qualifying = 50+ games)
+UPDATE farkle_lb_alltime a SET
+    avg_game_score = sub.avg_game_score,
+    best_game_score = sub.best_game_score,
+    total_games = sub.total_games,
+    qualifies = (sub.total_games >= 50)
+FROM (
+    SELECT playerid,
+        ROUND(AVG(game_score), 2) as avg_game_score,
+        MAX(game_score) as best_game_score,
+        COUNT(*) as total_games
+    FROM farkle_lb_daily_games
+    GROUP BY playerid
+) sub
+WHERE a.playerid = sub.playerid;
+
+-- Rank all-time by avg game score
 WITH ranked AS (
     SELECT playerid,
-           ROW_NUMBER() OVER (ORDER BY avg_daily_score DESC) as new_rank
+           ROW_NUMBER() OVER (ORDER BY avg_game_score DESC) as new_rank
     FROM farkle_lb_alltime
     WHERE qualifies = TRUE
 )
@@ -237,8 +254,9 @@ SELECT COUNT(*) as daily_games FROM farkle_lb_daily_games;
 SELECT COUNT(*) as daily_scores, COUNT(*) FILTER (WHERE qualifies) as qualifying FROM farkle_lb_daily_scores;
 SELECT COUNT(*) as weekly_scores, COUNT(*) FILTER (WHERE qualifies) as qualifying FROM farkle_lb_weekly_scores;
 SELECT COUNT(*) as alltime_entries, COUNT(*) FILTER (WHERE qualifies) as qualifying FROM farkle_lb_alltime;
-SELECT playerid, qualifying_days, avg_daily_score, best_day_score, rank
-FROM farkle_lb_alltime WHERE qualifies = TRUE ORDER BY rank;
+SELECT a.playerid, p.username, a.avg_game_score, a.best_game_score, a.total_games, a.rank
+FROM farkle_lb_alltime a JOIN farkle_players p ON a.playerid = p.playerid
+WHERE a.qualifies = TRUE ORDER BY a.rank;
 SELECT p.username, p.current_win_streak, p.best_win_streak
 FROM farkle_players p WHERE p.current_win_streak > 0 ORDER BY p.current_win_streak DESC;
 

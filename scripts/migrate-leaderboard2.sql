@@ -58,6 +58,12 @@ CREATE TABLE IF NOT EXISTS farkle_lb_alltime (
 );
 CREATE INDEX IF NOT EXISTS idx_lb_alltime_avg ON farkle_lb_alltime(avg_daily_score DESC) WHERE qualifies = TRUE;
 
+-- Add per-game metrics to all-time table
+ALTER TABLE farkle_lb_alltime ADD COLUMN IF NOT EXISTS avg_game_score NUMERIC(10,2) NOT NULL DEFAULT 0;
+ALTER TABLE farkle_lb_alltime ADD COLUMN IF NOT EXISTS best_game_score INT DEFAULT 0;
+ALTER TABLE farkle_lb_alltime ADD COLUMN IF NOT EXISTS total_games INT NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS idx_lb_alltime_avg_game ON farkle_lb_alltime(avg_game_score DESC) WHERE qualifies = TRUE;
+
 -- Table 5: Rotating stat highlights
 CREATE TABLE IF NOT EXISTS farkle_lb_stats (
     id SERIAL PRIMARY KEY,

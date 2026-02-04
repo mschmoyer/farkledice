@@ -630,6 +630,7 @@ function Leaderboard_ComputeWeeklyScores()
  */
 function Leaderboard_ComputeAllTimeScores()
 {
+	// Compute daily-based stats (kept for historical tracking)
 	$sql = "
 	INSERT INTO farkle_lb_alltime (playerid, qualifying_days, total_daily_score, avg_daily_score, best_day_score, qualifies, last_updated)
 	SELECT
@@ -638,7 +639,7 @@ function Leaderboard_ComputeAllTimeScores()
 		SUM(top10_score) as total_daily_score,
 		AVG(top10_score) as avg_daily_score,
 		MAX(top10_score) as best_day_score,
-		(COUNT(*) >= 10) as qualifies,
+		FALSE,
 		NOW()
 	FROM farkle_lb_daily_scores
 	WHERE qualifies = TRUE
@@ -648,10 +649,27 @@ function Leaderboard_ComputeAllTimeScores()
 		total_daily_score = EXCLUDED.total_daily_score,
 		avg_daily_score = EXCLUDED.avg_daily_score,
 		best_day_score = EXCLUDED.best_day_score,
-		qualifies = EXCLUDED.qualifies,
 		last_updated = NOW()
 	";
+	db_execute($sql);
 
+	// Compute per-game stats (primary metric: avg game score, qualifying = 50+ games)
+	$sql = "
+	UPDATE farkle_lb_alltime a SET
+		avg_game_score = sub.avg_game_score,
+		best_game_score = sub.best_game_score,
+		total_games = sub.total_games,
+		qualifies = (sub.total_games >= 50)
+	FROM (
+		SELECT playerid,
+			ROUND(AVG(game_score), 2) as avg_game_score,
+			MAX(game_score) as best_game_score,
+			COUNT(*) as total_games
+		FROM farkle_lb_daily_games
+		GROUP BY playerid
+	) sub
+	WHERE a.playerid = sub.playerid
+	";
 	db_execute($sql);
 }
 
@@ -1204,8 +1222,8 @@ function Leaderboard_GetWeekDayScores($playerId, $weekStart)
 function Leaderboard_GetBoard_Alltime($playerId, $scope)
 {
 	if ($scope === 'friends') {
-		$sql = "SELECT at.playerid, p.username, at.avg_daily_score, at.qualifying_days,
-				at.best_day_score, at.rank, at.prev_rank
+		$sql = "SELECT at.playerid, p.username, at.avg_game_score, at.best_game_score,
+				at.total_games, at.rank, at.prev_rank
 			FROM farkle_lb_alltime at
 			JOIN farkle_players p ON at.playerid = p.playerid
 			WHERE at.qualifies = TRUE
@@ -1214,7 +1232,7 @@ function Leaderboard_GetBoard_Alltime($playerId, $scope)
 			    FROM farkle_friends f
 			    WHERE (f.playerid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
 			  ))
-			ORDER BY at.avg_daily_score DESC
+			ORDER BY at.avg_game_score DESC
 			LIMIT 25";
 		$rows = db_query($sql, [
 			':pid' => $playerId,
@@ -1223,12 +1241,12 @@ function Leaderboard_GetBoard_Alltime($playerId, $scope)
 			':pid4' => $playerId
 		], SQL_MULTI_ROW);
 	} else {
-		$sql = "SELECT at.playerid, p.username, at.avg_daily_score, at.qualifying_days,
-				at.best_day_score, at.rank, at.prev_rank
+		$sql = "SELECT at.playerid, p.username, at.avg_game_score, at.best_game_score,
+				at.total_games, at.rank, at.prev_rank
 			FROM farkle_lb_alltime at
 			JOIN farkle_players p ON at.playerid = p.playerid
 			WHERE at.qualifies = TRUE
-			ORDER BY at.avg_daily_score DESC
+			ORDER BY at.avg_game_score DESC
 			LIMIT 25";
 		$rows = db_query($sql, [], SQL_MULTI_ROW);
 	}
@@ -1240,9 +1258,9 @@ function Leaderboard_GetBoard_Alltime($playerId, $scope)
 			$entries[] = [
 				'playerId' => (int)$row['playerid'],
 				'username' => $row['username'],
-				'avgDailyScore' => round((float)$row['avg_daily_score'], 2),
-				'qualifyingDays' => (int)$row['qualifying_days'],
-				'bestDayScore' => (int)$row['best_day_score'],
+				'avgGameScore' => round((float)$row['avg_game_score']),
+				'bestGameScore' => (int)$row['best_game_score'],
+				'totalGames' => (int)$row['total_games'],
 				'rank' => $rank,
 				'prevRank' => $row['prev_rank'] !== null ? (int)$row['prev_rank'] : null,
 				'isMe' => ((int)$row['playerid'] === (int)$playerId)
@@ -1279,8 +1297,8 @@ function Leaderboard_GetMyScore_Alltime($playerId, $entries, $scope)
 		}
 	}
 
-	$sql = "SELECT at.playerid, p.username, at.avg_daily_score, at.qualifying_days,
-			at.best_day_score, at.qualifies, at.rank, at.prev_rank
+	$sql = "SELECT at.playerid, p.username, at.avg_game_score, at.best_game_score,
+			at.total_games, at.qualifies, at.rank, at.prev_rank
 		FROM farkle_lb_alltime at
 		JOIN farkle_players p ON at.playerid = p.playerid
 		WHERE at.playerid = :playerid";
@@ -1290,9 +1308,9 @@ function Leaderboard_GetMyScore_Alltime($playerId, $entries, $scope)
 		return [
 			'playerId' => (int)$playerId,
 			'username' => isset($_SESSION['username']) ? $_SESSION['username'] : '',
-			'avgDailyScore' => 0,
-			'qualifyingDays' => 0,
-			'bestDayScore' => 0,
+			'avgGameScore' => 0,
+			'bestGameScore' => 0,
+			'totalGames' => 0,
 			'rank' => null,
 			'prevRank' => null,
 			'isMe' => true
@@ -1302,18 +1320,18 @@ function Leaderboard_GetMyScore_Alltime($playerId, $entries, $scope)
 	// Compute actual rank within scope
 	if ($scope === 'everyone') {
 		$sql = "SELECT COUNT(*) + 1 FROM farkle_lb_alltime
-			WHERE qualifies = TRUE AND avg_daily_score > :score";
-		$myRank = (int)db_query($sql, [':score' => (float)$row['avg_daily_score']], SQL_SINGLE_VALUE);
+			WHERE qualifies = TRUE AND avg_game_score > :score";
+		$myRank = (int)db_query($sql, [':score' => (float)$row['avg_game_score']], SQL_SINGLE_VALUE);
 	} else {
 		$sql = "SELECT COUNT(*) + 1 FROM farkle_lb_alltime at
-			WHERE at.qualifies = TRUE AND at.avg_daily_score > :score
+			WHERE at.qualifies = TRUE AND at.avg_game_score > :score
 			AND (at.playerid = :pid OR at.playerid IN (
 			    SELECT CASE WHEN f.playerid = :pid2 THEN f.friendid ELSE f.playerid END
 			    FROM farkle_friends f
 			    WHERE (f.playerid = :pid3 OR f.friendid = :pid4) AND f.status = 'accepted' AND f.removed = 0
 			))";
 		$myRank = (int)db_query($sql, [
-			':score' => (float)$row['avg_daily_score'],
+			':score' => (float)$row['avg_game_score'],
 			':pid' => $playerId,
 			':pid2' => $playerId,
 			':pid3' => $playerId,
@@ -1324,9 +1342,9 @@ function Leaderboard_GetMyScore_Alltime($playerId, $entries, $scope)
 	return [
 		'playerId' => (int)$row['playerid'],
 		'username' => $row['username'],
-		'avgDailyScore' => round((float)$row['avg_daily_score'], 2),
-		'qualifyingDays' => (int)$row['qualifying_days'],
-		'bestDayScore' => (int)$row['best_day_score'],
+		'avgGameScore' => round((float)$row['avg_game_score']),
+		'bestGameScore' => (int)$row['best_game_score'],
+		'totalGames' => (int)$row['total_games'],
 		'rank' => (bool)$row['qualifies'] ? $myRank : null,
 		'prevRank' => $row['prev_rank'] !== null ? (int)$row['prev_rank'] : null,
 		'isMe' => true
