@@ -662,8 +662,116 @@ class Leaderboard2Test extends DatabaseTestCase
         $result = Leaderboard_GetBoard_Daily($this->player1Id, 'everyone');
 
         $this->assertNotEmpty($result['entries']);
-        $this->assertArrayHasKey('statValue', $result['entries'][0], 'Entry should have statValue key');
-        $this->assertNotNull($result['entries'][0]['statValue'], 'statValue should not be null when stat exists');
+
+        // Find the entry for player1 (might not be first if there are other players)
+        $player1Entry = null;
+        foreach ($result['entries'] as $entry) {
+            if ($entry['playerId'] === $this->player1Id) {
+                $player1Entry = $entry;
+                break;
+            }
+        }
+
+        $this->assertNotNull($player1Entry, 'Player1 should be in entries');
+        $this->assertArrayHasKey('statValue', $player1Entry, 'Entry should have statValue key');
+        $this->assertNotNull($player1Entry['statValue'], 'statValue should not be null when stat exists');
+        $this->assertEquals(42.5, (float)$player1Entry['statValue'], 'statValue should match inserted value', 0.01);
+    }
+
+    public function testGetBoard_DailyFriendsShowsAcceptedFriends(): void
+    {
+        // Create test players
+        $playerA = $this->player1Id;
+        $playerB = $this->player2Id;
+        $playerC = $this->createTestPlayer('lb2_pending_friend');
+        $playerD = $this->createTestPlayer('lb2_no_friend');
+
+        // Make playerA and playerB accepted friends
+        $this->makeFriends($playerA, $playerB);
+
+        // Make playerA and playerC pending friends (should NOT appear in friends scope)
+        $this->execute(
+            "INSERT INTO farkle_friends (sourceid, friendid, playerid, status, removed)
+             VALUES (:p1, :p2, :p1b, 'pending', 0)
+             ON CONFLICT DO NOTHING",
+            [':p1' => $playerA, ':p2' => $playerC, ':p1b' => $playerA]
+        );
+
+        // playerD is not a friend at all (should NOT appear)
+
+        // All 4 players have qualifying daily scores
+        foreach ([$playerA, $playerB, $playerC, $playerD] as $idx => $pid) {
+            $this->execute(
+                "INSERT INTO farkle_lb_daily_scores (playerid, lb_date, games_played, top10_score, qualifies)
+                 VALUES (:pid, :date, 5, :score, TRUE)",
+                [':pid' => $pid, ':date' => $this->today, ':score' => 50000 - ($idx * 1000)]
+            );
+        }
+
+        // Call Leaderboard_GetBoard_Daily with scope='friends' for player A
+        $result = Leaderboard_GetBoard_Daily($playerA, 'friends');
+
+        // Assert playerA and playerB (accepted friend) appear in the results
+        $playerIds = array_map(fn($e) => $e['playerId'], $result['entries']);
+        $this->assertContains($playerA, $playerIds, 'Player A (self) should appear in friends board');
+        $this->assertContains($playerB, $playerIds, 'Player B (accepted friend) should appear in friends board');
+
+        // Assert that pending and non-friends do NOT appear
+        $this->assertNotContains($playerC, $playerIds, 'Player C (pending friend) should NOT appear in friends board');
+        $this->assertNotContains($playerD, $playerIds, 'Player D (not a friend) should NOT appear in friends board');
+    }
+
+    public function testDailyBoardRowsIncludeStatValues(): void
+    {
+        // Create multiple test players
+        $playerA = $this->player1Id;
+        $playerB = $this->player2Id;
+        $playerC = $this->createTestPlayer('lb2_stat_test_c');
+
+        // Record games and compute daily scores for all players
+        foreach ([$playerA, $playerB, $playerC] as $pid) {
+            for ($i = 1; $i <= 5; $i++) {
+                $gid = $this->createFinishedGame($pid, ($pid === $playerA ? $playerB : $playerA), 5000 + ($i * 100), 3000);
+                $this->insertDailyGame($pid, $gid, $this->today, $i, 5000 + ($i * 100));
+            }
+            Leaderboard_RecomputeDailyScore($pid, $this->today);
+        }
+
+        // Insert specific stat values into farkle_lb_stats for today
+        // Use the current featured stat type
+        $featured = LeaderboardStats_GetFeaturedStat();
+        $statType = $featured['type'];
+
+        $this->execute(
+            "INSERT INTO farkle_lb_stats (playerid, lb_date, stat_type, stat_value) VALUES
+             (:p1, :date, :type, 42.5),
+             (:p2, :date2, :type2, 87.3),
+             (:p3, :date3, :type3, 15.9)",
+            [
+                ':p1' => $playerA, ':date' => $this->today, ':type' => $statType,
+                ':p2' => $playerB, ':date2' => $this->today, ':type2' => $statType,
+                ':p3' => $playerC, ':date3' => $this->today, ':type3' => $statType
+            ]
+        );
+
+        // Call Leaderboard_GetBoard_Daily
+        $result = Leaderboard_GetBoard_Daily($playerA, 'everyone');
+
+        // Assert each entry has statValue field
+        $this->assertNotEmpty($result['entries'], 'Board should have entries');
+        foreach ($result['entries'] as $entry) {
+            $this->assertArrayHasKey('statValue', $entry, 'Each entry should have statValue field');
+        }
+
+        // Assert statValue matches the DB value
+        $statValuesByPlayerId = [];
+        foreach ($result['entries'] as $entry) {
+            $statValuesByPlayerId[$entry['playerId']] = $entry['statValue'];
+        }
+
+        $this->assertEquals(42.5, (float)$statValuesByPlayerId[$playerA], 'Player A statValue should match', 0.01);
+        $this->assertEquals(87.3, (float)$statValuesByPlayerId[$playerB], 'Player B statValue should match', 0.01);
+        $this->assertEquals(15.9, (float)$statValuesByPlayerId[$playerC], 'Player C statValue should match', 0.01);
     }
 
     // =====================================================
