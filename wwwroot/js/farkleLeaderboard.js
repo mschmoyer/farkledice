@@ -486,9 +486,15 @@ function RenderLeaderboard2() {
 		RenderScoreBar(data.myScore, board);
 	}
 
-	// Render stat banner if available
+	// Render stat banner and update stat column header
 	if (data.featuredStat) {
 		RenderStatBanner(data.featuredStat);
+		var statCol = document.getElementById('lb2StatCol');
+		if (statCol) {
+			// Extract short name from "Hot Dice -- Highest Single Round" → "Hot Dice"
+			var shortName = data.featuredStat.title ? data.featuredStat.title.split(' -- ')[0] : 'Stat';
+			statCol.textContent = (g_lb2.currentTier === 'alltime') ? '' : shortName;
+		}
 	}
 
 	// Render weekly day badges (weekly tier only)
@@ -543,7 +549,10 @@ function RenderBoard(board) {
 		}
 
 		// Stat cell (featured stat value if available)
-		var statHtml = entry.statValue ? '<span class="lb2-stat-value">' + formatNumber(entry.statValue) + '</span>' : '';
+		var statHtml = '';
+		if (entry.statValue !== null && entry.statValue !== undefined) {
+			statHtml = '<span class="lb2-stat-value">' + entry.statValue + '</span>';
+		}
 
 		// Score cell
 		var scoreHtml = '';

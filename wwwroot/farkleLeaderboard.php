@@ -816,10 +816,36 @@ function Leaderboard_BuildFeaturedStat($date)
 	}
 
 	return [
+		'type' => $featured['type'],
 		'title' => $featured['name'],
 		'label' => "Today's Featured Stat",
 		'leader' => $leader
 	];
+}
+
+/**
+ * Get all player stat values for a given stat type and date.
+ * Returns associative array keyed by playerid.
+ */
+function Leaderboard_GetStatValuesForDate($statType, $date)
+{
+	$sql = "SELECT playerid, stat_value FROM farkle_lb_stats
+		WHERE stat_type = :stat_type AND lb_date = :lb_date";
+	$rows = db_query($sql, [':stat_type' => $statType, ':lb_date' => $date], SQL_MULTI_ROW);
+
+	$values = [];
+	if ($rows) {
+		foreach ($rows as $row) {
+			$val = (float)$row['stat_value'];
+			// Format: round to 1 decimal for rates/consistency, integer for scores/streaks
+			if ($statType === 'farkle_rate' || $statType === 'consistency') {
+				$values[(int)$row['playerid']] = round($val, 1);
+			} else {
+				$values[(int)$row['playerid']] = (int)$val;
+			}
+		}
+	}
+	return $values;
 }
 
 function Leaderboard_GetBoard($playerId, $tier, $scope)
@@ -906,8 +932,17 @@ function Leaderboard_GetBoard_Daily($playerId, $scope)
 	// Get myScore separately if not in top 25
 	$myScore = Leaderboard_GetMyScore_Daily($playerId, $today, $entries, $scope);
 
-	// Get featured stat
+	// Get featured stat and attach per-player values
 	$featuredStat = Leaderboard_BuildFeaturedStat($today);
+	$statValues = Leaderboard_GetStatValuesForDate($featuredStat['type'], $today);
+	for ($i = 0; $i < count($entries); $i++) {
+		$pid = $entries[$i]['playerId'];
+		$entries[$i]['statValue'] = isset($statValues[$pid]) ? $statValues[$pid] : null;
+	}
+	if ($myScore) {
+		$pid = $myScore['playerId'];
+		$myScore['statValue'] = isset($statValues[$pid]) ? $statValues[$pid] : null;
+	}
 
 	return [
 		'entries' => $entries,
@@ -1054,9 +1089,18 @@ function Leaderboard_GetBoard_Weekly($playerId, $scope)
 	// Get day-by-day breakdown for current player
 	$dayScores = Leaderboard_GetWeekDayScores($playerId, $weekStart);
 
-	// Get featured stat
+	// Get featured stat and attach per-player values
 	$today = db_query("SELECT (NOW() AT TIME ZONE 'America/Chicago')::DATE", [], SQL_SINGLE_VALUE);
 	$featuredStat = Leaderboard_BuildFeaturedStat($today);
+	$statValues = Leaderboard_GetStatValuesForDate($featuredStat['type'], $today);
+	for ($i = 0; $i < count($entries); $i++) {
+		$pid = $entries[$i]['playerId'];
+		$entries[$i]['statValue'] = isset($statValues[$pid]) ? $statValues[$pid] : null;
+	}
+	if ($myScore) {
+		$pid = $myScore['playerId'];
+		$myScore['statValue'] = isset($statValues[$pid]) ? $statValues[$pid] : null;
+	}
 
 	return [
 		'entries' => $entries,
