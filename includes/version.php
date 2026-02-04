@@ -7,4 +7,4 @@
  * - Minor: New features and significant changes
  * - Revision: Bug fixes and small tweaks
  */
-define('APP_VERSION', '3.0.4');
+define('APP_VERSION', '3.0.3');
