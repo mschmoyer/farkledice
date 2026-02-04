@@ -638,7 +638,7 @@ function Leaderboard_ComputeAllTimeScores()
 		SUM(top10_score) as total_daily_score,
 		AVG(top10_score) as avg_daily_score,
 		MAX(top10_score) as best_day_score,
-		(COUNT(*) >= 30) as qualifies,
+		(COUNT(*) >= 10) as qualifies,
 		NOW()
 	FROM farkle_lb_daily_scores
 	WHERE qualifies = TRUE
