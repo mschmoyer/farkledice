@@ -55,13 +55,13 @@ function db_connect()
 	}
 
 	try {
-		$dsn = "pgsql:host=$host;port=$port;dbname=$dbname";
+		// PostgreSQL connection timeout must be in DSN, not PDO options
+		$dsn = "pgsql:host=$host;port=$port;dbname=$dbname;connect_timeout=5";
 		$g_dbh = new PDO($dsn, $username, $password, [
 			PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 			PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
 			PDO::ATTR_EMULATE_PREPARES => false,
 			PDO::ATTR_PERSISTENT => true,  // Enable connection pooling across requests
-			PDO::ATTR_TIMEOUT => 5,         // 5 second connection timeout
 		]);
 		return $g_dbh;
 	} catch (PDOException $e) {

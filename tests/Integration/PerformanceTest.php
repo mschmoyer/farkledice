@@ -32,9 +32,9 @@ class PerformanceTest extends DatabaseTestCase
             $dbutilSource,
             'dbutil.php should have PDO::ATTR_PERSISTENT => true in connection options');
 
-        $this->assertStringContainsString('PDO::ATTR_TIMEOUT => 5',
+        $this->assertStringContainsString('connect_timeout=5',
             $dbutilSource,
-            'dbutil.php should have PDO::ATTR_TIMEOUT => 5 in connection options');
+            'dbutil.php should have connect_timeout=5 in PostgreSQL DSN string');
 
         // Verify connection is working
         $result = db_query("SELECT 1 as test", [], SQL_SINGLE_VALUE);
