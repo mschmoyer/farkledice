@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farkle Ten Shop</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --navy-deep: #0a0e1a;
+    --navy: #111827;
+    --navy-mid: #1a2235;
+    --navy-light: #243044;
+    --gold: #d4a017;
+    --gold-light: #e8bf4a;
+    --gold-dim: #a07a10;
+    --gold-glow: rgba(212, 160, 23, 0.15);
+    --green: #2ecc71;
+    --green-dim: rgba(46, 204, 113, 0.15);
+    --red-soft: #e74c3c;
+    --text: #e8e0d4;
+    --text-dim: #8a8290;
+    --text-warm: #c4b8a8;
+    --card-bg: rgba(26, 34, 53, 0.85);
+    --card-border: rgba(212, 160, 23, 0.12);
+    --card-hover: rgba(212, 160, 23, 0.06);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy-deep);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* === BACKGROUND TEXTURE === */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(212,160,23,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 80%, rgba(46,100,180,0.04) 0%, transparent 60%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4a017' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* === TOP BAR === */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    background: linear-gradient(180deg, rgba(10,14,26,0.97) 0%, rgba(10,14,26,0.92) 100%);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .shop-title {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: -0.02em;
+  }
+
+  .player-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--navy-mid);
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-warm);
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .player-tag .avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--navy-deep);
+    font-weight: 700;
+  }
+
+  .balance {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, rgba(212,160,23,0.12), rgba(212,160,23,0.06));
+    border: 1px solid rgba(212,160,23,0.2);
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gold-light);
+  }
+
+  .coin-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), #c4920e);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--navy-deep);
+    box-shadow: 0 0 8px rgba(212,160,23,0.3);
+    flex-shrink: 0;
+  }
+
+  .back-link {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .back-link:hover { color: var(--text); }
+  .back-link::before { content: '←'; font-size: 15px; }
+
+  /* === TABS === */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 16px 24px 0;
+    overflow-x: auto;
+    position: relative;
+    z-index: 1;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    padding: 10px 20px;
+    border-radius: 10px 10px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s;
+    white-space: nowrap;
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    position: relative;
+    user-select: none;
+  }
+
+  .tab:hover {
+    color: var(--text-warm);
+    background: rgba(255,255,255,0.03);
+  }
+
+  .tab.active {
+    color: var(--gold-light);
+    background: var(--navy-mid);
+    border-color: var(--card-border);
+  }
+
+  .tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--navy-mid);
+  }
+
+  /* === CONTENT === */
+  .content-area {
+    padding: 0 24px 48px;
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid var(--card-border);
+    background: linear-gradient(180deg, var(--navy-mid) 0%, transparent 200px);
+    min-height: 60vh;
+  }
+
+  .tab-content {
+    display: none;
+    padding-top: 24px;
+    animation: fadeUp 0.35s ease;
+  }
+
+  .tab-content.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-desc {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+    max-width: 520px;
+    line-height: 1.5;
+  }
+
+  /* === GRID === */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    max-width: 1100px;
+  }
+
+  /* === CARDS === */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, rgba(212,160,23,0.04), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(212,160,23,0.25);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(212,160,23,0.08);
+  }
+
+  .card:hover::before { opacity: 1; }
+
+  .card.locked {
+    opacity: 0.55;
+    filter: saturate(0.4);
+  }
+  .card.locked:hover {
+    opacity: 0.7;
+    filter: saturate(0.6);
+    transform: translateY(-2px);
+  }
+
+  .card.equipped {
+    border-color: rgba(46,204,113,0.3);
+    box-shadow: inset 0 0 0 1px rgba(46,204,113,0.1);
+  }
+
+  .card-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    min-height: 70px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card-info {
+    position: relative;
+    z-index: 1;
+  }
+
+  .card-name {
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .card-price {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gold-light);
+  }
+
+  .card-price .coin-sm {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), #c4920e);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 800;
+    color: var(--navy-deep);
+    flex-shrink: 0;
+  }
+
+  .card-price.free {
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  /* === BUTTONS === */
+  .btn-buy {
+    padding: 6px 18px;
+    border-radius: 100px;
+    border: none;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .btn-buy.gold {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+    color: var(--navy-deep);
+    box-shadow: 0 2px 8px rgba(212,160,23,0.2);
+  }
+  .btn-buy.gold:hover {
+    background: linear-gradient(135deg, var(--gold-light), var(--gold));
+    box-shadow: 0 4px 16px rgba(212,160,23,0.3);
+    transform: scale(1.03);
+  }
+
+  .btn-equipped {
+    padding: 6px 14px;
+    border-radius: 100px;
+    border: 1px solid rgba(46,204,113,0.3);
+    background: var(--green-dim);
+    color: var(--green);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+
+  .btn-locked {
+    padding: 6px 14px;
+    border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    color: var(--text-dim);
+    font-size: 11px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* === DICE CSS === */
+  .dice-pair {
+    display: flex;
+    gap: 10px;
+  }
+
+  .die {
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    padding: 7px;
+    gap: 2px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.1);
+    position: relative;
+  }
+
+  .pip {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    align-self: center;
+    justify-self: center;
+  }
+
+  .pip.hidden { opacity: 0; }
+
+  /* face configurations */
+  /* 1: center only */
+  .die[data-face="1"] .pip:nth-child(1), .die[data-face="1"] .pip:nth-child(2),
+  .die[data-face="1"] .pip:nth-child(3), .die[data-face="1"] .pip:nth-child(4),
+  .die[data-face="1"] .pip:nth-child(6), .die[data-face="1"] .pip:nth-child(7),
+  .die[data-face="1"] .pip:nth-child(8), .die[data-face="1"] .pip:nth-child(9) { opacity: 0; }
+
+  /* 2: top-right, bottom-left */
+  .die[data-face="2"] .pip:nth-child(1), .die[data-face="2"] .pip:nth-child(2),
+  .die[data-face="2"] .pip:nth-child(4), .die[data-face="2"] .pip:nth-child(5),
+  .die[data-face="2"] .pip:nth-child(6), .die[data-face="2"] .pip:nth-child(8),
+  .die[data-face="2"] .pip:nth-child(9) { opacity: 0; }
+
+  /* 3: top-right, center, bottom-left */
+  .die[data-face="3"] .pip:nth-child(1), .die[data-face="3"] .pip:nth-child(2),
+  .die[data-face="3"] .pip:nth-child(4), .die[data-face="3"] .pip:nth-child(6),
+  .die[data-face="3"] .pip:nth-child(8), .die[data-face="3"] .pip:nth-child(9) { opacity: 0; }
+
+  /* 4: four corners */
+  .die[data-face="4"] .pip:nth-child(2), .die[data-face="4"] .pip:nth-child(4),
+  .die[data-face="4"] .pip:nth-child(5), .die[data-face="4"] .pip:nth-child(6),
+  .die[data-face="4"] .pip:nth-child(8) { opacity: 0; }
+
+  /* 5: four corners + center */
+  .die[data-face="5"] .pip:nth-child(2), .die[data-face="5"] .pip:nth-child(4),
+  .die[data-face="5"] .pip:nth-child(6), .die[data-face="5"] .pip:nth-child(8) { opacity: 0; }
+
+  /* 6: all sides */
+  .die[data-face="6"] .pip:nth-child(2), .die[data-face="6"] .pip:nth-child(5),
+  .die[data-face="6"] .pip:nth-child(8) { opacity: 0; }
+
+  /* === BACKGROUND PREVIEW === */
+  .bg-preview {
+    width: 100%;
+    height: 100px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+
+  /* === FELT PREVIEW === */
+  .felt-preview {
+    width: 100%;
+    height: 90px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+
+  .felt-preview::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='4' height='4' viewBox='0 0 4 4' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 3h1v1H1V3zm2-2h1v1H3V1z' fill='%23ffffff' fill-opacity='0.04'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+  }
+
+  /* === ACCOLADE BADGES === */
+  .accolade-preview {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+    min-height: 60px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .accolade-badge {
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .accolade-standard {
+    background: rgba(255,255,255,0.08);
+    color: var(--text-warm);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .accolade-fire {
+    background: linear-gradient(135deg, rgba(231,76,60,0.2), rgba(243,156,18,0.2));
+    color: #f39c12;
+    border: 1px solid rgba(243,156,18,0.3);
+    box-shadow: 0 0 10px rgba(243,156,18,0.1);
+  }
+
+  .accolade-ice {
+    background: linear-gradient(135deg, rgba(52,152,219,0.2), rgba(155,220,250,0.15));
+    color: #7ec8e3;
+    border: 1px solid rgba(155,220,250,0.25);
+    box-shadow: 0 0 10px rgba(155,220,250,0.08);
+  }
+
+  .accolade-galaxy {
+    background: linear-gradient(135deg, rgba(142,68,173,0.2), rgba(52,152,219,0.15));
+    color: #bb8fce;
+    border: 1px solid rgba(142,68,173,0.3);
+    box-shadow: 0 0 10px rgba(142,68,173,0.1);
+  }
+
+  .accolade-legendary {
+    background: linear-gradient(135deg, rgba(212,160,23,0.2), rgba(160,122,16,0.15));
+    color: var(--gold-light);
+    border: 1px solid rgba(212,160,23,0.3);
+    box-shadow: 0 0 10px rgba(212,160,23,0.1);
+  }
+
+  /* === TITLE BADGES === */
+  .title-preview {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 14px;
+    min-height: 50px;
+    align-items: center;
+  }
+
+  .title-badge {
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .title-newcomer {
+    background: rgba(255,255,255,0.06);
+    color: var(--text-dim);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .title-regular {
+    background: rgba(52,152,219,0.12);
+    color: #5dade2;
+    border: 1px solid rgba(52,152,219,0.2);
+  }
+
+  .title-veteran {
+    background: rgba(46,204,113,0.12);
+    color: #58d68d;
+    border: 1px solid rgba(46,204,113,0.2);
+  }
+
+  .title-highroller {
+    background: linear-gradient(135deg, rgba(212,160,23,0.15), rgba(212,160,23,0.08));
+    color: var(--gold-light);
+    border: 1px solid rgba(212,160,23,0.25);
+  }
+
+  .title-luckyseven {
+    background: rgba(155,89,182,0.12);
+    color: #c39bd3;
+    border: 1px solid rgba(155,89,182,0.25);
+  }
+
+  .title-farklelord {
+    background: rgba(231,76,60,0.12);
+    color: #ec7063;
+    border: 1px solid rgba(231,76,60,0.2);
+  }
+
+  .title-untouchable {
+    background: linear-gradient(135deg, rgba(212,160,23,0.2), rgba(243,156,18,0.15));
+    color: var(--gold-light);
+    border: 1px solid rgba(212,160,23,0.3);
+    box-shadow: 0 0 8px rgba(212,160,23,0.08);
+  }
+
+  .title-diamondhands {
+    background: linear-gradient(135deg, rgba(52,152,219,0.15), rgba(142,68,173,0.12));
+    color: #85c1e9;
+    border: 1px solid rgba(52,152,219,0.25);
+  }
+
+  .unlock-req {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  /* === MODAL === */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+  }
+
+  .modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .modal {
+    background: var(--navy);
+    border: 1px solid rgba(212,160,23,0.2);
+    border-radius: 18px;
+    padding: 32px;
+    max-width: 360px;
+    width: 90%;
+    text-align: center;
+    transform: scale(0.93) translateY(12px);
+    transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  }
+
+  .modal-overlay.show .modal {
+    transform: scale(1) translateY(0);
+  }
+
+  .modal-title {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .modal-subtitle {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+  }
+
+  .modal-preview {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+    padding: 20px;
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .modal-price-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 4px;
+  }
+
+  .modal-price-row span:first-child {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .modal-price-row span:last-child {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gold-light);
+  }
+
+  .modal-new-balance {
+    font-size: 13px;
+    color: var(--text-dim);
+    padding: 12px 0;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 20px;
+  }
+
+  .modal-new-balance strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .modal-actions button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+    border: none;
+  }
+
+  .btn-cancel {
+    background: rgba(255,255,255,0.06);
+    color: var(--text-dim);
+    border: 1px solid rgba(255,255,255,0.08) !important;
+  }
+  .btn-cancel:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text);
+  }
+
+  .btn-confirm {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+    color: var(--navy-deep);
+  }
+  .btn-confirm:hover {
+    background: linear-gradient(135deg, var(--gold-light), var(--gold));
+    box-shadow: 0 4px 20px rgba(212,160,23,0.25);
+  }
+
+  /* === FOOTER === */
+  .footer-note {
+    text-align: center;
+    padding: 32px 24px;
+    font-size: 12px;
+    color: var(--text-dim);
+    position: relative;
+    z-index: 1;
+  }
+
+  .footer-note::before {
+    content: '🎲';
+    display: block;
+    margin-bottom: 6px;
+    font-size: 16px;
+    opacity: 0.5;
+  }
+
+  /* === ART NOTES === */
+  .art-note {
+    position: absolute;
+    bottom: 6px;
+    right: 8px;
+    font-size: 9px;
+    color: var(--text-dim);
+    opacity: 0.5;
+    font-style: italic;
+    z-index: 2;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .topbar {
+      padding: 10px 16px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .topbar-left { gap: 10px; }
+    .shop-title { font-size: 17px; }
+    .tabs { padding: 12px 16px 0; gap: 2px; }
+    .tab { padding: 8px 14px; font-size: 12px; }
+    .content-area { padding: 0 16px 40px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .card { padding: 14px; }
+    .die { width: 44px; height: 44px; padding: 5px; }
+    .balance { font-size: 13px; padding: 5px 12px; }
+  }
+
+  @media (max-width: 420px) {
+    .grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .die { width: 38px; height: 38px; padding: 4px; gap: 1px; border-radius: 7px; }
+    .card-name { font-size: 13px; }
+    .btn-buy { padding: 5px 12px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="shop-title">Farkle Ten Shop</div>
+    <div class="player-tag">
+      <div class="avatar">D</div>
+      DiceKing42
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px;">
+    <div class="balance">
+      <span class="coin-icon">$</span>
+      2,450
+    </div>
+    <a href="#" class="back-link">Back to Game</a>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" data-tab="dice">Dice Skins</div>
+  <div class="tab" data-tab="backgrounds">Backgrounds</div>
+  <div class="tab" data-tab="felts">Table Felts</div>
+  <div class="tab" data-tab="accolades">Accolade Packs</div>
+  <div class="tab" data-tab="titles">Titles</div>
+</div>
+
+<!-- CONTENT -->
+<div class="content-area">
+
+  <!-- DICE SKINS -->
+  <div class="tab-content active" id="tab-dice">
+    <p class="section-desc">Customize the look of your dice. Skins are visible to all players during your games.</p>
+    <div class="grid" id="dice-grid"></div>
+  </div>
+
+  <!-- BACKGROUNDS -->
+  <div class="tab-content" id="tab-backgrounds">
+    <p class="section-desc">Profile backgrounds appear behind your player card. Show off your style.</p>
+    <div class="grid" id="bg-grid"></div>
+  </div>
+
+  <!-- TABLE FELTS -->
+  <div class="tab-content" id="tab-felts">
+    <p class="section-desc">Change the table surface when you're the host. Your felt, your rules.</p>
+    <div class="grid" id="felt-grid"></div>
+  </div>
+
+  <!-- ACCOLADE PACKS -->
+  <div class="tab-content" id="tab-accolades">
+    <p class="section-desc">Style how your post-game accolades look when you award them to opponents.</p>
+    <div class="grid" id="accolade-grid"></div>
+  </div>
+
+  <!-- TITLES -->
+  <div class="tab-content" id="tab-titles">
+    <p class="section-desc">Titles appear under your name. Some are earned, others can be purchased.</p>
+    <div class="grid" id="title-grid"></div>
+  </div>
+
+</div>
+
+<div class="footer-note">All items are cosmetic only — no gameplay advantages.</div>
+
+<!-- PURCHASE MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Purchase Item</div>
+    <div class="modal-subtitle">This item will be applied immediately.</div>
+    <div class="modal-preview" id="modal-preview"></div>
+    <div class="modal-price-row">
+      <span>Price</span>
+      <span id="modal-price">500</span>
+    </div>
+    <div class="modal-new-balance">
+      New balance: <strong id="modal-balance">1,950</strong>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm" onclick="closeModal()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+
+const playerBalance = 2450;
+
+const diceData = [
+  { name: 'Classic White', bg: '#f0ece4', pip: '#222', price: 0, status: 'equipped', faces: [5,3] },
+  { name: 'Midnight Blue', bg: '#1a2744', pip: '#c8d8e8', price: 500, status: 'buy', faces: [6,2] },
+  { name: 'Crimson', bg: '#8b1a1a', pip: '#d4a017', price: 500, status: 'buy', faces: [4,1] },
+  { name: 'Forest Green', bg: '#1a4a2a', pip: '#d4e8d4', price: 500, status: 'buy', faces: [3,5] },
+  { name: 'Royal Purple', bg: '#3a1a5c', pip: '#c0c0d0', price: 1000, status: 'buy', faces: [2,6] },
+  { name: 'Golden Luxury', bg: 'linear-gradient(135deg, #d4a017, #b8860b)', pip: '#1a1a1a', price: 2500, status: 'buy', faces: [5,5] },
+  { name: 'Diamond', bg: 'linear-gradient(135deg, #a8d8ea, #87ceeb)', pip: '#fff', price: 5000, status: 'buy', faces: [6,4] },
+  { name: 'Obsidian', bg: '#1a1a1a', pip: '#cc3333', price: 3000, status: 'locked', req: 'Win 100 Games', faces: [1,4] },
+  { name: 'Phoenix Fire', bg: 'linear-gradient(135deg, #e25822, #cc3300)', pip: '#fff', price: 5000, status: 'locked', req: '10-Game Win Streak', faces: [6,6] },
+  { name: 'Lucky Clover', bg: '#2d6a3a', pip: '#e8f0e8', price: 2000, status: 'locked', req: 'Win 50 Games', faces: [4,3] },
+];
+
+const bgData = [
+  { name: 'Default Blue', style: 'linear-gradient(135deg, #0d1b2a 0%, #1b2838 100%)', price: 0, status: 'equipped' },
+  { name: 'Sunset', style: 'linear-gradient(135deg, #e07020 0%, #6a1b9a 100%)', price: 1000, status: 'buy' },
+  { name: 'Ocean Depths', style: 'linear-gradient(135deg, #004d5a 0%, #0a1628 100%)', price: 1000, status: 'buy' },
+  { name: 'Emerald', style: 'linear-gradient(135deg, #0d5a2a 0%, #1a3a20 50%, #0d5a2a 100%)', price: 1500, status: 'buy' },
+  { name: 'Starfield', style: 'radial-gradient(1px 1px at 20% 30%, #fff 50%, transparent 100%), radial-gradient(1px 1px at 80% 70%, #fff 50%, transparent 100%), radial-gradient(1px 1px at 50% 10%, #ccc 50%, transparent 100%), radial-gradient(1px 1px at 10% 80%, #ddd 50%, transparent 100%), radial-gradient(1px 1px at 70% 40%, #fff 50%, transparent 100%), radial-gradient(1px 1px at 40% 60%, #ccc 50%, transparent 100%), radial-gradient(1px 1px at 90% 20%, #fff 50%, transparent 100%), radial-gradient(1px 1px at 30% 90%, #ddd 50%, transparent 100%), linear-gradient(135deg, #060818 0%, #0d1020 100%)', price: 2500, status: 'buy' },
+  { name: 'Gold Rush', style: 'linear-gradient(135deg, #b8860b 0%, #d4a017 40%, #8b6914 100%)', price: 3000, status: 'buy' },
+  { name: 'Northern Lights', style: 'linear-gradient(180deg, #0a1628 0%, #1a4a3a 30%, #2a2a6a 60%, #4a2a6a 100%)', price: 5000, status: 'buy' },
+  { name: "Champion's Crest", style: 'linear-gradient(135deg, #8b1a1a 0%, #d4a017 100%)', price: 0, status: 'locked', req: 'Win 500 Games' },
+  { name: 'Farkle Master', style: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', border: '2px solid #d4a017', price: 0, status: 'locked', req: '1,000 Farkles' },
+];
+
+const feltData = [
+  { name: 'Classic Green', color: '#2d5a27', price: 0, status: 'equipped' },
+  { name: 'Casino Blue', color: '#1a3a5c', price: 500, status: 'buy' },
+  { name: 'Royal Red', color: '#5a1a1a', price: 500, status: 'buy' },
+  { name: 'Midnight', color: '#1a1a22', price: 1500, status: 'buy' },
+  { name: 'Purple Velvet', color: '#2a1a3a', price: 2000, status: 'buy' },
+  { name: 'White Marble', color: '#d8d0c8', extra: 'linear-gradient(135deg, rgba(180,170,160,0.3) 0%, transparent 50%, rgba(180,170,160,0.2) 100%)', price: 3000, status: 'buy' },
+];
+
+const accoladeData = [
+  { name: 'Standard Pack', desc: 'Clean and simple', style: 'standard', price: 0, status: 'equipped', samples: ['Clutch God', 'Hot Streak'] },
+  { name: 'Fire Pack 🔥', desc: 'Flame-bordered badges', style: 'fire', price: 1500, status: 'buy', samples: ['Clutch God', 'Hot Streak'] },
+  { name: 'Ice Pack ❄️', desc: 'Frost-styled badges', style: 'ice', price: 1500, status: 'buy', samples: ['Clutch God', 'Hot Streak'] },
+  { name: 'Galaxy Pack ✨', desc: 'Cosmic badge style', style: 'galaxy', price: 3000, status: 'buy', samples: ['Clutch God', 'Hot Streak'] },
+  { name: 'Legendary Pack 👑', desc: 'Gold crown borders', style: 'legendary', price: 5000, status: 'buy', samples: ['Clutch God', 'Hot Streak'] },
+];
+
+const titleData = [
+  { name: 'Newcomer', style: 'newcomer', price: 0, status: 'equipped', req: 'Default' },
+  { name: 'Regular', style: 'regular', price: 0, status: 'unlocked', req: 'Play 50 games' },
+  { name: 'Veteran', style: 'veteran', price: 0, status: 'unlocked', req: 'Play 200 games' },
+  { name: 'High Roller', style: 'highroller', price: 2000, status: 'buy', req: 'Reach 10,000 coins' },
+  { name: 'Lucky Seven', style: 'luckyseven', price: 0, status: 'locked', req: 'Win 7 in a row' },
+  { name: 'Farkle Lord', style: 'farklelord', price: 0, status: 'locked', req: 'Get 500 farkles' },
+  { name: 'The Untouchable', style: 'untouchable', price: 0, status: 'locked', req: 'Win 20 in a row' },
+  { name: 'Diamond Hands', style: 'diamondhands', price: 0, status: 'locked', req: '-5K to positive' },
+];
+
+
+// ===== RENDER HELPERS =====
+
+function createDie(face, bg, pipColor) {
+  const die = document.createElement('div');
+  die.className = 'die';
+  die.setAttribute('data-face', face);
+  if (bg.includes('gradient')) {
+    die.style.background = bg;
+  } else {
+    die.style.backgroundColor = bg;
+  }
+  for (let i = 0; i < 9; i++) {
+    const pip = document.createElement('div');
+    pip.className = 'pip';
+    pip.style.backgroundColor = pipColor;
+    die.appendChild(pip);
+  }
+  return die;
+}
+
+function priceHTML(price) {
+  if (price === 0) return '<span class="card-price free">Free</span>';
+  return `<span class="card-price"><span class="coin-sm">$</span>${price.toLocaleString()}</span>`;
+}
+
+function statusHTML(item) {
+  if (item.status === 'equipped') return '<span class="btn-equipped">✓ Equipped</span>';
+  if (item.status === 'locked') return `<span class="btn-locked">🔒 Locked</span>`;
+  if (item.status === 'unlocked') return '<span class="btn-equipped">✓ Unlocked</span>';
+  return `<button class="btn-buy gold" onclick="openModal('${item.name}', ${item.price})">Buy</button>`;
+}
+
+
+// ===== RENDER TABS =====
+
+function renderDice() {
+  const grid = document.getElementById('dice-grid');
+  diceData.forEach(d => {
+    const card = document.createElement('div');
+    card.className = `card ${d.status === 'locked' ? 'locked' : ''} ${d.status === 'equipped' ? 'equipped' : ''}`;
+    const preview = document.createElement('div');
+    preview.className = 'card-preview';
+    const pair = document.createElement('div');
+    pair.className = 'dice-pair';
+    pair.appendChild(createDie(d.faces[0], d.bg, d.pip));
+    pair.appendChild(createDie(d.faces[1], d.bg, d.pip));
+    preview.appendChild(pair);
+
+    card.innerHTML = '';
+    card.appendChild(preview);
+
+    const info = document.createElement('div');
+    info.className = 'card-info';
+    info.innerHTML = `
+      <div class="card-name">${d.name}</div>
+      ${d.status === 'locked' ? `<div class="unlock-req">🔒 ${d.req}</div>` : ''}
+      <div class="card-bottom">
+        ${priceHTML(d.price)}
+        ${statusHTML(d)}
+      </div>
+    `;
+    card.appendChild(info);
+    grid.appendChild(card);
+  });
+}
+
+function renderBackgrounds() {
+  const grid = document.getElementById('bg-grid');
+  bgData.forEach(b => {
+    const card = document.createElement('div');
+    card.className = `card ${b.status === 'locked' ? 'locked' : ''} ${b.status === 'equipped' ? 'equipped' : ''}`;
+    card.innerHTML = `
+      <div class="bg-preview" style="background: ${b.style}; ${b.border ? 'border:' + b.border : ''}"></div>
+      <div class="card-info">
+        <div class="card-name">${b.name}</div>
+        ${b.status === 'locked' ? `<div class="unlock-req">🔒 ${b.req}</div>` : ''}
+        <div class="card-bottom">
+          ${priceHTML(b.price)}
+          ${statusHTML(b)}
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderFelts() {
+  const grid = document.getElementById('felt-grid');
+  feltData.forEach(f => {
+    const card = document.createElement('div');
+    card.className = `card ${f.status === 'equipped' ? 'equipped' : ''}`;
+    const extraBg = f.extra ? `, ${f.extra}` : '';
+    card.innerHTML = `
+      <div class="felt-preview" style="background-color: ${f.color}; ${f.extra ? 'background-image:' + f.extra : ''}"></div>
+      <div class="card-info">
+        <div class="card-name">${f.name}</div>
+        <div class="card-bottom">
+          ${priceHTML(f.price)}
+          ${statusHTML(f)}
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderAccolades() {
+  const grid = document.getElementById('accolade-grid');
+  accoladeData.forEach(a => {
+    const card = document.createElement('div');
+    card.className = `card ${a.status === 'equipped' ? 'equipped' : ''}`;
+    card.innerHTML = `
+      <div class="accolade-preview">
+        ${a.samples.map(s => `<span class="accolade-badge accolade-${a.style}">${s}</span>`).join('')}
+      </div>
+      <div class="card-info">
+        <div class="card-name">${a.name}</div>
+        <div class="unlock-req" style="color: var(--text-dim); font-style: normal; margin-bottom: 8px;">${a.desc}</div>
+        <div class="card-bottom">
+          ${priceHTML(a.price)}
+          ${statusHTML(a)}
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderTitles() {
+  const grid = document.getElementById('title-grid');
+  titleData.forEach(t => {
+    const card = document.createElement('div');
+    card.className = `card ${t.status === 'locked' ? 'locked' : ''} ${t.status === 'equipped' ? 'equipped' : ''}`;
+    card.innerHTML = `
+      <div class="title-preview">
+        <span class="title-badge title-${t.style}">${t.name}</span>
+      </div>
+      <div class="card-info">
+        <div class="unlock-req" style="text-align:center; margin-bottom: 8px; font-style: normal;">${t.req}</div>
+        <div class="card-bottom">
+          ${priceHTML(t.price)}
+          ${statusHTML(t)}
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+
+// ===== TABS =====
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+
+// ===== MODAL =====
+
+function openModal(name, price) {
+  const modal = document.getElementById('modal');
+  document.getElementById('modal-title').textContent = name;
+  document.getElementById('modal-price').innerHTML = `<span style="display:inline-flex;align-items:center;gap:5px;"><span class="coin-sm" style="width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#c4920e);display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:var(--navy-deep);">$</span>${price.toLocaleString()}</span>`;
+  document.getElementById('modal-balance').textContent = (playerBalance - price).toLocaleString();
+
+  // Find the item and render a preview
+  const previewEl = document.getElementById('modal-preview');
+  const diceItem = diceData.find(d => d.name === name);
+  if (diceItem) {
+    previewEl.innerHTML = '';
+    const pair = document.createElement('div');
+    pair.className = 'dice-pair';
+    pair.appendChild(createDie(diceItem.faces[0], diceItem.bg, diceItem.pip));
+    pair.appendChild(createDie(diceItem.faces[1], diceItem.bg, diceItem.pip));
+    previewEl.appendChild(pair);
+  } else {
+    const bgItem = bgData.find(b => b.name === name);
+    if (bgItem) {
+      previewEl.innerHTML = `<div style="width:100%;height:70px;border-radius:8px;background:${bgItem.style};"></div>`;
+    } else {
+      const feltItem = feltData.find(f => f.name === name);
+      if (feltItem) {
+        previewEl.innerHTML = `<div class="felt-preview" style="background-color:${feltItem.color};margin:0;"></div>`;
+      } else {
+        const accItem = accoladeData.find(a => a.name === name);
+        if (accItem) {
+          previewEl.innerHTML = `<div class="accolade-preview" style="margin:0;min-height:auto;">${accItem.samples.map(s => `<span class="accolade-badge accolade-${accItem.style}">${s}</span>`).join('')}</div>`;
+        } else {
+          const titleItem = titleData.find(t => t.name === name);
+          if (titleItem) {
+            previewEl.innerHTML = `<span class="title-badge title-${titleItem.style}">${titleItem.name}</span>`;
+          } else {
+            previewEl.innerHTML = '';
+          }
+        }
+      }
+    }
+  }
+
+  modal.classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+document.getElementById('modal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+
+// ===== INIT =====
+
+renderDice();
+renderBackgrounds();
+renderFelts();
+renderAccolades();
+renderTitles();
+</script>
+
+</body>
+</html>
